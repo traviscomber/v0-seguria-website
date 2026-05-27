@@ -22,11 +22,11 @@ export function Navigation() {
           {/* Logo - positioned on the left */}
           <Link href="/" className="absolute left-0 flex-shrink-0">
             <Image
-              src="/logo-seguria.png"
+              src="/logo-seguria-icon.png"
               alt="SegurIA"
-              width={60}
-              height={60}
-              className="w-15 h-15"
+              width={56}
+              height={56}
+              className="w-14 h-14"
             />
           </Link>
 
