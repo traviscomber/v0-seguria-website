@@ -27,7 +27,7 @@ export function Navigation() {
               width={640}
               height={427}
               sizes="(max-width: 1024px) 180px, 240px"
-              className="h-[73px] w-auto"
+              className="h-24 w-auto"
               priority
             />
           </Link>
