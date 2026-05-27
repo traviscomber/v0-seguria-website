@@ -26,10 +26,9 @@ export function Navigation() {
               alt="SegurIA"
               width={640}
               height={427}
-              sizes="(max-width: 768px) 100px, 140px"
-              className="h-14 w-auto"
+              sizes="(max-width: 1024px) 180px, 240px"
+              className="h-24 w-auto"
               priority
-              quality={90}
             />
           </Link>
 
