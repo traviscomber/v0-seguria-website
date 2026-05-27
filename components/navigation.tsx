@@ -18,20 +18,19 @@ export function Navigation() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A1B2E]/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
+        <div className="flex items-center justify-center h-32 relative">
+          {/* Logo - positioned on the left */}
+          <Link href="/" className="absolute left-0 flex-shrink-0">
             <Image
               src="/logo-seguria.png"
               alt="SegurIA"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+              width={200}
+              height={200}
+              className="w-28 h-28"
             />
-            <span className="text-xl font-light text-white tracking-wide">SegurIA</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - centered */}
           <div className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
               <Link
@@ -47,7 +46,7 @@ export function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 text-white"
+            className="lg:hidden p-2 text-white absolute right-0"
             aria-label="Toggle menu"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
