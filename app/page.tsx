@@ -14,7 +14,7 @@ export default function HomePage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(10, 27, 46, 0.7), rgba(10, 27, 46, 0.9)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2532&auto=format&fit=crop')`
+            backgroundImage: `linear-gradient(to bottom, rgba(10, 27, 46, 0.7), rgba(10, 27, 46, 0.9)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=70&w=1400&auto=format&fit=crop')`
           }}
         />
         

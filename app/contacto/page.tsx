@@ -18,6 +18,7 @@ type FormData = {
   tieneInternet: string
   tipoServicio: string
   mensaje: string
+  website: string
 }
 
 export default function ContactoPage() {
@@ -32,11 +33,13 @@ export default function ContactoPage() {
     tieneCamaras: '',
     tieneInternet: '',
     tipoServicio: '',
-    mensaje: ''
+    mensaje: '',
+    website: ''
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -47,14 +50,31 @@ export default function ContactoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
     setIsSubmitting(true)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    console.log('Form submitted:', formData)
-    setIsSubmitting(false)
-    setIsSubmitted(true)
+
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'No se pudo enviar el formulario. Intentá nuevamente.')
+      }
+
+      setIsSubmitted(true)
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo enviar el formulario. Intentá nuevamente.'
+      setSubmitError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isSubmitted) {
@@ -167,6 +187,18 @@ export default function ContactoPage() {
             {/* Form */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="glass-card p-8 space-y-6">
+                <div className="sr-only" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    autoComplete="off"
+                    tabIndex={-1}
+                    value={formData.website}
+                    onChange={handleChange}
+                  />
+                </div>
                 {/* Personal Info */}
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
@@ -359,6 +391,12 @@ export default function ContactoPage() {
                     placeholder="Cuéntanos más sobre tu proyecto..."
                   />
                 </div>
+
+                {submitError && (
+                  <p className="rounded-[5px] border border-red-300/40 bg-red-500/10 px-4 py-3 text-[14px] text-red-100">
+                    {submitError}
+                  </p>
+                )}
 
                 <button
                   type="submit"
