@@ -24,9 +24,9 @@ export function Navigation() {
             <Image
               src="/logo-seguria-icon.png"
               alt="SegurIA"
-              width={80}
-              height={80}
-              className="w-auto h-[70%]"
+              width={240}
+              height={240}
+              className="w-auto h-[210%]"
               priority
             />
           </Link>
