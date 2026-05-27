@@ -14,7 +14,7 @@ export default function SolucionesPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(10, 27, 46, 0.8), rgba(10, 27, 46, 0.95)), url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2574&auto=format&fit=crop')`
+            backgroundImage: `linear-gradient(to bottom, rgba(10, 27, 46, 0.8), rgba(10, 27, 46, 0.95)), url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=70&w=1400&auto=format&fit=crop')`
           }}
         />
         
