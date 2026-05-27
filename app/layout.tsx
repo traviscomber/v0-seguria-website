@@ -11,7 +11,7 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://v0-seguria-website.vercel.app'),
+  metadataBase: new URL('https://seguria.tech'),
   title: {
     default: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
     template: '%s | SegurIA',
@@ -29,13 +29,13 @@ export const metadata: Metadata = {
     'IoT',
   ],
   alternates: {
-    canonical: '/',
+    canonical: 'https://seguria.tech',
   },
   openGraph: {
     title: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
     description:
       'Conectamos tecnologia. Protegemos lo que importa. Soluciones de seguridad e infraestructura inteligente para campos y propiedades.',
-    url: '/',
+    url: 'https://seguria.tech',
     siteName: 'SegurIA',
     locale: 'es_CL',
     type: 'website',
@@ -61,8 +61,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'SegurIA',
+    alternateName: 'Segur IA',
+    url: 'https://seguria.tech',
+    sameAs: ['https://segur-ia.cl'],
+    description: 'Infraestructura inteligente para campos y propiedades',
+    foundingDate: '2024',
+    areaServed: 'CL',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Customer Service',
+      url: 'https://seguria.tech/contacto',
+    },
+  }
+
   return (
     <html lang="es" className="bg-[#0A1B2E]">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body className={`${montserrat.className} antialiased`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
