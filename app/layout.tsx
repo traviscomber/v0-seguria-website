@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
   description: 'Conectamos tecnología. Protegemos lo que importa. Preparamos tu operación para crecer. Soluciones de seguridad e infraestructura inteligente.',
   keywords: ['seguridad', 'infraestructura inteligente', 'campos', 'propiedades', 'monitoreo', 'cámaras', 'sensores', 'IoT'],
+  viewport: 'width=device-width, initial-scale=1.0',
 }
 
 export default function RootLayout({
