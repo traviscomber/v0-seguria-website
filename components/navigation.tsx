@@ -18,15 +18,15 @@ export function Navigation() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A1B2E]/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-center h-32 relative">
+        <div className="flex items-center justify-center h-20 relative">
           {/* Logo - positioned on the left */}
           <Link href="/" className="absolute left-0 flex-shrink-0">
             <Image
               src="/logo-seguria.png"
               alt="SegurIA"
-              width={200}
-              height={200}
-              className="w-28 h-28"
+              width={60}
+              height={60}
+              className="w-15 h-15"
             />
           </Link>
 
