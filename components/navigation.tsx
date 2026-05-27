@@ -20,13 +20,14 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-center h-20 relative">
           {/* Logo - positioned on the left */}
-          <Link href="/" className="absolute left-0 flex-shrink-0">
+          <Link href="/" className="absolute left-6 flex-shrink-0 h-full flex items-center">
             <Image
               src="/logo-seguria-icon.png"
               alt="SegurIA"
-              width={56}
-              height={56}
-              className="w-14 h-14"
+              width={80}
+              height={80}
+              className="w-auto h-[70%]"
+              priority
             />
           </Link>
 
