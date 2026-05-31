@@ -20,6 +20,17 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      // Domain consolidation: segur-ia.cl → seguria.tech (301 permanent redirect)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'segur-ia.cl' }],
+        destination: 'https://seguria.tech/:path*',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
