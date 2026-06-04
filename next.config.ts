@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Redirect www to non-www (n3uralia.com)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.n3uralia.com' }],
+        destination: 'https://n3uralia.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
