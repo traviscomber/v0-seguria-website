@@ -1,7 +1,17 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, Camera, CheckCircle2, FileText, MapPin, ShieldAlert, Signal, Wifi } from 'lucide-react'
+import {
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  FileText,
+  MapPin,
+  ShieldAlert,
+  Signal,
+  Sparkles,
+  Wifi,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -75,53 +85,75 @@ export default async function PropertyPage({
 
   return (
     <div className="space-y-8">
-      <section className="space-y-4">
-        <Button asChild variant="ghost" className="w-fit rounded-full px-0 text-white/60 hover:bg-transparent hover:text-white">
-          <Link href="/app">
-            <ArrowLeft className="h-4 w-4" />
-            Volver al portal
-          </Link>
-        </Button>
+      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.18),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)] lg:p-10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(77,163,217,0.06)_0%,transparent_42%,rgba(255,255,255,0.03)_100%)]" />
+        <div className="relative space-y-6">
+          <Button asChild variant="ghost" className="w-fit rounded-full px-0 text-white/60 hover:bg-transparent hover:text-white">
+            <Link href="/app">
+              <ArrowLeft className="h-4 w-4" />
+              Volver al portal
+            </Link>
+          </Button>
 
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
-              <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                Sitio cliente
-              </Badge>
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
+                <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
+                  Sitio cliente
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-4xl font-light text-white text-balance md:text-5xl">{site.label}</h1>
+                <p className="max-w-3xl text-base leading-7 text-white/65 md:text-lg">
+                  Vista premium para leer el sitio sin esfuerzo: qué hay instalado, qué está activo y qué conviene
+                  revisar primero.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <InfoTile label="Ubicacion" value={site.location} icon={MapPin} />
+                <InfoTile label="Camaras" value={cameraCount.toString()} icon={Camera} />
+                <InfoTile label="Sensores" value={sensorCount.toString()} icon={Signal} />
+                <InfoTile label="Accesos" value={accessCount.toString()} icon={Wifi} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <CardTitle className="text-3xl font-normal text-white">{site.label}</CardTitle>
-              <CardDescription className="max-w-3xl text-base text-white/65">
-                Vista simple para entender que hay instalado, que esta activo y que requiere atencion.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <InfoTile label="Ubicacion" value={site.location} icon={MapPin} />
-            <InfoTile label="Camaras" value={cameraCount.toString()} icon={Camera} />
-            <InfoTile label="Sensores" value={sensorCount.toString()} icon={Signal} />
-            <InfoTile label="Accesos" value={accessCount.toString()} icon={Wifi} />
-          </CardContent>
-        </Card>
+
+            <Card className="border-white/10 bg-[#071524]/80 shadow-none backdrop-blur">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+                  <CardTitle className="text-lg font-normal text-white">Resumen rapido</CardTitle>
+                </div>
+                <CardDescription className="text-white/55">Lectura ejecutiva de la operacion del sitio.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <MiniMetric label="Dispositivos" value={site.deviceCount} />
+                <MiniMetric label="Activos" value={activeCount} />
+                <MiniMetric label="Documentos" value={site.documentCount} />
+                <MiniMetric label="Alertas" value={site.alertCount} />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Equipos del sitio</CardTitle>
             <CardDescription className="text-white/55">
-              Equipos agrupados por tipo para leer la operacion sin ruido.
+              Equipos agrupados por tipo para entender la operacion de un vistazo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {buckets.map((bucket) => (
-              <div key={bucket.key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={bucket.key} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-white">{groupLabel(bucket.key)}</p>
-                    <p className="text-sm text-white/45 mt-1">
+                    <p className="mt-1 text-sm text-white/45">
                       {bucket.count} {bucket.count === 1 ? 'equipo' : 'equipos'}
                     </p>
                   </div>
@@ -129,7 +161,7 @@ export default async function PropertyPage({
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {bucket.devices.slice(0, 4).map((device) => (
-                    <div key={device.id} className="rounded-xl border border-white/10 bg-[#0B1D30] p-3">
+                    <div key={device.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-white">{device.displayName || device.marca || 'Equipo'}</p>
@@ -160,20 +192,7 @@ export default async function PropertyPage({
         <div className="space-y-6">
           <Card className="border-white/10 bg-white/5 shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg font-normal text-white">Resumen del sitio</CardTitle>
-              <CardDescription className="text-white/55">Lo esencial para operacion y soporte.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              <MiniMetric label="Dispositivos" value={site.deviceCount} />
-              <MiniMetric label="Activos" value={activeCount} />
-              <MiniMetric label="Documentos" value={site.documentCount} />
-              <MiniMetric label="Alertas" value={site.alertCount} />
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/5 shadow-none">
-            <CardHeader>
-              <CardTitle className="text-lg font-normal text-white">Documentos disponibles</CardTitle>
+              <CardTitle className="text-lg font-normal text-white">Documentos</CardTitle>
               <CardDescription className="text-white/55">Propuestas, reportes y material del sitio.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -193,6 +212,38 @@ export default async function PropertyPage({
                   </div>
                 ))
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/10 bg-white/5 shadow-none">
+            <CardHeader>
+              <CardTitle className="text-lg font-normal text-white">Siguiente paso</CardTitle>
+              <CardDescription className="text-white/55">Lo que conviene revisar primero.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {site.alertCount > 0 ? (
+                <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
+                  Hay equipos que requieren revision. Este sitio debe revisarse antes de cerrar el dia.
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+                  El sitio esta estable y listo para monitoreo normal.
+                </div>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  'Confirmar equipos visibles para el cliente.',
+                  'Subir documentos y reportes del sitio.',
+                  'Revisar alertas antes de la siguiente visita.',
+                  'Compartir acceso al equipo correspondiente.',
+                ].map((step) => (
+                  <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -239,33 +290,23 @@ export default async function PropertyPage({
 
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Siguiente paso</CardTitle>
-            <CardDescription className="text-white/55">Lo que conviene revisar primero.</CardDescription>
+            <CardTitle className="text-lg font-normal text-white">Lectura del sitio</CardTitle>
+            <CardDescription className="text-white/55">
+              Lo que el cliente entiende en segundos.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {site.alertCount > 0 ? (
-              <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-                Hay equipos que requieren revision. Este sitio debe revisarse antes de cerrar el dia.
+          <CardContent className="space-y-4">
+            {[
+              'Una vista limpia del sitio completo.',
+              'Camaras, sensores y accesos agrupados.',
+              'Alertas y documentos sin ruido.',
+              'Soporte con contexto real del sitio.',
+            ].map((text) => (
+              <div key={text} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                <span>{text}</span>
               </div>
-            ) : (
-              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-                El sitio esta estable y listo para monitoreo normal.
-              </div>
-            )}
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                'Confirmar equipos visibles para el cliente.',
-                'Subir documentos y reportes del sitio.',
-                'Revisar alertas antes de la siguiente visita.',
-                'Compartir acceso al equipo correspondiente.',
-              ].map((step) => (
-                <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                  <span>{step}</span>
-                </div>
-              ))}
-            </div>
+            ))}
           </CardContent>
         </Card>
       </section>
