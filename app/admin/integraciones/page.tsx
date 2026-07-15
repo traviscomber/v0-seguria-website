@@ -20,6 +20,8 @@ import {
   getIntegrationSummary,
   getIntegrationActivitySummary,
 } from '@/lib/integration-state'
+import { cameraCatalog, cameraCommonCapabilities } from '@/lib/camera-catalog'
+import { deviceCatalogGroups, deviceCatalogHighlights } from '@/lib/device-catalog'
 import { TuyaConnectForm } from '@/components/tuya-connect-form'
 
 export const dynamic = 'force-dynamic'
@@ -178,6 +180,122 @@ export default function IntegrationsAdminPage() {
               <h3 className="text-white font-light text-[16px]">{family.title}</h3>
               <p className="text-white/55 text-sm mt-2">{family.description}</p>
               <p className="text-white/40 text-sm mt-3">{family.details}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-card p-6 border border-[#4DA3D9]/20">
+        <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <p className="text-[#4DA3D9] text-sm mb-2">Catálogo de cámaras</p>
+            <h2 className="text-2xl font-light text-white">Tipos que ya conviene considerar en el portal.</h2>
+            <p className="text-white/55 mt-3 max-w-2xl">
+              No hay una base pública completa con todos los modelos, pero sí categorías y capacidades para dejar el portal listo.
+            </p>
+          </div>
+          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
+            Data base lista
+          </span>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4 mt-5">
+          {cameraCatalog.map((camera) => (
+            <div key={camera.code} className="rounded-[5px] bg-white/5 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-white font-light">{camera.label}</p>
+                  <p className="text-white/50 text-sm mt-1">Categoría interna: {camera.code}</p>
+                </div>
+                <span className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/60">Compatible</span>
+              </div>
+              <p className="text-white/55 text-sm mt-3">{camera.summary}</p>
+
+              <div className="grid sm:grid-cols-2 gap-3 mt-4 text-sm">
+                <div>
+                  <p className="text-white/40">Capacidades</p>
+                  <ul className="mt-2 space-y-1 text-white/70">
+                    {camera.features.map((feature) => (
+                      <li key={feature}>• {feature}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-white/40">Emparejamiento</p>
+                  <ul className="mt-2 space-y-1 text-white/70">
+                    {camera.pairing.map((method) => (
+                      <li key={method}>• {method}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {camera.notes.map((note) => (
+                  <span key={note} className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/55">
+                    {note}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 rounded-[5px] bg-white/5 p-4">
+          <p className="text-white/40 text-sm">Capacidades comunes que ya vale la pena modelar</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {cameraCommonCapabilities.map((item) => (
+              <span key={item} className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card p-6 border border-[#4DA3D9]/20">
+        <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <p className="text-[#4DA3D9] text-sm mb-2">Sensores y otros equipos</p>
+            <h2 className="text-2xl font-light text-white">La data que conviene cargar para el portal del cliente.</h2>
+            <p className="text-white/55 mt-3 max-w-2xl">
+              Priorizamos los sensores que más importan para seguridad, control ambiental y automatización.
+            </p>
+          </div>
+          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
+            Cobertura amplia
+          </span>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {deviceCatalogHighlights.map((item) => (
+            <span key={item} className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/60">
+              {item}
+            </span>
+          ))}
+        </div>
+
+        <div className="grid xl:grid-cols-2 gap-4 mt-5">
+          {deviceCatalogGroups.map((group) => (
+            <div key={group.title} className="rounded-[5px] bg-white/5 p-4">
+              <h3 className="text-white font-light text-[16px]">{group.title}</h3>
+              <p className="text-white/50 text-sm mt-1">{group.description}</p>
+              <div className="space-y-4 mt-4">
+                {group.items.slice(0, 6).map((item) => (
+                  <div key={item.code} className="rounded-[5px] bg-[#0B1D30] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-white">{item.label}</p>
+                        <p className="text-white/45 text-xs mt-1">Código interno: {item.code}</p>
+                      </div>
+                      <span className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/55">
+                        {item.platforms[0]}
+                      </span>
+                    </div>
+                    <p className="text-white/60 text-sm mt-2">{item.summary}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
