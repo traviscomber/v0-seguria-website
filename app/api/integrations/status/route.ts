@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getIntegrationConnections, getIntegrationEvents, getIntegrationSummary } from '@/lib/integration-state'
+import {
+  getIntegrationConnections,
+  getIntegrationEvents,
+  getIntegrationSummary,
+  getIntegrationActivitySummary,
+} from '@/lib/integration-state'
 
 export async function GET() {
   const summary = getIntegrationSummary()
@@ -8,6 +13,7 @@ export async function GET() {
     success: true,
     data: {
       summary,
+      activity: getIntegrationActivitySummary(10),
       connections: getIntegrationConnections(),
       recentEvents: getIntegrationEvents(10),
     },

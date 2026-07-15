@@ -14,7 +14,12 @@ import {
   ClipboardList,
   Shield,
 } from 'lucide-react'
-import { getIntegrationConnections, getIntegrationEvents, getIntegrationSummary } from '@/lib/integration-state'
+import {
+  getIntegrationConnections,
+  getIntegrationEvents,
+  getIntegrationSummary,
+  getIntegrationActivitySummary,
+} from '@/lib/integration-state'
 import { TuyaConnectForm } from '@/components/tuya-connect-form'
 
 export const dynamic = 'force-dynamic'
@@ -104,6 +109,7 @@ const feedFamilies = [
 
 export default function IntegrationsAdminPage() {
   const summary = getIntegrationSummary()
+  const activity = getIntegrationActivitySummary(12)
   const connections = getIntegrationConnections()
   const recentEvents = getIntegrationEvents(12)
 
@@ -138,6 +144,21 @@ export default function IntegrationsAdminPage() {
         <div className="glass-card p-6">
           <p className="text-white/60 text-sm">Pendientes</p>
           <p className="text-white text-3xl font-light mt-2">{summary.pendingConnections}</p>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-4">
+        <div className="rounded-[5px] bg-white/5 p-4">
+          <p className="text-white/50 text-sm">Cuentas listas</p>
+          <p className="text-white text-2xl font-light mt-1">{activity.connectedEvents}</p>
+        </div>
+        <div className="rounded-[5px] bg-white/5 p-4">
+          <p className="text-white/50 text-sm">Sincronizaciones</p>
+          <p className="text-white text-2xl font-light mt-1">{activity.syncEvents}</p>
+        </div>
+        <div className="rounded-[5px] bg-white/5 p-4">
+          <p className="text-white/50 text-sm">Alertas</p>
+          <p className="text-white text-2xl font-light mt-1">{activity.alertEvents}</p>
         </div>
       </div>
 
@@ -306,8 +327,8 @@ export default function IntegrationsAdminPage() {
         </div>
       </div>
 
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
           <div>
             <h2 className="text-lg font-light text-white">Siguiente paso</h2>
             <p className="text-white/55 text-sm mt-1">

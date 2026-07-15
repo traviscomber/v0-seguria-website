@@ -186,6 +186,24 @@ export function getIntegrationSummary() {
   }
 }
 
+export function getIntegrationActivitySummary(limit = 10) {
+  const recentEvents = getIntegrationEvents(limit)
+  const connectedEvents = recentEvents.filter((event) => event.eventType === 'account.connected').length
+  const syncEvents = recentEvents.filter(
+    (event) => event.eventType.includes('sync') || event.eventType.includes('heartbeat') || event.eventType.includes('gateway.')
+  ).length
+  const alertEvents = recentEvents.filter(
+    (event) => event.eventType.includes('alert') || event.eventType.includes('error') || event.status === 'warning'
+  ).length
+
+  return {
+    recentEvents,
+    connectedEvents,
+    syncEvents,
+    alertEvents,
+  }
+}
+
 export function recordIntegrationConnectionEvent(event: Omit<IntegrationEvent, 'id' | 'receivedAt'>) {
   return appendEvent(event)
 }
