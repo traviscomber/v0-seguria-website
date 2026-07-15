@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { connectTuyaIntegrationAccount } from '@/lib/integration-state'
+import { importTuyaAccountPortfolio } from '@/lib/tuya-import'
 
 const connectSchema = z.object({
   account_name: z.string().trim().min(1).max(120),
@@ -23,9 +24,15 @@ export async function POST(request: Request) {
       accountScope: parsed.data.account_scope,
     })
 
+    const portfolio = importTuyaAccountPortfolio({
+      accountName: parsed.data.account_name,
+      siteName: parsed.data.site_name,
+      accountScope: parsed.data.account_scope,
+    })
+
     return NextResponse.json({
       success: true,
-      data: { event },
+      data: { event, portfolio },
       message: 'Cuenta del cliente lista para importar dispositivos.',
     })
   } catch (error) {

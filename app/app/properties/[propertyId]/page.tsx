@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { getAuthSessionFromToken } from '@/lib/auth-store'
-import { getPortalActivityFeed, getPortalSiteForUser } from '@/lib/client-portal'
+import { getPortalActivityFeed, getPortalDeviceBuckets, getPortalSiteForUser } from '@/lib/client-portal'
 
 function formatDate(value?: Date) {
-  if (!value) return 'Sin actualización'
+  if (!value) return 'Sin actualizacion'
   return new Intl.DateTimeFormat('es-CL', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -21,6 +21,22 @@ function getStatusTone(status: string) {
   if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
   if (status === 'revision') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
   return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
+}
+
+function getGroupTone(group: string) {
+  if (group === 'camera') return 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
+  if (group === 'sensor') return 'border-sky-400/25 bg-sky-400/10 text-sky-100'
+  if (group === 'alert') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+  if (group === 'access') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+  return 'border-white/10 bg-white/5 text-white/70'
+}
+
+function groupLabel(group: string) {
+  if (group === 'camera') return 'Camaras'
+  if (group === 'sensor') return 'Sensores'
+  if (group === 'alert') return 'Alertas'
+  if (group === 'access') return 'Accesos'
+  return 'Otros'
 }
 
 function countDevices(devices: { tipo: string }[], target: string[]) {
@@ -51,6 +67,7 @@ export default async function PropertyPage({
   }
 
   const activity = getPortalActivityFeed([site])
+  const buckets = getPortalDeviceBuckets(site.devices)
   const cameraCount = countDevices(site.devices, ['camara_ip', 'camara_analogica'])
   const sensorCount = countDevices(site.devices, ['sensor_movimiento', 'sensor_temperatura', 'sensor_humedad', 'sensor_puerta'])
   const accessCount = countDevices(site.devices, ['control_acceso'])
@@ -77,13 +94,13 @@ export default async function PropertyPage({
             <div className="space-y-2">
               <CardTitle className="text-3xl font-normal text-white">{site.label}</CardTitle>
               <CardDescription className="max-w-3xl text-base text-white/65">
-                Vista simple para entender qué hay instalado, qué está activo y qué requiere atención.
+                Vista simple para entender que hay instalado, que esta activo y que requiere atencion.
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <InfoTile label="Ubicación" value={site.location} icon={MapPin} />
-            <InfoTile label="Cámaras" value={cameraCount.toString()} icon={Camera} />
+            <InfoTile label="Ubicacion" value={site.location} icon={MapPin} />
+            <InfoTile label="Camaras" value={cameraCount.toString()} icon={Camera} />
             <InfoTile label="Sensores" value={sensorCount.toString()} icon={Signal} />
             <InfoTile label="Accesos" value={accessCount.toString()} icon={Wifi} />
           </CardContent>
@@ -95,35 +112,48 @@ export default async function PropertyPage({
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Equipos del sitio</CardTitle>
             <CardDescription className="text-white/55">
-              Estado general y tipo de cada equipo visible para el cliente.
+              Equipos agrupados por tipo para leer la operacion sin ruido.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {site.devices.length === 0 ? (
-              <p className="py-6 text-sm text-white/55">Todavía no hay equipos cargados para este sitio.</p>
-            ) : (
-              site.devices.map((device) => (
-                <div key={device.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-white">{device.displayName || device.marca || 'Equipo'}</p>
-                      <p className="mt-1 text-sm text-white/55">
-                        {device.ubicacionDescripcion || 'Ubicación por definir'}
-                      </p>
-                    </div>
-                    <Badge className={device.estado === 'activo' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' : device.estado === 'mantencion' ? 'border-amber-400/30 bg-amber-400/10 text-amber-100' : 'border-rose-400/30 bg-rose-400/10 text-rose-100'}>
-                      {device.estado === 'activo' ? 'Activo' : device.estado === 'mantencion' ? 'En revisión' : 'Con alerta'}
-                    </Badge>
+          <CardContent className="space-y-4">
+            {buckets.map((bucket) => (
+              <div key={bucket.key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-white">{groupLabel(bucket.key)}</p>
+                    <p className="text-sm text-white/45 mt-1">
+                      {bucket.count} {bucket.count === 1 ? 'equipo' : 'equipos'}
+                    </p>
                   </div>
-                  <Separator className="my-4 bg-white/10" />
-                  <div className="grid gap-3 text-sm sm:grid-cols-3">
-                    <Row label="Tipo" value={device.tipo.replace(/_/g, ' ')} />
-                    <Row label="Actualización" value={formatDate(device.lastSeenAt || device.fechaActualizacion)} />
-                    <Row label="Notas" value={device.notas || 'Sin notas'} />
-                  </div>
+                  <Badge className={getGroupTone(bucket.key)}>{bucket.count}</Badge>
                 </div>
-              ))
-            )}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {bucket.devices.slice(0, 4).map((device) => (
+                    <div key={device.id} className="rounded-xl border border-white/10 bg-[#0B1D30] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-white">{device.displayName || device.marca || 'Equipo'}</p>
+                          <p className="mt-1 text-xs text-white/45">{device.ubicacionDescripcion || 'Sin ubicacion'}</p>
+                        </div>
+                        <Badge
+                          className={
+                            device.estado === 'activo'
+                              ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                              : device.estado === 'mantencion'
+                                ? 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+                                : 'border-rose-400/30 bg-rose-400/10 text-rose-100'
+                          }
+                        >
+                          {device.estado === 'activo' ? 'Activo' : device.estado === 'mantencion' ? 'Revision' : 'Alerta'}
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-sm text-white/60">{device.notas || 'Sin notas'}</p>
+                    </div>
+                  ))}
+                  {bucket.count === 0 && <p className="text-sm text-white/45">Sin equipos cargados.</p>}
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -131,7 +161,7 @@ export default async function PropertyPage({
           <Card className="border-white/10 bg-white/5 shadow-none">
             <CardHeader>
               <CardTitle className="text-lg font-normal text-white">Resumen del sitio</CardTitle>
-              <CardDescription className="text-white/55">Lo esencial para operación y soporte.</CardDescription>
+              <CardDescription className="text-white/55">Lo esencial para operacion y soporte.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               <MiniMetric label="Dispositivos" value={site.deviceCount} />
@@ -148,7 +178,7 @@ export default async function PropertyPage({
             </CardHeader>
             <CardContent className="space-y-3">
               {site.documents.length === 0 ? (
-                <p className="py-6 text-sm text-white/55">No hay documentos publicados todavía.</p>
+                <p className="py-6 text-sm text-white/55">No hay documentos publicados todavia.</p>
               ) : (
                 site.documents.map((document) => (
                   <div key={document.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -172,7 +202,7 @@ export default async function PropertyPage({
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
-            <CardDescription className="text-white/55">Últimos cambios visibles del sitio.</CardDescription>
+            <CardDescription className="text-white/55">Ultimos cambios visibles del sitio.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {activity.length === 0 ? (
@@ -215,11 +245,11 @@ export default async function PropertyPage({
           <CardContent className="space-y-3">
             {site.alertCount > 0 ? (
               <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-                Hay equipos que requieren revisión. Este sitio debe revisarse antes de cerrar el día.
+                Hay equipos que requieren revision. Este sitio debe revisarse antes de cerrar el dia.
               </div>
             ) : (
               <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-                El sitio está estable y listo para monitoreo normal.
+                El sitio esta estable y listo para monitoreo normal.
               </div>
             )}
 
@@ -263,15 +293,6 @@ function InfoTile({
           <p className="mt-1 text-sm text-white">{value}</p>
         </div>
       </div>
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-      <p className="mt-1 text-white/80">{value}</p>
     </div>
   )
 }

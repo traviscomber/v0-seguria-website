@@ -11,10 +11,11 @@ import {
   getAccessiblePortalSites,
   getPortalActivityFeed,
   getPortalDashboardTotals,
+  getPortalDeviceBuckets,
 } from '@/lib/client-portal'
 
 function formatDate(value?: Date) {
-  if (!value) return 'Sin actualización'
+  if (!value) return 'Sin actualizacion'
   return new Intl.DateTimeFormat('es-CL', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -25,6 +26,22 @@ function getStatusTone(status: string) {
   if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
   if (status === 'revision') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
   return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
+}
+
+function getGroupTone(group: string) {
+  if (group === 'camera') return 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
+  if (group === 'sensor') return 'border-sky-400/25 bg-sky-400/10 text-sky-100'
+  if (group === 'alert') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+  if (group === 'access') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+  return 'border-white/10 bg-white/5 text-white/70'
+}
+
+function groupLabel(group: string) {
+  if (group === 'camera') return 'Camaras'
+  if (group === 'sensor') return 'Sensores'
+  if (group === 'alert') return 'Alertas'
+  if (group === 'access') return 'Accesos'
+  return 'Otros'
 }
 
 export default async function ClientAppPage() {
@@ -56,32 +73,19 @@ export default async function ClientAppPage() {
             </Badge>
             <div className="space-y-3">
               <CardTitle className="text-3xl font-normal text-white">
-                Todo lo que necesita tu operación, en un solo lugar.
+                Todo lo que necesita tu operacion, en un solo lugar.
               </CardTitle>
               <CardDescription className="max-w-2xl text-base text-white/65">
-                Revisa tus sitios, equipos, documentos y alertas desde una vista simple. El portal está pensado para
-                que cualquier cliente lo entienda en pocos segundos.
+                Revisa tus sitios, camaras, sensores, alertas y documentos desde una vista simple y clara.
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Sitios</p>
-                <p className="mt-2 text-3xl font-light text-white">{totals.sites}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Dispositivos</p>
-                <p className="mt-2 text-3xl font-light text-white">{totals.devices}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Cámaras</p>
-                <p className="mt-2 text-3xl font-light text-white">{totals.cameras}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Alertas</p>
-                <p className="mt-2 text-3xl font-light text-white">{totals.alerts}</p>
-              </div>
+              <Metric label="Sitios" value={totals.sites} />
+              <Metric label="Dispositivos" value={totals.devices} />
+              <Metric label="Camaras" value={totals.cameras} />
+              <Metric label="Alertas" value={totals.alerts} />
             </div>
 
             <Separator className="bg-white/10" />
@@ -103,8 +107,8 @@ export default async function ClientAppPage() {
 
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Resumen rápido</CardTitle>
-            <CardDescription className="text-white/55">Lo más importante del estado actual.</CardDescription>
+            <CardTitle className="text-lg font-normal text-white">Resumen rapido</CardTitle>
+            <CardDescription className="text-white/55">Lo mas importante del estado actual.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -123,18 +127,12 @@ export default async function ClientAppPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Documentos</p>
-                <p className="mt-2 text-2xl font-light text-white">{totals.documents}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/45">Sensores</p>
-                <p className="mt-2 text-2xl font-light text-white">{totals.sensors}</p>
-              </div>
+              <Metric label="Documentos" value={totals.documents} />
+              <Metric label="Sensores" value={totals.sensors} />
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-              <p className="text-sm text-white/45">Última actualización</p>
+              <p className="text-sm text-white/45">Ultima actualizacion</p>
               <p className="mt-2 text-sm text-white">{formatDate(primarySite?.lastUpdatedAt)}</p>
             </div>
           </CardContent>
@@ -147,48 +145,71 @@ export default async function ClientAppPage() {
             <p className="text-sm uppercase tracking-[0.2em] text-white/40">Sitios</p>
             <h2 className="mt-2 text-2xl font-normal text-white">Tus propiedades</h2>
           </div>
-          <p className="text-sm text-white/45">Cada tarjeta muestra el estado general de ese sitio.</p>
+          <p className="text-sm text-white/45">Cada tarjeta resume equipos agrupados por tipo.</p>
         </div>
 
         {sites.length === 0 ? (
           <Card className="border-white/10 bg-white/5 shadow-none">
             <CardContent className="py-12 text-center text-white/60">
-              Todavía no hay sitios asociados a esta cuenta.
+              Todavia no hay sitios asociados a esta cuenta.
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            {sites.map((site) => (
-              <Card key={site.propertyId} className="border-white/10 bg-white/5 shadow-none">
-                <CardHeader className="space-y-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <CardTitle className="text-xl font-normal text-white">{site.label}</CardTitle>
-                      <CardDescription className="mt-2 text-white/55">{site.location}</CardDescription>
+            {sites.map((site) => {
+              const buckets = getPortalDeviceBuckets(site.devices)
+              return (
+                <Card key={site.propertyId} className="border-white/10 bg-white/5 shadow-none">
+                  <CardHeader className="space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <CardTitle className="text-xl font-normal text-white">{site.label}</CardTitle>
+                        <CardDescription className="mt-2 text-white/55">{site.location}</CardDescription>
+                      </div>
+                      <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
                     </div>
-                    <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatMini label="Equipos" value={site.deviceCount} />
-                    <StatMini label="Cámaras" value={site.cameraCount} />
-                    <StatMini label="Sensores" value={site.sensorCount} />
-                    <StatMini label="Alertas" value={site.alertCount} />
-                  </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <Metric label="Equipos" value={site.deviceCount} />
+                      <Metric label="Camaras" value={site.cameraCount} />
+                      <Metric label="Sensores" value={site.sensorCount} />
+                      <Metric label="Alertas" value={site.alertCount} />
+                    </div>
 
-                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3 text-sm">
-                    <div className="text-white/55">
-                      <p>Documentos</p>
-                      <p className="mt-1 text-white">{site.documentCount} disponibles</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {buckets.map((bucket) => (
+                        <div key={bucket.key} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm text-white/50">{groupLabel(bucket.key)}</p>
+                            <Badge className={getGroupTone(bucket.key)}>{bucket.count}</Badge>
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            {bucket.devices.slice(0, 3).map((device) => (
+                              <div key={device.id} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                                <p className="text-sm text-white">{device.displayName || device.marca || 'Equipo'}</p>
+                                <p className="text-xs text-white/45">{device.ubicacionDescripcion || 'Sin ubicacion'}</p>
+                              </div>
+                            ))}
+                            {bucket.count === 0 && <p className="text-sm text-white/40">Sin equipos cargados</p>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <Button asChild size="sm" variant="ghost" className="rounded-full text-white hover:bg-white/10">
-                      <Link href={`/app/properties/${site.propertyId}`}>Abrir</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3 text-sm">
+                      <div className="text-white/55">
+                        <p>Documentos</p>
+                        <p className="mt-1 text-white">{site.documentCount} disponibles</p>
+                      </div>
+                      <Button asChild size="sm" variant="ghost" className="rounded-full text-white hover:bg-white/10">
+                        <Link href={`/app/properties/${site.propertyId}`}>Abrir</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </section>
@@ -197,13 +218,11 @@ export default async function ClientAppPage() {
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
-            <CardDescription className="text-white/55">
-              Últimos cambios detectados en equipos y documentos.
-            </CardDescription>
+            <CardDescription className="text-white/55">Ultimos cambios detectados en equipos y documentos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {activity.length === 0 ? (
-              <p className="py-6 text-sm text-white/55">Aún no hay actividad para mostrar.</p>
+              <p className="py-6 text-sm text-white/55">Aun no hay actividad para mostrar.</p>
             ) : (
               activity.map((item) => (
                 <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -238,15 +257,15 @@ export default async function ClientAppPage() {
 
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Qué puede hacer el cliente</CardTitle>
+            <CardTitle className="text-lg font-normal text-white">Que puede hacer el cliente</CardTitle>
             <CardDescription className="text-white/55">
-              Este portal deja listo el acceso a información clave sin complicarlo.
+              Este portal deja listo el acceso a informacion clave sin complicarlo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {[
               'Entrar con su cuenta y ver solo sus sitios.',
-              'Revisar cámaras, sensores y estado general.',
+              'Revisar camaras, sensores y estado general.',
               'Abrir documentos y reportes cuando los necesite.',
               'Pedir soporte sin perder contexto operativo.',
             ].map((text) => (
@@ -262,7 +281,7 @@ export default async function ClientAppPage() {
   )
 }
 
-function StatMini({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
