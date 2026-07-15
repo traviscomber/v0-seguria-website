@@ -1,7 +1,17 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { ArrowRight, Building2, Camera, CheckCircle2, FileText, ShieldAlert, Wifi } from 'lucide-react'
+import {
+  ArrowRight,
+  Building2,
+  Camera,
+  CheckCircle2,
+  FileText,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Wifi,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -65,78 +75,87 @@ export default async function ClientAppPage() {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader className="space-y-4">
+      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.2),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(77,163,217,0.06)_0%,transparent_40%,rgba(255,255,255,0.03)_100%)]" />
+        <div className="relative grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="space-y-6">
             <Badge className="w-fit border-[#4DA3D9]/30 bg-[#4DA3D9]/15 text-[#9DD2F2] hover:bg-[#4DA3D9]/15">
               Portal de cliente
             </Badge>
-            <div className="space-y-3">
-              <CardTitle className="text-3xl font-normal text-white">
-                Todo lo que necesita tu operacion, en un solo lugar.
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-base text-white/65">
-                Revisa tus sitios, camaras, sensores, alertas y documentos desde una vista simple y clara.
-              </CardDescription>
+            <div className="space-y-4">
+              <h1 className="max-w-3xl text-4xl font-light text-white text-balance md:text-5xl">
+                Una experiencia premium para ver y entender tu seguridad sin ruido.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-white/68 md:text-lg">
+                SegurIA te muestra sitios, camaras, sensores, accesos y alertas en una sola vista clara. Tu equipo
+                ve contexto, el cliente ve control.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric label="Sitios" value={totals.sites} />
-              <Metric label="Dispositivos" value={totals.devices} />
-              <Metric label="Camaras" value={totals.cameras} />
-              <Metric label="Alertas" value={totals.alerts} />
-            </div>
-
-            <Separator className="bg-white/10" />
 
             <div className="flex flex-wrap items-center gap-3">
               <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
                 <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
-                  Ver sitio principal
+                  Abrir sitio principal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
                 <Link href="/contacto">Pedir soporte</Link>
               </Button>
-              <p className="text-sm text-white/45">Usuario: {user.name}</p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Resumen rapido</CardTitle>
-            <CardDescription className="text-white/55">Lo mas importante del estado actual.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                  <Building2 className="h-5 w-5" strokeWidth={1.7} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <MiniStat label="Sitios" value={totals.sites} accent="bg-[#4DA3D9]/15" />
+              <MiniStat label="Equipos" value={totals.devices} accent="bg-white/5" />
+              <MiniStat label="Alertas" value={totals.alerts} accent="bg-rose-400/10" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Card className="border-white/10 bg-[#071524]/80 shadow-none backdrop-blur">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+                  <CardTitle className="text-lg font-normal text-white">Estado general</CardTitle>
                 </div>
-                <div>
-                  <p className="text-sm text-white/45">Sitio principal</p>
-                  <p className="text-white">{primarySite?.label || 'Sin sitio asignado'}</p>
+                <CardDescription className="text-white/55">
+                  Una lectura rapida para saber si todo esta listo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
+                      <Building2 className="h-5 w-5" strokeWidth={1.7} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-white/45">Sitio principal</p>
+                      <p className="text-white">{primarySite?.label || 'Sin sitio asignado'}</p>
+                    </div>
+                  </div>
+                  <Badge className={primarySite ? getStatusTone(primarySite.status) : 'border-white/10 bg-white/5 text-white/60'}>
+                    {primarySite?.statusLabel || 'Pendiente'}
+                  </Badge>
                 </div>
-              </div>
-              <Badge className={primarySite ? getStatusTone(primarySite.status) : 'border-white/10 bg-white/5 text-white/60'}>
-                {primarySite?.statusLabel || 'Pendiente'}
-              </Badge>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Metric label="Documentos" value={totals.documents} />
-              <Metric label="Sensores" value={totals.sensors} />
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <MiniMetric label="Documentos" value={totals.documents} />
+                  <MiniMetric label="Sensores" value={totals.sensors} />
+                </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-              <p className="text-sm text-white/45">Ultima actualizacion</p>
-              <p className="mt-2 text-sm text-white">{formatDate(primarySite?.lastUpdatedAt)}</p>
+                <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                  <p className="text-sm text-white/45">Ultima actualizacion</p>
+                  <p className="mt-2 text-sm text-white">{formatDate(primarySite?.lastUpdatedAt)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <MicroProof label="Portal simple" value="1" />
+              <MicroProof label="Lectura clara" value="100%" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
 
       <section id="sitios" className="space-y-4">
@@ -286,6 +305,48 @@ function Metric({ label, value }: { label: string; value: number }) {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
       <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function MiniStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string
+  value: number
+  accent: string
+}) {
+  return (
+    <div className={`rounded-2xl border border-white/10 ${accent} p-4`}>
+      <p className="text-xs uppercase tracking-[0.18em] text-white/40">{label}</p>
+      <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function MiniMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
+      <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function MicroProof({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
+          <CheckCircle2 className="h-4 w-4" strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
+          <p className="mt-1 text-white">{value}</p>
+        </div>
+      </div>
     </div>
   )
 }
