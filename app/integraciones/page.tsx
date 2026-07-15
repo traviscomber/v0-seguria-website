@@ -6,44 +6,43 @@ import { ArrowRight, Cpu, GitBranch, Home, Lock, Network, ShieldCheck, Workflow 
 const pillars = [
   {
     icon: Home,
-    title: 'Seteo interno',
-    description: 'Nosotros dejamos la cuenta del cliente lista.',
+    title: 'Cuenta lista',
+    description: 'Nuestro equipo deja cada cuenta preparada para operar sin friccion.',
   },
   {
     icon: Cpu,
-    title: 'Ver sus equipos',
-    description: 'La app muestra dispositivos, camaras y sensores del cliente.',
+    title: 'Todo ordenado',
+    description: 'El cliente ve camaras, sensores y accesos en un solo portal.',
   },
   {
     icon: GitBranch,
-    title: 'Mostrar estado',
-    description: 'Se ve que esta activo, en alerta o requiere revision.',
+    title: 'Estado claro',
+    description: 'Se entiende rapido que esta activo, que requiere revision y que esta en alerta.',
   },
 ]
 
 const capabilities = [
-  'Nosotros seteamos la cuenta del cliente',
-  'Ver dispositivos, camaras y sensores',
-  'Mostrar estado y alertas simples',
-  'Abrir una vista clara para soporte interno',
-  'Dejar lista la base para la version pro',
+  'Una sola vista para camaras, sensores y accesos',
+  'Alertas simples y faciles de leer',
+  'Soporte con contexto de cada sitio',
+  'Base lista para escalar a version pro',
 ]
 
 const flow = [
   {
     step: '01',
-    title: 'Setear cuenta',
-    description: 'Nuestro equipo configura la cuenta del cliente.',
+    title: 'Configurar cuenta',
+    description: 'Nuestro equipo deja la cuenta del cliente lista y asignada al sitio correcto.',
   },
   {
     step: '02',
-    title: 'Traer datos',
-    description: 'La app lee equipos, estado y alertas.',
+    title: 'Cargar equipos',
+    description: 'Se importan camaras, sensores, accesos y alertas relevantes.',
   },
   {
     step: '03',
     title: 'Mostrar portal',
-    description: 'SegurIA enseña los datos de forma simple y entendible.',
+    description: 'SegurIA muestra el estado en una pantalla simple, clara y comercial.',
   },
 ]
 
@@ -75,11 +74,11 @@ export default function IntegracionesPage() {
             Operacion interna
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight text-balance">
-            Nosotros dejamos la cuenta del cliente lista y mostramos sus datos.
+            Un portal simple para que cada cliente vea su seguridad sin enredos.
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed text-balance">
-            La primera version de SegurIA es interna: nuestro equipo configura la cuenta del cliente y luego ve sus
-            dispositivos, estado y alertas en un solo lugar.
+            SegurIA conecta la operacion con una experiencia clara: nosotros dejamos la cuenta lista y el cliente
+            entra a ver sus sitios, camaras, sensores y alertas en un solo lugar.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contacto" className="btn-primary px-8 py-4 text-[15px] inline-flex items-center gap-2">
@@ -98,7 +97,7 @@ export default function IntegracionesPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-light text-white text-balance">Tres pasos simples</h2>
             <p className="mt-4 text-white/60 text-lg max-w-2xl mx-auto">
-              Lo minimo para que nuestro equipo deje la cuenta operativa rapido.
+              Lo minimo para que el cliente vea valor desde el primer dia.
             </p>
           </div>
 
@@ -119,9 +118,10 @@ export default function IntegracionesPage() {
       <section className="py-24 bg-[#0A1B2E]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-start">
           <div>
-            <h2 className="text-3xl md:text-4xl font-light text-white text-balance mb-6">Que permite hoy</h2>
+            <h2 className="text-3xl md:text-4xl font-light text-white text-balance mb-6">Que resuelve hoy</h2>
             <p className="text-white/60 text-lg leading-relaxed mb-8">
-              Primero configuramos la cuenta del cliente. Luego mostramos sus datos de forma clara.
+              Primero configuramos la cuenta del cliente. Luego mostramos sus datos de forma clara, con foco en
+              camaras, sensores, accesos y alertas.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {capabilities.map((item) => (
@@ -155,7 +155,7 @@ export default function IntegracionesPage() {
             <div className="mt-8 pt-6 border-t border-white/10">
               <div className="flex items-center gap-3 text-white/60 text-sm">
                 <Lock className="w-4 h-4 text-[#4DA3D9]" strokeWidth={1.5} />
-                Solo lo necesario para empezar: seteo interno, datos y visualizacion clara
+                Solo lo necesario para empezar: cuenta configurada, datos importados y una visual simple
               </div>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function IntegracionesPage() {
             Esta puede ser la base simple del producto
           </h2>
           <p className="mt-4 text-[#6B7280] text-lg max-w-2xl mx-auto leading-relaxed">
-            La primera meta es que nuestro equipo setee la cuenta y el cliente vea sus equipos sin friccion.
+            La primera meta es que nuestro equipo configure la cuenta y el cliente vea sus equipos sin friccion.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contacto" className="btn-primary px-8 py-4 text-[15px] inline-flex items-center gap-2">

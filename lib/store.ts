@@ -512,15 +512,37 @@ export const deleteLead = (id: string): boolean => {
 // ==================== PROJECTS ====================
 export const getProjects = (): Project[] => projects
 export const getProjectById = (id: string): Project | undefined => projects.find(p => p.id === id)
-export const createProject = (data: Omit<Project, 'id' | 'fechaCreacion' | 'fechaActualizacion'>): Project => {
+export const createProject = (
+  data: Omit<Project, 'id' | 'fechaCreacion' | 'fechaActualizacion'> & { id?: string }
+): Project => {
   const project: Project = {
     ...data,
-    id: generateId(),
+    id: data.id || generateId(),
     fechaCreacion: new Date(),
     fechaActualizacion: new Date(),
   }
   projects = [project, ...projects]
   return project
+}
+export const createProjectWithId = (
+  id: string,
+  data: Omit<Project, 'id' | 'fechaCreacion' | 'fechaActualizacion'>
+): Project => createProject({ ...data, id })
+export const upsertProjectWithId = (
+  id: string,
+  data: Omit<Project, 'id' | 'fechaCreacion' | 'fechaActualizacion'>
+): Project => {
+  const index = projects.findIndex((project) => project.id === id)
+  if (index >= 0) {
+    projects[index] = {
+      ...projects[index],
+      ...data,
+      id,
+      fechaActualizacion: new Date(),
+    }
+    return projects[index]
+  }
+  return createProjectWithId(id, data)
 }
 export const updateProject = (id: string, data: Partial<Project>): Project | undefined => {
   const index = projects.findIndex(p => p.id === id)

@@ -47,6 +47,14 @@ function hashPassword(password: string, salt: string) {
   return crypto.pbkdf2Sync(password, salt, 120000, 64, 'sha512').toString('hex')
 }
 
+function createPasswordRecord(password: string) {
+  const salt = createId()
+  return {
+    passwordSalt: salt,
+    passwordHash: hashPassword(password, salt),
+  }
+}
+
 async function ensureStateFile() {
   try {
     await fs.access(AUTH_FILE)
@@ -75,6 +83,28 @@ function createSeedUser(input: {
     propertyIds: input.propertyIds || [],
     passwordSalt: salt,
     passwordHash: hashPassword(input.password, salt),
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  }
+}
+
+function createUserRecord(input: {
+  id?: string
+  name: string
+  email: string
+  role: AuthRole
+  password: string
+  clientIds?: string[]
+  propertyIds?: string[]
+}): AuthUser {
+  return {
+    id: input.id || createId(),
+    name: input.name,
+    email: input.email.toLowerCase(),
+    role: input.role,
+    clientIds: input.clientIds || [],
+    propertyIds: input.propertyIds || [],
+    ...createPasswordRecord(input.password),
     createdAt: nowIso(),
     updatedAt: nowIso(),
   }
@@ -129,6 +159,40 @@ export async function listAuthUsers() {
 export async function findAuthUserByEmail(email: string) {
   const state = await readState()
   return state.users.find((user) => user.email === email.toLowerCase())
+}
+
+export async function upsertAuthUser(input: {
+  name: string
+  email: string
+  role: AuthRole
+  password: string
+  clientIds?: string[]
+  propertyIds?: string[]
+}) {
+  const state = await readState()
+  const email = input.email.toLowerCase()
+  const existingIndex = state.users.findIndex((user) => user.email === email)
+  const passwordRecord = createPasswordRecord(input.password)
+  const nextUser = existingIndex >= 0
+    ? {
+        ...state.users[existingIndex],
+        name: input.name,
+        role: input.role,
+        clientIds: input.clientIds || [],
+        propertyIds: input.propertyIds || [],
+        ...passwordRecord,
+        updatedAt: nowIso(),
+      }
+    : createUserRecord(input)
+
+  if (existingIndex >= 0) {
+    state.users[existingIndex] = nextUser
+  } else {
+    state.users.push(nextUser)
+  }
+
+  await writeState(state)
+  return nextUser
 }
 
 export async function authenticateUser(email: string, password: string) {
