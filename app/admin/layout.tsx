@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,11 +9,12 @@ import {
   FileText, 
   Cpu, 
   FileCheck,
+  Workflow,
   Menu,
   X,
   LogOut
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/admin/proyectos', label: 'Proyectos', icon: FolderKanban },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText },
   { href: '/admin/dispositivos', label: 'Dispositivos', icon: Cpu },
+  { href: '/admin/integraciones', label: 'Integraciones', icon: Workflow },
   { href: '/admin/propuestas', label: 'Propuestas', icon: FileCheck },
 ]
 
@@ -30,7 +32,56 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [authState, setAuthState] = useState<'loading' | 'authorized' | 'unauthorized'>('loading')
+
+  useEffect(() => {
+    let active = true
+
+    const verify = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (!active) return
+        const data = await response.json().catch(() => null)
+        const role = data?.data?.user?.role
+        if (response.ok && role !== 'client') {
+          setAuthState('authorized')
+        } else if (response.ok && role === 'client') {
+          setAuthState('unauthorized')
+          router.replace('/app')
+        } else {
+          setAuthState('unauthorized')
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`)
+        }
+      } catch {
+        if (!active) return
+        setAuthState('unauthorized')
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`)
+      }
+    }
+
+    verify()
+    return () => {
+      active = false
+    }
+  }, [pathname, router])
+
+  if (authState === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0A1B2E] flex items-center justify-center text-white/60">
+        Verificando acceso...
+      </div>
+    )
+  }
+
+  if (authState === 'unauthorized') {
+    return (
+      <div className="min-h-screen bg-[#0A1B2E] flex items-center justify-center text-white/60">
+        Redirigiendo a login...
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0A1B2E]">

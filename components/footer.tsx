@@ -38,6 +38,11 @@ export function Footer() {
                   Ver Todas
                 </Link>
               </li>
+              <li>
+                <Link href="/integraciones" className="text-white/50 hover:text-white text-sm transition-colors">
+                  Integraciones
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -46,13 +51,13 @@ export function Footer() {
             <h3 className="text-white font-light text-sm mb-4">Empresa</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="text-white/50 hover:text-white text-sm transition-colors">
-                  Acerca de
+                <Link href="/integraciones" className="text-white/50 hover:text-white text-sm transition-colors">
+                  Integraciones
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-white/50 hover:text-white text-sm transition-colors">
-                  Blog
+                <Link href="/soluciones" className="text-white/50 hover:text-white text-sm transition-colors">
+                  Plataforma
                 </Link>
               </li>
               <li>
@@ -69,14 +74,14 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
                 <Mail size={16} className="text-[#4DA3D9]" />
-                <a href="mailto:info@seguria.com" className="text-white/50 hover:text-white text-sm transition-colors">
-                  info@seguria.com
+                <a href="mailto:contacto@seguria.cl" className="text-white/50 hover:text-white text-sm transition-colors">
+                  contacto@seguria.cl
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} className="text-[#4DA3D9]" />
-                <a href="tel:+5612345678" className="text-white/50 hover:text-white text-sm transition-colors">
-                  +56 (2) 1234 5678
+                <a href="tel:+56912345678" className="text-white/50 hover:text-white text-sm transition-colors">
+                  +56 9 1234 5678
                 </a>
               </li>
               <li className="flex items-start gap-2">

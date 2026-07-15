@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
-import { Camera, Cpu, Wifi, Lock, Monitor, FileText, Search, PenTool, Wrench, Activity } from 'lucide-react'
+import { ArrowRight, Camera, Cpu, GitBranch, Home, Wifi, Lock, Monitor, FileText, Search, PenTool, Wrench, Activity } from 'lucide-react'
 
 export default function SolucionesPage() {
   return (
@@ -55,7 +55,7 @@ export default function SolucionesPage() {
               },
               {
                 icon: Cpu,
-                title: 'Sensores e IoT',
+                title: 'Sensores y equipos',
                 description: 'Sensores ambientales, perimetrales, de acceso, movimiento, agua, clima y eventos.'
               },
               {
@@ -94,24 +94,59 @@ export default function SolucionesPage() {
         </div>
       </section>
 
+      {/* Integration Layer */}
+      <section className="py-24 bg-[#0A1B2E]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-[0.9fr_1.1fr] gap-12 items-center">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-light text-white text-balance mb-6">
+              Una solución completa también necesita una forma simple de conectar todo.
+            </h2>
+            <p className="text-white/60 text-lg leading-relaxed mb-8">
+              SegurIA conecta equipos y sistemas para que puedas ver estado, recibir avisos y responder rápido.
+            </p>
+            <Link href="/integraciones" className="btn-primary px-6 py-3 text-[15px] inline-flex items-center gap-2">
+              Ver cómo funciona
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { icon: Home, title: 'Control central' },
+              { icon: Cpu, title: 'Sensores' },
+              { icon: GitBranch, title: 'Cambios' },
+              { icon: Lock, title: 'Accesos' },
+            ].map((item) => (
+              <div key={item.title} className="glass-card p-5">
+                <div className="w-11 h-11 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mb-4">
+                  <item.icon className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-white font-light text-[16px] mb-1">{item.title}</h3>
+                <p className="text-white/55 text-sm leading-relaxed">Listo para control simple y ordenado.</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Scalability Section */}
       <section className="py-24 bg-[#0A1B2E]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-light text-white text-balance mb-6">
-                Preparado para crecer con múltiples ecosistemas.
+                Preparado para crecer con varios equipos y marcas.
               </h2>
               <p className="text-white/60 text-lg leading-relaxed mb-8">
-                SegurIA está diseñado para integrarse progresivamente con cámaras, sensores, dispositivos y plataformas mediante protocolos, APIs, conectores y gateways compatibles.
+                SegurIA está pensado para sumar cámaras, sensores y equipos sin enredar la operación.
               </p>
               <div className="space-y-4">
                 {[
-                  'Integración con múltiples marcas y protocolos',
-                  'Compatible con estándares ONVIF y RTSP',
-                  'APIs abiertas para conexión con sistemas existentes',
-                  'Gateways IoT para sensores diversos',
-                  'Escalable según crecimiento de la operación'
+                  'Sumar marcas y equipos poco a poco',
+                  'Conectar con sistemas que ya usas',
+                  'Leer estado y recibir avisos',
+                  'Crecer a más lugares cuando haga falta',
+                  'Mantener todo claro y ordenado'
                 ].map((item, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#4DA3D9]" />
@@ -123,12 +158,12 @@ export default function SolucionesPage() {
             <div className="glass-card p-8 lg:p-12">
               <div className="grid grid-cols-3 gap-6">
                 {[
-                  { label: 'Cámaras IP', icon: Camera },
+                  { label: 'Cámaras', icon: Camera },
                   { label: 'Sensores', icon: Cpu },
                   { label: 'Redes', icon: Wifi },
                   { label: 'Accesos', icon: Lock },
                   { label: 'Software', icon: Monitor },
-                  { label: 'Docs', icon: FileText }
+                  { label: 'Documentos', icon: FileText }
                 ].map((item, index) => (
                   <div key={index} className="text-center">
                     <div className="w-12 h-12 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mx-auto mb-2">
@@ -156,7 +191,7 @@ export default function SolucionesPage() {
               Proceso completo
             </h2>
             <p className="mt-4 text-[#6B7280] text-lg max-w-2xl mx-auto">
-              Acompañamos cada etapa de tu proyecto
+              Te acompañamos en cada paso del proyecto
             </p>
           </div>
 
@@ -178,7 +213,7 @@ export default function SolucionesPage() {
                 icon: Wrench,
                 step: '03',
                 title: 'Instalación',
-                description: 'Implementamos dispositivos, redes y toda la configuración.'
+                description: 'Dejamos todo instalado y funcionando.'
               },
               {
                 icon: Activity,
@@ -224,6 +259,12 @@ export default function SolucionesPage() {
               className="btn-secondary px-8 py-4 text-[15px] inline-flex items-center gap-2"
             >
               Ver Aplicaciones
+            </Link>
+            <Link 
+              href="/integraciones" 
+              className="btn-ghost px-8 py-4 text-[15px] inline-flex items-center gap-2"
+            >
+              Integraciones
             </Link>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
-import { Camera, Cpu, Wifi, Monitor, Search, PenTool, Wrench, Activity } from 'lucide-react'
+import { ArrowRight, Camera, Cpu, GitBranch, Home, Monitor, Search, PenTool, Wrench, Activity, Wifi } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -168,6 +168,68 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Integrations Section */}
+      <section className="py-24 bg-[#123A5A]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-start">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-light text-white text-balance">
+                Integraciones que convierten el sitio en una plataforma.
+              </h2>
+              <p className="mt-4 text-white/60 text-lg max-w-2xl leading-relaxed">
+                La siguiente etapa es unir marketing, CRM y control en una sola experiencia simple.
+              </p>
+              <div className="mt-8 grid sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    icon: Home,
+                    title: 'Control central',
+                    description: 'Todo en un solo lugar, fácil de revisar.',
+                  },
+                  {
+                    icon: Cpu,
+                    title: 'Sensores y equipos',
+                    description: 'Sensores, enchufes y otros equipos conectados.',
+                  },
+                  {
+                    icon: GitBranch,
+                    title: 'Cambios',
+                    description: 'Cambios y configuraciones ordenadas.',
+                  },
+                  {
+                    icon: Wifi,
+                    title: 'Conexión',
+                    description: 'Conexión estable para varios lugares y equipos.',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="glass-card p-5">
+                    <div className="w-11 h-11 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mb-4">
+                      <item.icon className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-white font-light text-[16px] mb-2">{item.title}</h3>
+                    <p className="text-white/55 text-sm leading-relaxed">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass-card p-8 lg:p-10">
+              <p className="text-[#4DA3D9] text-sm mb-4">Siguiente paso recomendado</p>
+              <h3 className="text-2xl font-light text-white text-balance mb-4">
+                Construir un centro de control con avisos, estado y acciones.
+              </h3>
+              <p className="text-white/60 leading-relaxed mb-8">
+                Podemos dejar listo el diseño para recibir eventos y mostrar el estado de los equipos.
+              </p>
+              <Link href="/integraciones" className="btn-primary px-6 py-3 text-[15px] inline-flex items-center gap-2">
+                Ver integraciones
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Process Section */}
       <section className="py-24 bg-[#E6F1F8]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -198,7 +260,7 @@ export default function HomePage() {
                 icon: Wrench,
                 step: '03',
                 title: 'Instalación',
-                description: 'Implementamos dispositivos, redes y configuración.'
+                description: 'Dejamos todo instalado y funcionando.'
               },
               {
                 icon: Activity,
@@ -244,6 +306,12 @@ export default function HomePage() {
               className="btn-secondary px-8 py-4 text-[15px] inline-flex items-center gap-2"
             >
               Ver Soluciones
+            </Link>
+            <Link 
+              href="/integraciones" 
+              className="btn-ghost px-8 py-4 text-[15px] inline-flex items-center gap-2"
+            >
+              Integraciones
             </Link>
           </div>
         </div>

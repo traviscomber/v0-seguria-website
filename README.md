@@ -4,9 +4,40 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v
 
 ## Built with v0
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below - start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_3kTNF2QMxVmGVRjdLzfBj9mGHkEn)
+[Continue working on v0 ->](https://v0.app/chat/projects/prj_3kTNF2QMxVmGVRjdLzfBj9mGHkEn)
+
+## Integrations
+
+The portal now includes a first integration layer for the security platform:
+
+- `GET /api/integrations/status`
+- `POST /api/integrations/home-assistant`
+- `POST /api/integrations/tuya`
+
+Required environment variables:
+
+- `HOME_ASSISTANT_WEBHOOK_SECRET`
+- `TUYA_SYNC_SECRET`
+
+## Auth
+
+The portal now includes a persistent local auth scaffold with roles and tenant scope:
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+Demo accounts:
+
+- `admin@seguria.local` / `seguria-admin`
+- `tech@seguria.local` / `seguria-tech`
+- `client@seguria.local` / `seguria-client`
+
+## Local Gateway
+
+The repository also includes a gateway scaffold under `gateway/` for the local-first architecture. It is intended to run in a property network and sync events to the portal when connectivity is available.
 
 ## Getting Started
 

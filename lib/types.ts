@@ -104,11 +104,15 @@ export interface Device {
   id: string
   proyectoId: string
   tipo: DeviceType
+  integrationSource?: 'home_assistant' | 'tuya' | 'manual'
+  externalId?: string
+  displayName?: string
   marca?: string
   modelo?: string
   protocolo?: DeviceProtocol
   ubicacionDescripcion?: string
   ubicacionCoordenadas?: { lat: number; lng: number }
+  lastSeenAt?: Date
   estado: DeviceStatus
   ipUrl?: string
   fuenteEnergia?: PowerSource
@@ -195,4 +199,37 @@ export interface DashboardStats {
     aceptadas: number
     valorTotal: number
   }
+}
+
+// ==================== INTEGRATIONS ====================
+export type IntegrationProvider = 'home_assistant' | 'tuya' | 'github'
+export type IntegrationStatus = 'pending' | 'connected' | 'degraded' | 'offline'
+
+export interface IntegrationConnection {
+  provider: IntegrationProvider
+  name: string
+  description: string
+  status: IntegrationStatus
+  endpoint: string
+  accountName?: string
+  accountScope?: string
+  secretName?: string
+  lastSyncAt?: Date
+  totalEvents: number
+  totalDevices: number
+  notes: string[]
+}
+
+export interface IntegrationEvent {
+  id: string
+  provider: IntegrationProvider
+  eventType: string
+  title: string
+  status: 'info' | 'success' | 'warning' | 'error'
+  entityId?: string
+  externalId?: string
+  deviceName?: string
+  projectId?: string
+  payload?: Record<string, unknown>
+  receivedAt: Date
 }

@@ -1,0 +1,325 @@
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  Github,
+  Home,
+  Network,
+  ShieldAlert,
+  Workflow,
+  Radar,
+  RefreshCw,
+  AlertTriangle,
+  PlayCircle,
+  ClipboardList,
+  Shield,
+} from 'lucide-react'
+import { getIntegrationConnections, getIntegrationEvents, getIntegrationSummary } from '@/lib/integration-state'
+import { TuyaConnectForm } from '@/components/tuya-connect-form'
+
+export const dynamic = 'force-dynamic'
+
+const statusStyles = {
+  pending: 'bg-amber-500/20 text-amber-400',
+  connected: 'bg-green-500/20 text-green-400',
+  degraded: 'bg-orange-500/20 text-orange-300',
+  offline: 'bg-red-500/20 text-red-400',
+}
+
+const providerLabels: Record<string, string> = {
+  tuya: 'Cuenta del cliente',
+  home_assistant: 'Capa local',
+  github: 'GitHub',
+}
+
+function scrubVisibleText(value: string) {
+  return value.replace(/tuya/gi, 'cliente')
+}
+
+function scrubVisiblePayload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(scrubVisiblePayload)
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+        key,
+        key === 'source' && typeof entry === 'string' ? scrubVisibleText(entry) : scrubVisiblePayload(entry),
+      ])
+    )
+  }
+  return typeof value === 'string' ? scrubVisibleText(value) : value
+}
+
+const autonomyFunctions = [
+  {
+    icon: Radar,
+    title: 'Descubrir equipos',
+    description: 'Detectar camaras, sensores, luces y accesos de forma automatica.',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Sincronizar estado',
+    description: 'Traer el estado de cada equipo y mostrarlo en tiempo real.',
+  },
+  {
+    icon: AlertTriangle,
+    title: 'Recibir alertas',
+    description: 'Guardar eventos de movimiento, apertura, falla o desconexion.',
+  },
+  {
+    icon: PlayCircle,
+    title: 'Ejecutar acciones',
+    description: 'Encender, apagar, abrir o cerrar con un solo toque.',
+  },
+  {
+    icon: Shield,
+    title: 'Mantener autonomia',
+    description: 'Seguir funcionando aunque la red falle o se corte por momentos.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Auditar cambios',
+    description: 'Saber que se cambio, cuando paso y a que equipo afecto.',
+  },
+]
+
+const feedFamilies = [
+  {
+    title: 'Camaras',
+    description: 'Stream, snapshot, online/offline y movimiento.',
+    details: 'La interfaz ya puede mostrar imagen, enlace o alerta.',
+  },
+  {
+    title: 'Sensores',
+    description: 'Puerta, presencia, temperatura, humedad y bateria.',
+    details: 'Las lecturas entran a una sola linea de tiempo clara.',
+  },
+  {
+    title: 'Alertas',
+    description: 'Falla, perdida de señal, bateria baja y desconexion.',
+    details: 'Cada evento queda visible para operacion y soporte.',
+  },
+]
+
+export default function IntegrationsAdminPage() {
+  const summary = getIntegrationSummary()
+  const connections = getIntegrationConnections()
+  const recentEvents = getIntegrationEvents(12)
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-light text-white">Integraciones</h1>
+        <p className="text-white/60 mt-1">Operacion interna: nosotros seteamos la cuenta del cliente.</p>
+      </div>
+
+      <div className="glass-card p-6">
+        <p className="text-[#4DA3D9] text-sm mb-2">Objetivo</p>
+        <h2 className="text-2xl md:text-3xl font-light text-white text-balance">
+          Dejar lista la cuenta del cliente y mostrar sus datos.
+        </h2>
+        <p className="text-white/55 mt-3 max-w-2xl">
+          La meta ahora es simple: nuestro equipo configura la cuenta, trae dispositivos y muestra su estado.
+        </p>
+      </div>
+
+      <TuyaConnectForm />
+
+      <div className="grid sm:grid-cols-3 gap-6">
+        <div className="glass-card p-6">
+          <p className="text-white/60 text-sm">Conexiones</p>
+          <p className="text-white text-3xl font-light mt-2">{summary.totalConnections}</p>
+        </div>
+        <div className="glass-card p-6">
+          <p className="text-white/60 text-sm">Conectadas</p>
+          <p className="text-white text-3xl font-light mt-2">{summary.connectedConnections}</p>
+        </div>
+        <div className="glass-card p-6">
+          <p className="text-white/60 text-sm">Pendientes</p>
+          <p className="text-white text-3xl font-light mt-2">{summary.pendingConnections}</p>
+        </div>
+      </div>
+
+      <div className="glass-card p-6 border border-[#4DA3D9]/20">
+        <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <p className="text-[#4DA3D9] text-sm mb-2">Feeds listos</p>
+            <h2 className="text-2xl font-light text-white">La base ya recibe equipos y alertas del cliente.</h2>
+          </div>
+          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
+            Listo para conectar cuentas
+          </span>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4 mt-5">
+          {feedFamilies.map((family) => (
+            <div key={family.title} className="rounded-[5px] bg-white/5 p-4">
+              <h3 className="text-white font-light text-[16px]">{family.title}</h3>
+              <p className="text-white/55 text-sm mt-2">{family.description}</p>
+              <p className="text-white/40 text-sm mt-3">{family.details}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-4">
+        {autonomyFunctions.map((item) => (
+          <div key={item.title} className="glass-card p-5">
+            <div className="w-11 h-11 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mb-4">
+              <item.icon className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-white font-light text-[16px] mb-1">{item.title}</h3>
+            <p className="text-white/55 text-sm leading-relaxed">{item.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid xl:grid-cols-[1fr_1.1fr] gap-6">
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Workflow className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+              <h2 className="text-lg font-light text-white">Estado de conectores</h2>
+            </div>
+            <span className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/60">API listo</span>
+          </div>
+
+          <div className="space-y-4">
+            {connections.map((connection) => {
+              const Icon = connection.provider === 'github' ? Github : Home
+              return (
+                <div key={connection.provider} className="rounded-[5px] bg-white/5 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-white font-light">{connection.name}</p>
+                        <p className="text-white/50 text-sm mt-1">{connection.description}</p>
+                        {connection.accountName && (
+                          <p className="text-white/40 text-xs mt-1">
+                            Cuenta: {connection.accountName}
+                            {connection.accountScope ? ` | ${connection.accountScope}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`inline-block px-2 py-1 rounded-[5px] text-[12px] ${statusStyles[connection.status]}`}>
+                      {connection.status}
+                    </span>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4 mt-4 text-sm">
+                    <div>
+                      <p className="text-white/40">Endpoint</p>
+                      <p className="text-white/70 mt-1 break-all">
+                        {connection.provider === 'tuya' ? 'Endpoint interno' : connection.endpoint}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-white/40">Secreto</p>
+                      <p className="text-white/70 mt-1">{connection.secretName || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/40">Eventos</p>
+                      <p className="text-white/70 mt-1">{connection.totalEvents}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/40">Dispositivos</p>
+                      <p className="text-white/70 mt-1">{connection.totalDevices}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {connection.notes.map((note) => (
+                      <span key={note} className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/55">
+                        {note}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Network className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+              <h2 className="text-lg font-light text-white">Eventos recientes</h2>
+            </div>
+            <span className="text-[12px] px-2 py-1 rounded-[5px] bg-white/10 text-white/60">{recentEvents.length} items</span>
+          </div>
+
+          <div className="space-y-4">
+            {recentEvents.length === 0 ? (
+              <div className="text-center py-12 text-white/50">
+                <Clock3 className="w-12 h-12 mx-auto mb-4 text-white/20" strokeWidth={1.5} />
+                Sin eventos registrados
+              </div>
+            ) : (
+              recentEvents.map((event) => (
+                <div key={event.id} className="rounded-[5px] bg-white/5 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block px-2 py-1 rounded-[5px] text-[12px] ${statusStyles.connected}`}>
+                          {providerLabels[event.provider] || 'Integracion'}
+                        </span>
+                        <span className="text-white/35 text-[12px]">{event.eventType}</span>
+                      </div>
+                      <p className="text-white mt-3 font-light">{scrubVisibleText(event.title)}</p>
+                      <div className="mt-2 text-white/50 text-sm space-y-1">
+                        {event.deviceName && <p>Dispositivo: {event.deviceName}</p>}
+                        {event.entityId && <p>Entidad: {event.entityId}</p>}
+                        {event.externalId && <p>ID externo: {event.externalId}</p>}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/40 text-[12px]">
+                        {new Intl.DateTimeFormat('es-CL', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }).format(new Date(event.receivedAt))}
+                      </p>
+                      {event.status === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-400 ml-auto mt-2" strokeWidth={1.5} />
+                      ) : event.status === 'warning' ? (
+                        <ShieldAlert className="w-4 h-4 text-amber-400 ml-auto mt-2" strokeWidth={1.5} />
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {event.payload && (
+                    <pre className="mt-4 overflow-x-auto rounded-[5px] bg-[#0A1B2E] p-3 text-[12px] text-white/65">
+                      {JSON.stringify(scrubVisiblePayload(event.payload), null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <h2 className="text-lg font-light text-white">Siguiente paso</h2>
+            <p className="text-white/55 text-sm mt-1">
+              Setear la cuenta real del cliente y probar la primera vista de datos.
+            </p>
+          </div>
+          <a href="/integraciones" className="btn-primary px-5 py-2.5 text-[15px] inline-flex items-center gap-2">
+            Revisar experiencia
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
