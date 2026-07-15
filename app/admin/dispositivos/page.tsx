@@ -105,7 +105,7 @@ export default function DevicesPage() {
   const deviceTypeChartData = [
     { name: 'Camaras', value: cameraDevices.length },
     { name: 'Sensores', value: sensorDevices.length },
-    { name: 'Tuya', value: tuyaDevices.length },
+    { name: 'Cuenta maestra', value: tuyaDevices.length },
     { name: 'Local', value: homeAssistantDevices.length },
   ]
 

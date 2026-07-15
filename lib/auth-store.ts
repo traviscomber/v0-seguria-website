@@ -55,6 +55,28 @@ function createPasswordRecord(password: string) {
   }
 }
 
+function isAuthState(value: unknown): value is AuthState {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<AuthState>
+  return Array.isArray(candidate.users) && Array.isArray(candidate.sessions)
+}
+
+async function repairCorruptState(raw: string) {
+  await fs.mkdir(path.dirname(AUTH_FILE), { recursive: true })
+  const backupName = `auth-state.corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+  const backupPath = path.join(path.dirname(AUTH_FILE), backupName)
+
+  try {
+    await fs.writeFile(backupPath, raw, 'utf8')
+  } catch {
+    // Best effort backup only.
+  }
+
+  const seed = createSeedState()
+  await writeState(seed)
+  return seed
+}
+
 async function ensureStateFile() {
   try {
     await fs.access(AUTH_FILE)
@@ -135,6 +157,14 @@ function createSeedState(): AuthState {
         clientIds: ['demo-client'],
         propertyIds: ['demo-property'],
       }),
+      createSeedUser({
+        name: 'N3uralia',
+        email: 'juan@n3uralia.com',
+        role: 'client',
+        password: 'c4rlit0s',
+        clientIds: ['n3uralia'],
+        propertyIds: ['n3uralia'],
+      }),
     ],
     sessions: [],
   }
@@ -143,7 +173,16 @@ function createSeedState(): AuthState {
 async function readState(): Promise<AuthState> {
   await ensureStateFile()
   const raw = await fs.readFile(AUTH_FILE, 'utf8')
-  return JSON.parse(raw) as AuthState
+
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!isAuthState(parsed)) {
+      return repairCorruptState(raw)
+    }
+    return parsed
+  } catch {
+    return repairCorruptState(raw)
+  }
 }
 
 async function writeState(state: AuthState) {

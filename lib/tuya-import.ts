@@ -3,6 +3,7 @@ import { recordIntegrationConnectionEvent } from '@/lib/integration-state'
 
 type TuyaAccountInput = {
   accountName: string
+  accountEmail?: string
   siteName?: string
   accountScope?: string
 }
@@ -151,6 +152,7 @@ export function importTuyaAccountPortfolio(input: TuyaAccountInput) {
         battery: seed.battery,
         signal: seed.signal,
         accountName: input.accountName,
+        accountEmail: input.accountEmail,
         accountScope: input.accountScope || input.siteName || 'Sitio principal',
       },
     })
@@ -165,6 +167,7 @@ export function importTuyaAccountPortfolio(input: TuyaAccountInput) {
     externalId: input.accountName,
     payload: {
       accountName: input.accountName,
+      accountEmail: input.accountEmail,
       accountScope: input.accountScope || input.siteName || 'Sitio principal',
       imported: importedDevices.length,
       kinds: importedDevices.map((device) => device.tipo),

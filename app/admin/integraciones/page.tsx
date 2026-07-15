@@ -34,7 +34,7 @@ const statusStyles = {
 }
 
 const providerLabels: Record<string, string> = {
-  tuya: 'Cuenta del cliente',
+  tuya: 'Cuenta maestra',
   home_assistant: 'Capa local',
   github: 'GitHub',
 }
@@ -114,22 +114,42 @@ export default function IntegrationsAdminPage() {
   const activity = getIntegrationActivitySummary(12)
   const connections = getIntegrationConnections()
   const recentEvents = getIntegrationEvents(12)
+  const tuyaConnection = connections.find((connection) => connection.provider === 'tuya')
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-light text-white">Integraciones</h1>
-        <p className="text-white/60 mt-1">Operacion interna: nosotros seteamos la cuenta del cliente.</p>
+        <p className="mt-1 text-white/60">Operacion interna: nosotros vinculamos la cuenta maestra que concentra todos los clientes del sitio.</p>
       </div>
 
       <div className="glass-card p-6">
         <p className="text-[#4DA3D9] text-sm mb-2">Objetivo</p>
         <h2 className="text-2xl md:text-3xl font-light text-white text-balance">
-          Dejar lista la cuenta del cliente y mostrar sus datos.
+          Dejar lista la cuenta maestra y mostrar sus datos.
         </h2>
-        <p className="text-white/55 mt-3 max-w-2xl">
-          La meta ahora es simple: nuestro equipo configura la cuenta, trae dispositivos y muestra su estado.
+        <p className="mt-3 max-w-2xl text-white/55">
+          La meta ahora es simple: nuestro equipo configura la cuenta maestra, trae dispositivos y muestra su estado.
         </p>
+      </div>
+
+      <div className="glass-card border border-[#4DA3D9]/20 p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-[#4DA3D9] mb-2">Cuenta maestra activa</p>
+            <h2 className="text-2xl font-light text-white">
+              {tuyaConnection?.accountName || 'Aun no hay cuenta vinculada'}
+            </h2>
+            <p className="mt-2 text-sm text-white/55">
+              {tuyaConnection?.accountEmail || 'Completa el formulario para guardar el correo y el alcance.'}
+            </p>
+          </div>
+          <div className="grid gap-2 text-sm text-white/65 sm:text-right">
+            <p>Alcance: {tuyaConnection?.accountScope || 'Sin definir'}</p>
+            <p>Estado: {tuyaConnection?.status || 'pending'}</p>
+            <p>Ultima sincronizacion: {tuyaConnection?.lastSyncAt ? tuyaConnection.lastSyncAt.toLocaleString('es-CL') : 'Sin datos'}</p>
+          </div>
+        </div>
       </div>
 
       <TuyaConnectForm />

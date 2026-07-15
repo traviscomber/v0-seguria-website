@@ -5,6 +5,7 @@ import { importTuyaAccountPortfolio } from '@/lib/tuya-import'
 
 const connectSchema = z.object({
   account_name: z.string().trim().min(1).max(120),
+  account_email: z.string().trim().email().optional(),
   site_name: z.string().trim().max(120).optional(),
   account_scope: z.string().trim().max(120).optional(),
 })
@@ -20,12 +21,14 @@ export async function POST(request: Request) {
 
     const event = connectTuyaIntegrationAccount({
       accountName: parsed.data.account_name,
+      accountEmail: parsed.data.account_email,
       siteName: parsed.data.site_name,
       accountScope: parsed.data.account_scope,
     })
 
     const portfolio = importTuyaAccountPortfolio({
       accountName: parsed.data.account_name,
+      accountEmail: parsed.data.account_email,
       siteName: parsed.data.site_name,
       accountScope: parsed.data.account_scope,
     })
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: { event, portfolio },
-      message: 'Cuenta del cliente lista para importar dispositivos.',
+      message: 'Cuenta maestra lista para importar dispositivos.',
     })
   } catch (error) {
     console.error('Error connecting client account:', error)

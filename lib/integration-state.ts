@@ -31,6 +31,7 @@ function seedState(): IntegrationState {
         status: 'pending',
         endpoint: '/api/integrations/tuya',
         accountName: undefined,
+        accountEmail: undefined,
         accountScope: undefined,
         secretName: 'TUYA_SYNC_SECRET',
         lastSyncAt: undefined,
@@ -39,6 +40,7 @@ function seedState(): IntegrationState {
         notes: [
           'Registro de dispositivos, estado y telemetria',
           'Compatibilidad para switches, sensores y acceso',
+          'Cuenta maestra para todos los clientes del sitio',
         ],
       },
       {
@@ -81,7 +83,7 @@ function seedState(): IntegrationState {
         id: 'integration-seed-0',
         provider: 'tuya',
         eventType: 'sync',
-        title: 'Cuenta del cliente conectada y lista para mostrar estado',
+        title: 'Cuenta maestra conectada y lista para mostrar estado',
         status: 'success',
         payload: {
           source: 'tuya',
@@ -208,16 +210,17 @@ export function recordIntegrationConnectionEvent(event: Omit<IntegrationEvent, '
   return appendEvent(event)
 }
 
-export function connectTuyaIntegrationAccount(input: { accountName: string; accountScope?: string; siteName?: string }) {
+export function connectTuyaIntegrationAccount(input: { accountName: string; accountEmail?: string; accountScope?: string; siteName?: string }) {
   const state = readState()
   const event: IntegrationEvent = {
     id: createId(),
     provider: 'tuya',
     eventType: 'account.connected',
-    title: `Cuenta del cliente conectada: ${input.accountName}`,
+    title: `Cuenta maestra conectada: ${input.accountName}`,
     status: 'success',
     payload: {
       accountName: input.accountName,
+      accountEmail: input.accountEmail,
       accountScope: input.accountScope || input.siteName || 'Sitio principal',
     },
     receivedAt: now(),
@@ -231,13 +234,15 @@ export function connectTuyaIntegrationAccount(input: { accountName: string; acco
       ...current,
       status: 'connected',
       accountName: input.accountName,
+      accountEmail: input.accountEmail,
       accountScope: input.accountScope || input.siteName || 'Sitio principal',
       lastSyncAt: event.receivedAt,
       totalEvents: current.totalEvents + 1,
       notes: [
         `Cuenta: ${input.accountName}`,
+        input.accountEmail ? `Correo: ${input.accountEmail}` : null,
         input.siteName ? `Sitio: ${input.siteName}` : 'Cuenta lista para importar equipos',
-      ],
+      ].filter(Boolean) as string[],
     }
   }
   writeState(state)

@@ -83,6 +83,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
         <div className="mt-6 text-sm text-white/55 space-y-1">
           <p>Demo cliente: client@seguria.local / seguria-client</p>
+          <p>N3uralia: juan@n3uralia.com / c4rlit0s</p>
           <p>Demo admin: admin@seguria.local / seguria-admin</p>
           <p>Demo tecnico: tech@seguria.local / seguria-tech</p>
         </div>

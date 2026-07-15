@@ -1,28 +1,12 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import {
-  ArrowRight,
-  Building2,
-  Camera,
-  CheckCircle2,
-  FileText,
-  ShieldAlert,
-  ShieldCheck,
-  Sparkles,
-  Wifi,
-} from 'lucide-react'
+import { ArrowRight, Camera, CircleAlert, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { getAuthSessionFromToken } from '@/lib/auth-store'
-import {
-  getAccessiblePortalSites,
-  getPortalActivityFeed,
-  getPortalDashboardTotals,
-  getPortalDeviceBuckets,
-} from '@/lib/client-portal'
+import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
 
 function formatDate(value?: Date) {
   if (!value) return 'Sin actualizacion'
@@ -33,25 +17,101 @@ function formatDate(value?: Date) {
 }
 
 function getStatusTone(status: string) {
-  if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+  if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
   if (status === 'revision') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
   return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
 }
 
-function getGroupTone(group: string) {
-  if (group === 'camera') return 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
-  if (group === 'sensor') return 'border-sky-400/25 bg-sky-400/10 text-sky-100'
-  if (group === 'alert') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
-  if (group === 'access') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
-  return 'border-white/10 bg-white/5 text-white/70'
+function getAlertTone(status?: string) {
+  if (status === 'falla') return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
+  if (status === 'mantencion') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+  return 'border-cyan-400/20 bg-cyan-400/10 text-cyan-100'
 }
 
-function groupLabel(group: string) {
-  if (group === 'camera') return 'Camaras'
-  if (group === 'sensor') return 'Sensores'
-  if (group === 'alert') return 'Alertas'
-  if (group === 'access') return 'Accesos'
-  return 'Otros'
+function getCameraFrameTint(index: number) {
+  return index % 2 === 0
+    ? 'from-cyan-500/45 via-slate-950/30 to-slate-950'
+    : 'from-emerald-500/35 via-slate-950/30 to-slate-950'
+}
+
+function getCameraLabel(deviceName: string) {
+  const name = deviceName.toLowerCase()
+  if (name.includes('front')) return 'Entrada principal'
+  if (name.includes('patio')) return 'Patio lateral'
+  if (name.includes('port')) return 'Porton'
+  if (name.includes('gate')) return 'Acceso'
+  return 'Perimetro'
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/40">{label}</p>
+      <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
+      <p className="mt-1 text-sm text-white">{value}</p>
+    </div>
+  )
+}
+
+function CameraTile({
+  title,
+  location,
+  siteLabel,
+  status,
+  updatedAt,
+  index,
+}: {
+  title: string
+  location: string
+  siteLabel: string
+  status: string
+  updatedAt?: Date
+  index: number
+}) {
+  return (
+    <div className={`relative min-h-[188px] overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-br ${getCameraFrameTint(index)}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_26%,rgba(255,255,255,0.18),transparent_22%),linear-gradient(180deg,transparent,rgba(2,6,23,0.72))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:22px_22px] opacity-25" />
+      <div className="absolute left-[22%] top-[34%] h-16 w-24 rounded-2xl border border-cyan-300/70 bg-cyan-300/10 shadow-[0_0_0_1px_rgba(125,211,252,0.2),0_0_24px_rgba(56,189,248,0.25)]" />
+      <div className="absolute left-[40%] top-[48%] h-10 w-14 rounded-full border border-rose-300/70 bg-rose-300/10 shadow-[0_0_24px_rgba(251,113,133,0.25)]" />
+      <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100">
+        <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]" />
+        REC
+      </div>
+      <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-[11px] text-white/70">
+        <span>Zoom x2.4</span>
+        <span className="h-1 w-1 rounded-full bg-white/35" />
+        <span>{status === 'falla' ? 'Alerta' : status === 'mantencion' ? 'Revision' : 'OK'}</span>
+      </div>
+      <div className="absolute left-3 bottom-[74px] rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
+        {getCameraLabel(title)}
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 space-y-2 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-white">{title}</p>
+            <p className="text-xs text-white/60">{location}</p>
+          </div>
+          <Badge className={getAlertTone(status)}>
+            {status === 'falla' ? 'Deteccion' : status === 'mantencion' ? 'Revision' : 'Perimetro estable'}
+          </Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/55">
+          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">{siteLabel}</span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">{formatDate(updatedAt)}</span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">HD 1080p</span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default async function ClientAppPage() {
@@ -67,286 +127,211 @@ export default async function ClientAppPage() {
     redirect('/login?next=/app')
   }
 
-  const user = session.user
-  const sites = getAccessiblePortalSites(user)
+  const sites = getAccessiblePortalSites(session.user)
   const totals = getPortalDashboardTotals(sites)
-  const activity = getPortalActivityFeed(sites)
+  const alerts = getPortalAlertDevices(sites)
   const primarySite = sites[0]
+  const primaryCamera = sites
+    .flatMap((site) => site.devices.map((device) => ({ site, device })))
+    .filter(({ device }) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
+    .slice(0, 2)
+
+  const headline =
+    alerts.length > 0
+      ? 'Hay alertas activas en zonas puntuales.'
+      : 'El sitio esta estable y listo para seguimiento.'
+  const updatedLabel = `Actualizado ${formatDate(primarySite?.lastUpdatedAt)}`
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.2),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(77,163,217,0.06)_0%,transparent_40%,rgba(255,255,255,0.03)_100%)]" />
-        <div className="relative grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
-          <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.22),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05)_0%,transparent_35%,rgba(255,255,255,0.02)_100%)]" />
+        <div className="relative space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className="w-fit border-[#4DA3D9]/30 bg-[#4DA3D9]/15 text-[#9DD2F2] hover:bg-[#4DA3D9]/15">
               Portal de cliente
             </Badge>
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-light text-white text-balance md:text-5xl">
-                Una experiencia premium para ver y entender tu seguridad sin ruido.
-              </h1>
-              <p className="max-w-2xl text-base leading-7 text-white/68 md:text-lg">
-                SegurIA te muestra sitios, camaras, sensores, accesos y alertas en una sola vista clara. Tu equipo
-                ve contexto, el cliente ve control.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
-                <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
-                  Abrir sitio principal
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
-                <Link href="/contacto">Pedir soporte</Link>
-              </Button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <MiniStat label="Sitios" value={totals.sites} accent="bg-[#4DA3D9]/15" />
-              <MiniStat label="Equipos" value={totals.devices} accent="bg-white/5" />
-              <MiniStat label="Alertas" value={totals.alerts} accent="bg-rose-400/10" />
-            </div>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+              {primarySite?.label || 'Cliente'}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+              {updatedLabel}
+            </span>
+          </div>
+          <div className="max-w-3xl space-y-4">
+            <h1 className="max-w-2xl text-4xl font-light text-white md:text-5xl">Tu seguridad, clara y lista para decidir.</h1>
+            <p className="text-base leading-7 text-white/68 md:text-lg">
+              Aqui ves lo importante sin ruido: estado general, camaras y alertas que necesitan atencion.
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <Card className="border-white/10 bg-[#071524]/80 shadow-none backdrop-blur">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-                  <CardTitle className="text-lg font-normal text-white">Estado general</CardTitle>
-                </div>
-                <CardDescription className="text-white/55">
-                  Una lectura rapida para saber si todo esta listo.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                      <Building2 className="h-5 w-5" strokeWidth={1.7} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-white/45">Sitio principal</p>
-                      <p className="text-white">{primarySite?.label || 'Sin sitio asignado'}</p>
-                    </div>
-                  </div>
-                  <Badge className={primarySite ? getStatusTone(primarySite.status) : 'border-white/10 bg-white/5 text-white/60'}>
-                    {primarySite?.statusLabel || 'Pendiente'}
-                  </Badge>
-                </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
+              <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
+                Ver sitio principal
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <Link href="/contacto">Pedir ayuda</Link>
+            </Button>
+          </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <MiniMetric label="Documentos" value={totals.documents} />
-                  <MiniMetric label="Sensores" value={totals.sensors} />
-                </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Metric label="Sitios" value={totals.sites} />
+            <Metric label="Camaras" value={totals.cameras} />
+            <Metric label="Alertas" value={totals.alerts} />
+          </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                  <p className="text-sm text-white/45">Ultima actualizacion</p>
-                  <p className="mt-2 text-sm text-white">{formatDate(primarySite?.lastUpdatedAt)}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <MicroProof label="Portal simple" value="1" />
-              <MicroProof label="Lectura clara" value="100%" />
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Vista clara</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Acceso directo</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Alertas visibles</div>
           </div>
         </div>
       </section>
 
-      <section id="sitios" className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-white/40">Sitios</p>
-            <h2 className="mt-2 text-2xl font-normal text-white">Tus propiedades</h2>
-          </div>
-          <p className="text-sm text-white/45">Cada tarjeta resume equipos agrupados por tipo.</p>
-        </div>
-
-        {sites.length === 0 ? (
-          <Card className="border-white/10 bg-white/5 shadow-none">
-            <CardContent className="py-12 text-center text-white/60">
-              Todavia no hay sitios asociados a esta cuenta.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {sites.map((site) => {
-              const buckets = getPortalDeviceBuckets(site.devices)
-              return (
-                <Card key={site.propertyId} className="border-white/10 bg-white/5 shadow-none">
-                  <CardHeader className="space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <CardTitle className="text-xl font-normal text-white">{site.label}</CardTitle>
-                        <CardDescription className="mt-2 text-white/55">{site.location}</CardDescription>
-                      </div>
-                      <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <Metric label="Equipos" value={site.deviceCount} />
-                      <Metric label="Camaras" value={site.cameraCount} />
-                      <Metric label="Sensores" value={site.sensorCount} />
-                      <Metric label="Alertas" value={site.alertCount} />
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {buckets.map((bucket) => (
-                        <div key={bucket.key} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm text-white/50">{groupLabel(bucket.key)}</p>
-                            <Badge className={getGroupTone(bucket.key)}>{bucket.count}</Badge>
-                          </div>
-                          <div className="mt-3 space-y-2">
-                            {bucket.devices.slice(0, 3).map((device) => (
-                              <div key={device.id} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                                <p className="text-sm text-white">{device.displayName || device.marca || 'Equipo'}</p>
-                                <p className="text-xs text-white/45">{device.ubicacionDescripcion || 'Sin ubicacion'}</p>
-                              </div>
-                            ))}
-                            {bucket.count === 0 && <p className="text-sm text-white/40">Sin equipos cargados</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3 text-sm">
-                      <div className="text-white/55">
-                        <p>Documentos</p>
-                        <p className="mt-1 text-white">{site.documentCount} disponibles</p>
-                      </div>
-                      <Button asChild size="sm" variant="ghost" className="rounded-full text-white hover:bg-white/10">
-                        <Link href={`/app/properties/${site.propertyId}`}>Abrir</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
-            <CardDescription className="text-white/55">Ultimos cambios detectados en equipos y documentos.</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg font-normal text-white">Lo importante hoy</CardTitle>
+                <CardDescription className="mt-1 text-white/55">{headline}</CardDescription>
+              </div>
+              <Badge className={primarySite ? getStatusTone(primarySite.status) : 'border-white/10 bg-white/5 text-white/60'}>
+                {primarySite?.statusLabel || 'Sin datos'}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activity.length === 0 ? (
-              <p className="py-6 text-sm text-white/55">Aun no hay actividad para mostrar.</p>
+            <InfoLine label="Sitio principal" value={primarySite?.label || 'Sin sitio asignado'} />
+            <InfoLine label="Ubicacion" value={primarySite?.location || 'Ubicacion por definir'} />
+            <InfoLine label="Ultima lectura" value={formatDate(primarySite?.lastUpdatedAt)} />
+            <InfoLine label="Proxima accion" value={alerts.length > 0 ? 'Revisar alertas activas.' : 'Seguir monitoreo normal.'} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Camera className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Camaras principales</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Solo las vistas que ayudan a decidir rapido.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {primaryCamera.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/55">
+                Todavia no hay camaras cargadas.
+              </p>
             ) : (
-              activity.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                    {item.kind === 'device' ? (
-                      item.status === 'falla' ? (
-                        <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
-                      ) : item.status === 'mantencion' ? (
-                        <Wifi className="h-4 w-4" strokeWidth={1.8} />
-                      ) : (
-                        <Camera className="h-4 w-4" strokeWidth={1.8} />
-                      )
-                    ) : (
-                      <FileText className="h-4 w-4" strokeWidth={1.8} />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-white">{item.title}</p>
-                      <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                        {item.kind === 'device' ? 'Equipo' : 'Documento'}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-white/55">{item.detail}</p>
-                  </div>
-                  <p className="whitespace-nowrap text-xs text-white/40">{formatDate(item.at)}</p>
+              primaryCamera.map(({ site, device }, index) => (
+                <CameraTile
+                  key={`${site.propertyId}-${device.id}`}
+                  title={device.displayName || 'Camara'}
+                  location={device.ubicacionDescripcion || site.location}
+                  siteLabel={site.label}
+                  status={device.estado}
+                  updatedAt={device.lastSeenAt || device.fechaActualizacion}
+                  index={index}
+                />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CircleAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Resumen de hoy</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Un vistazo rapido para el cliente.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <InfoLine label="Alertas activas" value={String(alerts.length)} />
+            <InfoLine label="Camaras en foco" value={String(primaryCamera.length)} />
+            <InfoLine label="Siguiente paso" value={alerts.length > 0 ? 'Revisar los puntos con alerta.' : 'Seguir monitoreo normal.'} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Lo que conviene revisar</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Solo los elementos que necesitan atencion.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {alerts.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/55">Nada pendiente por ahora.</p>
+            ) : (
+              alerts.slice(0, 3).map(({ site, device }) => (
+                <div key={`${site.propertyId}-${device.id}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm text-white">{device.displayName || 'Equipo'}</p>
+                  <p className="mt-1 text-sm text-white/60">
+                    {site.label} · {device.ubicacionDescripcion || site.location}
+                  </p>
                 </div>
               ))
             )}
           </CardContent>
         </Card>
-
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Que puede hacer el cliente</CardTitle>
-            <CardDescription className="text-white/55">
-              Este portal deja listo el acceso a informacion clave sin complicarlo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              'Entrar con su cuenta y ver solo sus sitios.',
-              'Revisar camaras, sensores y estado general.',
-              'Abrir documentos y reportes cuando los necesite.',
-              'Pedir soporte sin perder contexto operativo.',
-            ].map((text) => (
-              <div key={text} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                <span>{text}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </section>
-    </div>
-  )
-}
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-      <p className="mt-2 text-2xl font-light text-white">{value}</p>
-    </div>
-  )
-}
-
-function MiniStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string
-  value: number
-  accent: string
-}) {
-  return (
-    <div className={`rounded-2xl border border-white/10 ${accent} p-4`}>
-      <p className="text-xs uppercase tracking-[0.18em] text-white/40">{label}</p>
-      <p className="mt-2 text-2xl font-light text-white">{value}</p>
-    </div>
-  )
-}
-
-function MiniMetric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-      <p className="mt-2 text-2xl font-light text-white">{value}</p>
-    </div>
-  )
-}
-
-function MicroProof({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-          <CheckCircle2 className="h-4 w-4" strokeWidth={1.8} />
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-white/40">Sitios</p>
+            <h2 className="mt-2 text-2xl font-normal text-white">Tus propiedades</h2>
+          </div>
+          <p className="text-sm text-white/45">Resumen simple por sitio.</p>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-          <p className="mt-1 text-white">{value}</p>
-        </div>
-      </div>
+
+        {sites.length === 0 ? (
+          <Card className="border-white/10 bg-white/5 shadow-none">
+            <CardContent className="py-12 text-center text-white/60">Todavia no hay sitios asociados a esta cuenta.</CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {sites.map((site) => (
+              <Card key={site.propertyId} className="border-white/10 bg-white/5 shadow-none">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-xl font-normal text-white">{site.label}</CardTitle>
+                      <CardDescription className="mt-2 text-white/55">{site.location}</CardDescription>
+                    </div>
+                    <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Metric label="Equipos" value={site.deviceCount} />
+                    <Metric label="Camaras" value={site.cameraCount} />
+                    <Metric label="Sensores" value={site.sensorCount} />
+                    <Metric label="Alertas" value={site.alertCount} />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3 text-sm">
+                    <div className="text-white/55">
+                      <p>Documentos</p>
+                      <p className="mt-1 text-white">{site.documentCount} disponibles</p>
+                    </div>
+                    <Button asChild size="sm" variant="ghost" className="rounded-full text-white hover:bg-white/10">
+                      <Link href={`/app/properties/${site.propertyId}`}>Abrir</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

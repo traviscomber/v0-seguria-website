@@ -212,6 +212,7 @@ export interface IntegrationConnection {
   status: IntegrationStatus
   endpoint: string
   accountName?: string
+  accountEmail?: string
   accountScope?: string
   secretName?: string
   lastSyncAt?: Date

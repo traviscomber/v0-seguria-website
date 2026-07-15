@@ -29,6 +29,7 @@ Resultado esperado al cierre de las 8 horas:
 - Si una dependencia externa falta, dejarla documentada y continuar con la siguiente parte util.
 - Mantener la interfaz simple para operacion interna.
 - Priorizar el cierre del portal antes de agregar mas complejidad.
+- Validar cada cambio contra el agente de compliance de marca en [`.agents/brandbook-compliance.md`](.agents/brandbook-compliance.md).
 
 ## Regla de prioridad
 
