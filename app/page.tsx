@@ -19,18 +19,18 @@ import {
 const storyCards = [
   {
     icon: Camera,
-    title: 'Camaras y visibilidad',
-    description: 'Cada sitio puede verse con orden, claridad y foco en lo que importa.',
+    title: 'Ves lo que importa',
+    description: 'Sin ruido. Sin cables confusos. Solo lo que necesitas saber, cuando lo necesitas.',
   },
   {
     icon: Cpu,
-    title: 'Sensores y control',
-    description: 'Movimiento, acceso, clima y alertas en una misma lectura simple.',
+    title: 'Todo conectado sin complicar',
+    description: 'Temperatura, movimiento, acceso. Una sola pantalla. Tu teléfono. Punto.',
   },
   {
     icon: Building2,
-    title: 'Sitios y clientes',
-    description: 'Una experiencia pensada para clientes, soporte y operación interna.',
+    title: 'Para ti y para ellos',
+    description: 'Tu cliente entiende al instante. Tu equipo sabe qué hacer. Todos tranquilos.',
   },
 ]
 
@@ -45,26 +45,26 @@ const processSteps = [
   {
     step: '01',
     icon: Search,
-    title: 'Diagnostico',
-    description: 'Entendemos el sitio, el entorno y el nivel de cobertura que necesita.',
+    title: 'Te escuchamos',
+    description: 'Visitamos. Preguntamos. Entendemos exactamente qué te quita el sueño.',
   },
   {
     step: '02',
     icon: GitBranch,
-    title: 'Configuracion',
-    description: 'Preparamos la cuenta, cargamos el sitio y dejamos todo ordenado.',
+    title: 'Lo armamos juntos',
+    description: 'Sin tecnicismos innecesarios. Solo lo que funciona en Chile, con tu presupuesto.',
   },
   {
     step: '03',
     icon: Monitor,
-    title: 'Portal',
-    description: 'Mostramos el estado en una interfaz simple para el cliente final.',
+    title: 'Ves, entiendes, actúas',
+    description: 'Tu portal listo. El de tu cliente también. Ambos saben qué hacer sin preguntar.',
   },
   {
     step: '04',
     icon: Activity,
-    title: 'Evolucion',
-    description: 'Escalamos la plataforma sin cambiar la experiencia central.',
+    title: 'Crecemos contigo',
+    description: 'Hoy un campo, mañana cinco. La plataforma crece. Tú sigues tranquilo.',
   },
 ]
 
@@ -98,12 +98,11 @@ export default function HomePage() {
           </div>
 
           <h1 className="mx-auto mt-8 max-w-5xl text-4xl font-light leading-tight text-white text-balance md:text-6xl lg:text-7xl">
-            Una sola plataforma para ver, entender y operar tu seguridad.
+            Todo lo que proteges, en un solo lugar que tiene sentido.
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/70 md:text-xl">
-            SegurIA une sitios, equipos y alertas en una vista clara. El cliente entiende rapido, tu equipo tiene
-            contexto y la operacion gana orden.
+            No vendemos cajas ni cables. Vendemos paz mental: tu campo cuidado de noche, tu casa vigilada siempre, tu negocio operando sin sorpresas.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -134,13 +133,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
             <div className="space-y-6">
-              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Plataforma</p>
+              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">La realidad</p>
               <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-                Diseñada para verse bien, entenderse rápido y crecer con cada cliente.
+                Hecha para que vendas sin explicar, para que tu cliente entienda al instante.
               </h2>
               <p className="max-w-xl text-lg leading-8 text-white/65">
-                No es una demo genérica. Es una base visual pensada para mostrar valor comercial y operar con
-                precisión en sitios reales.
+                Olvida los powerpoints largos. SegurIA se muestra sola. El cliente ve su campo, su casa, su negocio protegido. Punto. Firma en la siguiente página.
               </p>
               <div className="flex flex-wrap gap-2">
                 {platformHighlights.map((item) => (
@@ -173,11 +171,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <div className="space-y-6">
             <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-              Una narrativa simple para presentar una plataforma seria.
+              Así se vende seguridad en Chile ahora.
             </h2>
             <p className="max-w-2xl text-lg leading-8 text-white/65">
-              Campos, propiedades, cámaras y sensores se explican con una sola historia. Menos ruido, más lectura
-              comercial y una ruta clara hacia la version pro.
+              Sin jerga. Sin que el cliente necesite traducción. Un campo vigilado, una casa protegida, un negocio operando. Así. Hoy sale el proyecto. Mañana lo expanden.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {[
