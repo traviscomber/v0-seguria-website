@@ -1,14 +1,26 @@
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { authenticateUser, serializeSessionCookie } from '@/lib/auth-store'
+import { mapSupabaseUserToAuthUser, serializeSessionCookie } from '@/lib/auth-store'
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(6),
 })
 
+function hasSupabaseConfig() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+}
+
 export async function POST(request: NextRequest) {
   try {
+    if (!hasSupabaseConfig()) {
+      return NextResponse.json(
+        { success: false, error: 'Supabase no esta configurado en este entorno.' },
+        { status: 503 }
+      )
+    }
+
     const payload = await request.json()
     const parsed = loginSchema.safeParse(payload)
 
@@ -16,21 +28,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Credenciales invalidas.' }, { status: 400 })
     }
 
-    const result = await authenticateUser(parsed.data.email, parsed.data.password)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      }
+    )
 
-    if (!result) {
-      return NextResponse.json({ success: false, error: 'Email o contraseña incorrectos.' }, { status: 401 })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    })
+
+    if (error || !data.user || !data.session?.access_token) {
+      return NextResponse.json({ success: false, error: 'No pudimos validar tu acceso en Supabase.' }, { status: 401 })
     }
 
+    const authUser = mapSupabaseUserToAuthUser(data.user)
     const response = NextResponse.json({
       success: true,
       data: {
-        user: result.user,
+        user: authUser,
       },
       message: 'Sesion iniciada.',
     })
 
-    response.headers.set('Set-Cookie', serializeSessionCookie(result.session.token))
+    response.headers.set('Set-Cookie', serializeSessionCookie(data.session.access_token))
     return response
   } catch (error) {
     console.error('Error during login:', error)

@@ -2,6 +2,24 @@
 
 Objetivo: dejar lista una plataforma interna simple para que nuestro equipo configure la cuenta del cliente, traiga sus dispositivos y muestre sus datos en un portal claro.
 
+## Ruta recomendada para la conexion real
+
+Para simplificar la operacion, la conexion real de la marca debe pasar primero por Home Assistant y no directo a SegurIA.
+
+Flujo recomendado:
+
+- El cliente conecta sus equipos en Home Assistant usando la integracion oficial de Tuya.
+- Home Assistant expone camaras, sensores, escenas y estados como entidades normalizadas.
+- SegurIA consume esas entidades desde Home Assistant y las presenta en el portal.
+- Si una funcion no queda expuesta por Home Assistant, se evalua como excepcion y no como camino principal.
+
+Resultado:
+
+- una sola capa tecnica para operar,
+- menos dependencia directa de la marca,
+- mejor control de estados, alertas y soporte,
+- una base mas simple para escalar a version pro.
+
 ## Objetivo autonomo de 8 horas
 
 Construir el portal operativo base en una sola jornada de trabajo enfocada:
@@ -64,13 +82,13 @@ Hecho cuando:
 
 Meta:
 
-- Importar equipos del cliente.
+- Importar equipos del cliente desde Home Assistant.
 - Normalizar camaras, sensores, cerraduras, switches y alertas.
 - Guardar el estado de cada dispositivo.
 
 Tareas:
 
-- Leer dispositivos desde la fuente conectada.
+- Leer dispositivos desde la fuente conectada en Home Assistant.
 - Mapear cada equipo a un tipo interno.
 - Guardar estado, ubicacion y ultimo evento.
 - Registrar eventos de sincronizacion.
@@ -160,3 +178,7 @@ El sistema esta bien resuelto cuando nuestro equipo puede:
 - ver sus dispositivos sin friccion,
 - entender que esta bien y que esta mal,
 - y saber que hacer despues.
+
+## Regla de producto
+
+La marca no debe depender del camino directo a la nube del fabricante para el MVP. Home Assistant es el puente operativo recomendado.

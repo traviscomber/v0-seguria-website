@@ -92,7 +92,7 @@ export default function IntegracionesPage() {
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
               SegurIA ordena lo complejo para que el cliente vea solo lo importante: que hay instalado, que esta
-              funcionando y que requiere atencion. Todo con una narrativa clara para Chile y LATAM.
+              funcionando y que requiere atencion. La experiencia busca ser clara, directa y facil de explicar.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">

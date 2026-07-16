@@ -8,6 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getAuthSessionFromToken } from '@/lib/auth-store'
 import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
 
+const sourceCards = [
+  {
+    label: 'Fuente operativa',
+    value: 'Home Assistant',
+    description: 'La vista del cliente se alimenta desde una capa normalizada y estable.',
+  },
+  {
+    label: 'Fallback directo',
+    value: 'Solo excepciones',
+    description: 'Si algo no pasa por Home Assistant, se trata como caso especial.',
+  },
+  {
+    label: 'Onboarding',
+    value: 'Primer cliente real',
+    description: 'Preparar cuenta, validar lectura y dejar el portal listo para operar.',
+  },
+]
+
 function formatDate(value?: Date) {
   if (!value) return 'Sin actualizacion'
   return new Intl.DateTimeFormat('es-CL', {
@@ -178,11 +196,11 @@ export default async function ClientAppPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
-                <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
-                  Ver sitio principal
-                  <ArrowRight className="h-4 w-4" />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
+              <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
+                Ver sitio principal
+                <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
@@ -194,6 +212,16 @@ export default async function ClientAppPage() {
               <Metric label="Sitios" value={totals.sites} />
               <Metric label="Camaras" value={totals.cameras} />
               <Metric label="Alertas" value={totals.alerts} />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              {sourceCards.map((card) => (
+                <div key={card.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/40">{card.label}</p>
+                  <p className="mt-2 text-base font-light text-white">{card.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/60">{card.description}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -247,6 +275,15 @@ export default async function ClientAppPage() {
                   ))
                 )}
               </div>
+            </div>
+
+            <div className="rounded-[24px] border border-[#4DA3D9]/20 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Lectura del portal</p>
+              <h2 className="mt-2 text-xl font-light text-white">Una sola experiencia para el cliente</h2>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                El cliente ve una vista clara y no necesita entender la complejidad técnica. Si existe una excepción, la
+                resolvemos como tal en el panel interno.
+              </p>
             </div>
           </div>
         </div>

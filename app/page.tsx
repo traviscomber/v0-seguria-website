@@ -102,8 +102,8 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/70 md:text-xl">
-            SegurIA une sitios, equipos y alertas en una experiencia premium para Chile y LATAM. El cliente ve
-            claridad, tu equipo ve contexto y el negocio gana orden.
+            SegurIA une sitios, equipos y alertas en una vista clara. El cliente entiende rapido, tu equipo tiene
+            contexto y la operacion gana orden.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">

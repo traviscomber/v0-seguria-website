@@ -13,6 +13,7 @@ import {
   PlayCircle,
   ClipboardList,
   Shield,
+  ChevronRight,
 } from 'lucide-react'
 import {
   getIntegrationConnections,
@@ -34,7 +35,7 @@ const statusStyles = {
 }
 
 const providerLabels: Record<string, string> = {
-  tuya: 'Cuenta maestra',
+  tuya: 'Puente operativo',
   home_assistant: 'Capa local',
   github: 'GitHub',
 }
@@ -109,6 +110,29 @@ const feedFamilies = [
   },
 ]
 
+const onboardingSteps = [
+  {
+    step: '01',
+    title: 'Preparar puente',
+    description: 'Configurar Home Assistant como capa operativa y validar que los equipos aparezcan.',
+  },
+  {
+    step: '02',
+    title: 'Vincular cliente',
+    description: 'Cargar nombre, sitio y alcance del primer cliente real en el panel interno.',
+  },
+  {
+    step: '03',
+    title: 'Validar vista',
+    description: 'Comprobar que el portal de cliente muestre camaras, alertas y espacios vigilados.',
+  },
+  {
+    step: '04',
+    title: 'Registrar excepciones',
+    description: 'Dejar el acceso directo solo para casos especiales que no pasen por Home Assistant.',
+  },
+]
+
 export default function IntegrationsAdminPage() {
   const summary = getIntegrationSummary()
   const activity = getIntegrationActivitySummary(12)
@@ -120,23 +144,47 @@ export default function IntegrationsAdminPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-light text-white">Integraciones</h1>
-        <p className="mt-1 text-white/60">Operacion interna: nosotros vinculamos la cuenta maestra que concentra todos los clientes del sitio.</p>
+        <p className="mt-1 text-white/60">Operacion interna: Home Assistant debe ser el puente recomendado y SegurIA debe leer desde ahi.</p>
       </div>
 
       <div className="glass-card p-6">
         <p className="text-[#4DA3D9] text-sm mb-2">Objetivo</p>
         <h2 className="text-2xl md:text-3xl font-light text-white text-balance">
-          Dejar lista la cuenta maestra y mostrar sus datos.
+          Dejar lista la conexion real y mostrar sus datos.
         </h2>
         <p className="mt-3 max-w-2xl text-white/55">
-          La meta ahora es simple: nuestro equipo configura la cuenta maestra, trae dispositivos y muestra su estado.
+          La meta ahora es simple: nuestro equipo prepara el puente, trae dispositivos y muestra su estado.
         </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="glass-card p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-white/40">Vista cliente</p>
+          <h3 className="mt-2 text-lg font-light text-white">Home Assistant primero</h3>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            El portal debe leer desde la capa normalizada para dar una experiencia simple y confiable.
+          </p>
+        </div>
+        <div className="glass-card p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-white/40">Excepcion</p>
+          <h3 className="mt-2 text-lg font-light text-white">Fallback directo</h3>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            Solo si Home Assistant no expone algo relevante, se revisa un camino alternativo.
+          </p>
+        </div>
+        <div className="glass-card p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-white/40">Primer cliente</p>
+          <h3 className="mt-2 text-lg font-light text-white">Onboarding guiado</h3>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            Configuramos el puente, validamos la cuenta y dejamos la primera vista lista para operar.
+          </p>
+        </div>
       </div>
 
       <div className="glass-card border border-[#4DA3D9]/20 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-[#4DA3D9] mb-2">Cuenta maestra activa</p>
+            <p className="text-sm text-[#4DA3D9] mb-2">Conexion activa</p>
             <h2 className="text-2xl font-light text-white">
               {tuyaConnection?.accountName || 'Aun no hay cuenta vinculada'}
             </h2>
@@ -190,9 +238,7 @@ export default function IntegrationsAdminPage() {
             <p className="text-[#4DA3D9] text-sm mb-2">Feeds listos</p>
             <h2 className="text-2xl font-light text-white">La base ya recibe equipos y alertas del cliente.</h2>
           </div>
-          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
-            Listo para conectar cuentas
-          </span>
+          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">Listo para puente HA</span>
         </div>
         <div className="grid md:grid-cols-3 gap-4 mt-5">
           {feedFamilies.map((family) => (
@@ -316,6 +362,34 @@ export default function IntegrationsAdminPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-card p-6 border border-[#4DA3D9]/20">
+        <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div>
+            <p className="text-[#4DA3D9] text-sm mb-2">Onboarding</p>
+            <h2 className="text-2xl font-light text-white">Primer cliente real</h2>
+            <p className="text-white/55 mt-3 max-w-2xl">
+              Dejamos este flujo listo para usarlo como plantilla de activacion cuando llegue la primera cuenta real.
+            </p>
+          </div>
+          <span className="text-[12px] px-2 py-1 rounded-[5px] bg-[#4DA3D9]/15 text-[#9DD2F2]">
+            Guiado y repetible
+          </span>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {onboardingSteps.map((step) => (
+            <div key={step.step} className="rounded-[5px] bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-[#9DD2F2]">{step.step}</p>
+                <ChevronRight className="h-4 w-4 text-white/35" />
+              </div>
+              <h3 className="mt-2 text-white font-light text-[16px]">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{step.description}</p>
             </div>
           ))}
         </div>

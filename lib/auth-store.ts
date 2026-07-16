@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { createClient, type User } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
 
 export type AuthRole = 'client' | 'technician' | 'admin'
@@ -35,6 +36,28 @@ const AUTH_FILE = process.env.SEGURIA_AUTH_FILE || path.join(os.homedir(), '.seg
 const SESSION_COOKIE = 'seguria_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7
 
+function hasSupabaseConfig() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+}
+
+function createSupabaseAuthClient() {
+  if (!hasSupabaseConfig()) {
+    return null
+  }
+
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    }
+  )
+}
+
 function nowIso() {
   return new Date().toISOString()
 }
@@ -52,6 +75,46 @@ function createPasswordRecord(password: string) {
   return {
     passwordSalt: salt,
     passwordHash: hashPassword(password, salt),
+  }
+}
+
+function getRoleFromEmail(email: string): AuthRole {
+  const normalized = email.toLowerCase()
+  if (normalized === 'admin@seguria.local') return 'admin'
+  if (normalized === 'tech@seguria.local') return 'technician'
+  return 'client'
+}
+
+function getPortalScopeForEmail(email: string) {
+  const normalized = email.toLowerCase()
+  if (normalized === 'juan@n3uralia.com') {
+    return { clientIds: ['n3uralia'], propertyIds: ['n3uralia'] }
+  }
+  if (normalized === 'client@seguria.local') {
+    return { clientIds: ['demo-client'], propertyIds: ['demo-property'] }
+  }
+  if (normalized === 'tech@seguria.local') {
+    return { clientIds: ['demo-client'], propertyIds: ['demo-property'] }
+  }
+  return { clientIds: [], propertyIds: [] }
+}
+
+export function mapSupabaseUserToAuthUser(user: User): AuthUser {
+  const email = user.email?.toLowerCase() || ''
+  const role = (user.app_metadata?.role as AuthRole | undefined) || (user.user_metadata?.role as AuthRole | undefined) || getRoleFromEmail(email)
+  const scope = getPortalScopeForEmail(email)
+
+  return {
+    id: user.id,
+    name: (user.user_metadata?.full_name as string | undefined) || (user.user_metadata?.name as string | undefined) || user.email?.split('@')[0] || 'Usuario',
+    email: email || 'usuario@seguria.local',
+    role,
+    clientIds: scope.clientIds,
+    propertyIds: scope.propertyIds,
+    passwordSalt: '',
+    passwordHash: '',
+    createdAt: user.created_at,
+    updatedAt: user.updated_at || user.created_at,
   }
 }
 
@@ -170,6 +233,22 @@ function createSeedState(): AuthState {
   }
 }
 
+function getDefaultRoleForEmail(email: string): AuthRole {
+  const normalized = email.toLowerCase()
+  if (normalized === 'admin@seguria.local') return 'admin'
+  if (normalized === 'tech@seguria.local') return 'technician'
+  return 'client'
+}
+
+function getDisplayNameFromEmail(email: string) {
+  const localPart = email.split('@')[0] || 'Usuario'
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 async function readState(): Promise<AuthState> {
   await ensureStateFile()
   const raw = await fs.readFile(AUTH_FILE, 'utf8')
@@ -234,6 +313,26 @@ export async function upsertAuthUser(input: {
   return nextUser
 }
 
+export async function ensureAuthUserForEmail(input: {
+  email: string
+  name?: string
+  role?: AuthRole
+}) {
+  const existing = await findAuthUserByEmail(input.email)
+  if (existing) {
+    return existing
+  }
+
+  return upsertAuthUser({
+    name: input.name || getDisplayNameFromEmail(input.email),
+    email: input.email,
+    role: input.role || getDefaultRoleForEmail(input.email),
+    password: createId(),
+    clientIds: input.role === 'admin' ? [] : [input.email.toLowerCase()],
+    propertyIds: input.role === 'admin' ? [] : [input.email.toLowerCase()],
+  })
+}
+
 export async function authenticateUser(email: string, password: string) {
   const user = await findAuthUserByEmail(email)
   if (!user) return null
@@ -257,19 +356,44 @@ export async function authenticateUser(email: string, password: string) {
   return { user, session }
 }
 
-export async function getAuthSessionFromToken(token: string) {
+export async function createAuthSessionForUser(user: AuthUser) {
   const state = await readState()
-  const session = state.sessions.find((entry) => entry.token === token)
-  if (!session) return null
+  const token = createId()
+  const session: AuthSession = {
+    token,
+    userId: user.id,
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+    createdAt: nowIso(),
+  }
 
-  if (new Date(session.expiresAt).getTime() < Date.now()) {
-    state.sessions = state.sessions.filter((entry) => entry.token !== token)
-    await writeState(state)
+  state.sessions = state.sessions.filter((entry) => entry.userId !== user.id)
+  state.sessions.push(session)
+  await writeState(state)
+
+  return { user, session }
+}
+
+export async function getAuthSessionFromToken(token: string) {
+  const supabase = createSupabaseAuthClient()
+  if (!supabase) {
     return null
   }
 
-  const user = state.users.find((entry) => entry.id === session.userId)
-  return user ? { user, session } : null
+  const { data, error } = await supabase.auth.getUser(token)
+  if (error || !data.user) {
+    return null
+  }
+
+  const user = mapSupabaseUserToAuthUser(data.user)
+  return {
+    user,
+    session: {
+      token,
+      userId: user.id,
+      expiresAt: data.user.last_sign_in_at || data.user.updated_at || nowIso(),
+      createdAt: data.user.created_at || nowIso(),
+    },
+  }
 }
 
 export async function revokeAuthSession(token: string) {

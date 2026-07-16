@@ -7,7 +7,7 @@ export function TuyaConnectForm() {
   const [accountName, setAccountName] = useState('N3uralia')
   const [accountEmail, setAccountEmail] = useState('juan@n3uralia.com')
   const [siteName, setSiteName] = useState('Sitio principal')
-  const [accountScope, setAccountScope] = useState('Cuenta maestra')
+  const [accountScope, setAccountScope] = useState('Puente operativo')
   const [message, setMessage] = useState<string | null>(null)
   const [linkedAccount, setLinkedAccount] = useState<{
     accountName: string
@@ -36,11 +36,11 @@ export function TuyaConnectForm() {
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        setMessage(result.error || 'No se pudo vincular la cuenta maestra.')
+        setMessage(result.error || 'No se pudo preparar la conexion del cliente.')
         return
       }
 
-      setMessage('Cuenta maestra lista. Ahora puedes importar dispositivos y ver su estado.')
+      setMessage('Conexion preparada. SegurIA puede leer el estado desde el puente operativo.')
       setLinkedAccount({
         accountName,
         accountEmail,
@@ -48,7 +48,7 @@ export function TuyaConnectForm() {
         accountScope,
       })
     } catch {
-      setMessage('No se pudo vincular la cuenta maestra.')
+      setMessage('No se pudo preparar la conexion del cliente.')
     } finally {
       setIsSaving(false)
     }
@@ -61,14 +61,14 @@ export function TuyaConnectForm() {
           <PlugZap className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
         </div>
         <div>
-          <h3 className="text-lg font-light text-white">Vincular cuenta maestra</h3>
-          <p className="text-sm text-white/55">Deja la cuenta central lista para traer dispositivos y eventos de todos los clientes.</p>
+          <h3 className="text-lg font-light text-white">Preparar conexion del cliente</h3>
+          <p className="text-sm text-white/55">La ruta recomendada es usar Home Assistant como puente y dejar SegurIA solo como portal de lectura.</p>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="space-y-2">
-          <span className="text-sm text-white/55">Cuenta maestra</span>
+          <span className="text-sm text-white/55">Cliente</span>
           <input
             value={accountName}
             onChange={(e) => setAccountName(e.target.value)}
@@ -77,7 +77,7 @@ export function TuyaConnectForm() {
           />
         </label>
         <label className="space-y-2">
-          <span className="text-sm text-white/55">Correo</span>
+          <span className="text-sm text-white/55">Correo de autorizacion</span>
           <input
             type="email"
             value={accountEmail}
@@ -101,7 +101,7 @@ export function TuyaConnectForm() {
             value={accountScope}
             onChange={(e) => setAccountScope(e.target.value)}
             className="w-full rounded-[5px] bg-white/10 px-4 py-2.5 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
-            placeholder="Cuenta maestra"
+            placeholder="Puente operativo"
           />
         </label>
       </div>
@@ -113,10 +113,10 @@ export function TuyaConnectForm() {
           className="btn-primary inline-flex items-center gap-2 px-5 py-3 text-[15px] disabled:opacity-70"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlugZap className="w-4 h-4" strokeWidth={1.5} />}
-          {isSaving ? 'Vinculando...' : 'Vincular cuenta maestra y traer datos'}
+          {isSaving ? 'Preparando...' : 'Preparar conexion y traer datos'}
         </button>
         <p className="text-sm text-white/45">
-          Esto deja la cuenta central lista para importar equipos y empezar a mostrar estado.
+          Esto deja la conexion lista para importar equipos y empezar a mostrar estado.
         </p>
       </div>
 
@@ -128,7 +128,7 @@ export function TuyaConnectForm() {
 
       {linkedAccount && (
         <div className="rounded-[5px] border border-[#4DA3D9]/30 bg-[#4DA3D9]/10 px-4 py-3 text-sm text-white/80">
-          <p className="font-light text-white">Cuenta maestra vinculada</p>
+          <p className="font-light text-white">Conexion preparada</p>
           <p className="mt-1 text-white/60">Nombre: {linkedAccount.accountName}</p>
           <p className="text-white/60">Correo: {linkedAccount.accountEmail}</p>
           <p className="text-white/60">Sitio: {linkedAccount.siteName}</p>

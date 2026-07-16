@@ -6,8 +6,8 @@ import { useState } from 'react'
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter()
-  const [email, setEmail] = useState('client@seguria.local')
-  const [password, setPassword] = useState('seguria-client')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -42,31 +42,35 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A1B2E] flex items-center justify-center px-6">
-      <div className="w-full max-w-md glass-card p-8">
+    <main className="flex min-h-screen items-center justify-center bg-[#0A1B2E] px-6">
+      <div className="glass-card w-full max-w-md p-8">
         <div className="mb-8">
-          <p className="text-[#4DA3D9] text-sm">SegurIA Access</p>
-          <h1 className="text-3xl font-light text-white mt-2">Iniciar sesion</h1>
-          <p className="text-white/55 mt-2 text-sm">Acceso para clientes, tecnicos y administradores.</p>
+          <p className="text-sm text-[#4DA3D9]">SegurIA Access</p>
+          <h1 className="mt-2 text-3xl font-light text-white">Iniciar sesion</h1>
+          <p className="mt-2 text-sm text-white/55">Acceso para clientes, tecnicos y administradores.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-white/70 text-sm mb-2">Email</label>
+            <label className="mb-2 block text-sm text-white/70">Correo autorizado</label>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full px-4 py-3 rounded-[5px] bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+              className="w-full rounded-[5px] bg-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+              placeholder="usuario@empresa.com"
+              autoComplete="email"
             />
           </div>
           <div>
-            <label className="block text-white/70 text-sm mb-2">Password</label>
+            <label className="mb-2 block text-sm text-white/70">Clave</label>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full px-4 py-3 rounded-[5px] bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+              className="w-full rounded-[5px] bg-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+              placeholder="Ingresa tu clave"
+              autoComplete="current-password"
             />
           </div>
 
@@ -81,15 +85,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-white/55 space-y-1">
-          <p>Demo cliente: client@seguria.local / seguria-client</p>
-          <p>N3uralia: juan@n3uralia.com / c4rlit0s</p>
-          <p>Demo admin: admin@seguria.local / seguria-admin</p>
-          <p>Demo tecnico: tech@seguria.local / seguria-tech</p>
+        <div className="mt-6 rounded-[5px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+          Usa una cuenta autorizada por el equipo interno. La validacion de acceso se resuelve en Supabase.
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-4">
-          <Link href="/" className="text-[#4DA3D9] text-sm hover:underline">
+          <Link href="/" className="text-sm text-[#4DA3D9] hover:underline">
             Volver al sitio
           </Link>
           <span className="text-xs text-white/35">Portal interno seguro</span>
