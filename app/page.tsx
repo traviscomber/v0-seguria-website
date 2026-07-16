@@ -1,255 +1,238 @@
 import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
-import { Camera, Cpu, Wifi, Monitor, Search, PenTool, Wrench, Activity } from 'lucide-react'
+import {
+  ArrowRight,
+  Activity,
+  Building2,
+  Camera,
+  Cpu,
+  GitBranch,
+  Lock,
+  Monitor,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Wifi,
+} from 'lucide-react'
+
+const storyCards = [
+  {
+    icon: Camera,
+    title: 'Camaras y visibilidad',
+    description: 'Cada sitio puede verse con orden, claridad y foco en lo que importa.',
+  },
+  {
+    icon: Cpu,
+    title: 'Sensores y control',
+    description: 'Movimiento, acceso, clima y alertas en una misma lectura simple.',
+  },
+  {
+    icon: Building2,
+    title: 'Sitios y clientes',
+    description: 'Una experiencia pensada para clientes, soporte y operación interna.',
+  },
+]
+
+const platformHighlights = [
+  'Portal de cliente con login',
+  'Equipos agrupados por tipo',
+  'Alertas faciles de entender',
+  'Base lista para version pro',
+]
+
+const processSteps = [
+  {
+    step: '01',
+    icon: Search,
+    title: 'Diagnostico',
+    description: 'Entendemos el sitio, el entorno y el nivel de cobertura que necesita.',
+  },
+  {
+    step: '02',
+    icon: GitBranch,
+    title: 'Configuracion',
+    description: 'Preparamos la cuenta, cargamos el sitio y dejamos todo ordenado.',
+  },
+  {
+    step: '03',
+    icon: Monitor,
+    title: 'Portal',
+    description: 'Mostramos el estado en una interfaz simple para el cliente final.',
+  },
+  {
+    step: '04',
+    icon: Activity,
+    title: 'Evolucion',
+    description: 'Escalamos la plataforma sin cambiar la experiencia central.',
+  },
+]
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A1B2E]">
       <Navigation />
-      
-      {/* Hero Section */}
+
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-        {/* Background with overlay */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(10, 27, 46, 0.7), rgba(10, 27, 46, 0.9)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=70&w=1400&auto=format&fit=crop')`
+            backgroundImage:
+              "linear-gradient(to bottom, rgba(10, 27, 46, 0.68), rgba(10, 27, 46, 0.95)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=70&w=1400&auto=format&fit=crop')",
           }}
         />
-        
-        {/* Subtle grid overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `linear-gradient(rgba(77, 163, 217, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(77, 163, 217, 0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }} />
+        <div
+          className="absolute inset-0 opacity-12"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(77, 163, 217, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(77, 163, 217, 0.12) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+        <div className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,rgba(77,163,217,0.2),transparent_62%)]" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light text-white leading-tight text-balance">
-            Infraestructura inteligente para campos y propiedades.
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#4DA3D9]/30 bg-[#4DA3D9]/12 px-4 py-2 text-sm text-[#9DD2F2]">
+            <Sparkles className="w-4 h-4" strokeWidth={1.6} />
+            Infraestructura inteligente para campos y propiedades
+          </div>
+
+          <h1 className="mx-auto mt-8 max-w-5xl text-4xl font-light leading-tight text-white text-balance md:text-6xl lg:text-7xl">
+            Una sola plataforma para ver, entender y operar tu seguridad.
           </h1>
-          <p className="mt-6 text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed text-balance">
-            Conectamos y protegemos lo que más valorás. Tecnología, inteligencia y cobertura donde más lo necesitás.
+
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/70 md:text-xl">
+            SegurIA une sitios, equipos y alertas en una vista clara. El cliente entiende rapido, tu equipo tiene
+            contexto y la operacion gana orden.
           </p>
-          
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/campos-inteligentes" 
-              className="btn-primary px-8 py-4 text-[15px] inline-flex items-center gap-2 min-w-[220px] justify-center"
-            >
-              Campos Inteligentes
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link href="/integraciones" className="btn-primary inline-flex min-w-[220px] items-center justify-center gap-2 px-8 py-4 text-[15px]">
+              Ver integraciones
+              <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link 
-              href="/propiedades-inteligentes" 
-              className="btn-secondary px-8 py-4 text-[15px] inline-flex items-center gap-2 min-w-[220px] justify-center"
-            >
-              Propiedades Inteligentes
+            <Link href="/app" className="btn-secondary inline-flex min-w-[220px] items-center justify-center gap-2 px-8 py-4 text-[15px]">
+              Abrir portal
             </Link>
           </div>
-        </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-6 h-10 rounded-full border border-white/30 flex items-start justify-center p-2">
-            <div className="w-1 h-2 bg-white/50 rounded-full animate-bounce" />
-          </div>
-        </div>
-      </section>
-
-      {/* Two Directions Section */}
-      <section className="py-24 bg-[#123A5A]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-light text-white text-balance">
-              Dos direcciones, una misión
-            </h2>
-            <p className="mt-4 text-white/60 text-lg max-w-2xl mx-auto">
-              Soluciones especializadas para cada tipo de operación
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Campos Inteligentes */}
-            <div className="glass-card p-8 md:p-10 group hover:bg-[rgba(18,58,90,0.6)] transition-all duration-300">
-              <div className="w-14 h-14 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mb-6">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#4DA3D9]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-light text-white mb-4">Campos Inteligentes</h3>
-              <p className="text-white/60 leading-relaxed mb-6">
-                Monitoreo inteligente para mejorar la productividad, proteger cada hectárea y operar con mayor control.
-              </p>
-              <div className="space-y-2 text-[14px] text-white/50 mb-8">
-                <p>Campos • Ganadería • Agricultura • Parcelas</p>
-                <p>Instalaciones remotas • Infraestructura productiva</p>
-              </div>
-              <Link 
-                href="/campos-inteligentes" 
-                className="btn-ghost px-6 py-3 text-[15px] inline-block"
-              >
-                Explorar soluciones
-              </Link>
-            </div>
-
-            {/* Propiedades Inteligentes */}
-            <div className="glass-card p-8 md:p-10 group hover:bg-[rgba(18,58,90,0.6)] transition-all duration-300">
-              <div className="w-14 h-14 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mb-6">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#4DA3D9]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-light text-white mb-4">Propiedades Inteligentes</h3>
-              <p className="text-white/60 leading-relaxed mb-6">
-                Seguridad y conectividad para estancias, casas de campo, condominios, bodegas, oficinas y propiedades de alto valor.
-              </p>
-              <div className="space-y-2 text-[14px] text-white/50 mb-8">
-                <p>Casas • Condominios • Bodegas • Oficinas</p>
-                <p>Casas de campo • Propiedades comerciales</p>
-              </div>
-              <Link 
-                href="/propiedades-inteligentes" 
-                className="btn-ghost px-6 py-3 text-[15px] inline-block"
-              >
-                Explorar soluciones
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Technologies Section */}
-      <section className="py-24 bg-[#0A1B2E]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-light text-white text-balance">
-              Tecnologías principales
-            </h2>
-            <p className="mt-4 text-white/60 text-lg max-w-2xl mx-auto">
-              Herramientas integradas para una infraestructura completa
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: Camera,
-                title: 'Cámaras',
-                description: 'Monitoreo inteligente y visualización remota.'
-              },
-              {
-                icon: Cpu,
-                title: 'Sensores',
-                description: 'Datos del entorno, movimiento, acceso, clima y eventos.'
-              },
-              {
-                icon: Wifi,
-                title: 'Redes',
-                description: 'Conectividad estable para zonas urbanas, rurales o remotas.'
-              },
-              {
-                icon: Monitor,
-                title: 'Software',
-                description: 'Visualización, reportes, documentación y gestión centralizada.'
-              }
-            ].map((tech, index) => (
-              <div 
-                key={index} 
-                className="glass-card p-6 text-center group hover:bg-[rgba(18,58,90,0.6)] transition-all duration-300"
-              >
-                <div className="w-12 h-12 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center mx-auto mb-4">
-                  <tech.icon className="w-6 h-6 text-[#4DA3D9]" strokeWidth={1.5} />
+          <div className="mx-auto mt-16 grid max-w-5xl gap-4 sm:grid-cols-3">
+            {storyCards.map((card) => (
+              <div key={card.title} className="rounded-3xl border border-white/10 bg-white/6 p-6 text-left backdrop-blur-md">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#4DA3D9]/20 bg-[#4DA3D9]/15 text-[#9DD2F2]">
+                  <card.icon className="h-6 w-6" strokeWidth={1.6} />
                 </div>
-                <h3 className="text-lg font-light text-white mb-2">{tech.title}</h3>
-                <p className="text-[14px] text-white/60 leading-relaxed">{tech.description}</p>
+                <h3 className="text-xl font-light text-white">{card.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/60">{card.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Process Section */}
-      <section className="py-24 bg-[#E6F1F8]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-light text-[#0A1B2E] text-balance">
-              Nuestro proceso
-            </h2>
-            <p className="mt-4 text-[#6B7280] text-lg max-w-2xl mx-auto">
-              De principio a fin, acompañamos cada etapa de tu proyecto
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: Search,
-                step: '01',
-                title: 'Diagnóstico',
-                description: 'Analizamos necesidades, entorno, riesgos y cobertura.'
-              },
-              {
-                icon: PenTool,
-                step: '02',
-                title: 'Diseño',
-                description: 'Creamos una solución técnica adaptada al lugar.'
-              },
-              {
-                icon: Wrench,
-                step: '03',
-                title: 'Instalación',
-                description: 'Implementamos dispositivos, redes y configuración.'
-              },
-              {
-                icon: Activity,
-                step: '04',
-                title: 'Monitoreo',
-                description: 'Activamos seguimiento, soporte y mejora continua.'
-              }
-            ].map((process, index) => (
-              <div 
-                key={index} 
-                className="glass-card-light p-6 text-center"
-              >
-                <div className="text-[#4DA3D9] text-sm font-light mb-4">{process.step}</div>
-                <div className="w-12 h-12 rounded-[5px] bg-[#2B5C7E]/10 flex items-center justify-center mx-auto mb-4">
-                  <process.icon className="w-6 h-6 text-[#2B5C7E]" strokeWidth={1.5} />
-                </div>
-                <h3 className="text-lg font-light text-[#0A1B2E] mb-2">{process.title}</h3>
-                <p className="text-[14px] text-[#6B7280] leading-relaxed">{process.description}</p>
+      <section className="bg-[#123A5A] py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+            <div className="space-y-6">
+              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Plataforma</p>
+              <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
+                Diseñada para verse bien, entenderse rápido y crecer con cada cliente.
+              </h2>
+              <p className="max-w-xl text-lg leading-8 text-white/65">
+                No es una demo genérica. Es una base visual pensada para mostrar valor comercial y operar con
+                precisión en sitios reales.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {platformHighlights.map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/70">
+                    {item}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {processSteps.map((step) => (
+                <div key={step.title} className="glass-card p-6">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
+                      <step.icon className="h-5 w-5" strokeWidth={1.7} />
+                    </div>
+                    <span className="text-xs uppercase tracking-[0.22em] text-white/35">{step.step}</span>
+                  </div>
+                  <h3 className="text-lg font-light text-white">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/60">{step.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-[#0A1B2E]">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-light text-white text-balance">
-            Preparado para dar el siguiente paso
-          </h2>
-          <p className="mt-4 text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
-            Conversemos sobre tu proyecto. Te ayudamos a diseñar la solución ideal para tu campo o propiedad.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/contacto" 
-              className="btn-primary px-8 py-4 text-[15px] inline-flex items-center gap-2"
-            >
-              Solicitar Asesoría
-            </Link>
-            <Link 
-              href="/soluciones" 
-              className="btn-secondary px-8 py-4 text-[15px] inline-flex items-center gap-2"
-            >
-              Ver Soluciones
-            </Link>
+      <section className="bg-[#0A1B2E] py-24">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
+              Una narrativa simple para presentar una plataforma seria.
+            </h2>
+            <p className="max-w-2xl text-lg leading-8 text-white/65">
+              Campos, propiedades, cámaras y sensores se explican con una sola historia. Menos ruido, más lectura
+              comercial y una ruta clara hacia la version pro.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                'Login para clientes',
+                'Vista por sitio',
+                'Acceso a documentos',
+                'Soporte con contexto',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#9DD2F2]" strokeWidth={1.6} />
+                  <span className="text-white/75">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(77,163,217,0.16),transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+            <div className="flex items-center gap-3">
+              <Lock className="h-5 w-5 text-[#9DD2F2]" strokeWidth={1.7} />
+              <p className="text-sm uppercase tracking-[0.22em] text-white/45">Base actual</p>
+            </div>
+            <h3 className="mt-4 text-2xl font-light text-white">Un sistema que se entiende sin explicación extra.</h3>
+            <p className="mt-4 text-sm leading-7 text-white/60">
+              Desde el portal público hasta la vista del cliente, todo comparte el mismo lenguaje visual: orden,
+              claridad y una ruta inmediata a la accion.
+            </p>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <Metric label="Sitios" value="1+" />
+              <Metric label="Equipos" value="8" />
+              <Metric label="Capas" value="3" />
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/contacto" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-[15px]">
+                Pedir llamada
+              </Link>
+              <Link href="/propiedades-inteligentes" className="btn-ghost inline-flex items-center gap-2 px-6 py-3 text-[15px]">
+                Ver solución
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       <Footer />
     </main>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
+      <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
   )
 }

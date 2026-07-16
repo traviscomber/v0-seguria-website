@@ -1,0 +1,10 @@
+{
+  "name": "seguria-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "check": "node -e \"import('./src/config.js').then(() => console.log('gateway scaffold ok'))\""
+  }
+}
