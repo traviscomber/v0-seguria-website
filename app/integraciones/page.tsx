@@ -82,11 +82,11 @@ export default function IntegracionesPage() {
         <div className="relative mx-auto grid min-h-[92vh] max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
           <div className="flex flex-col justify-center">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#4DA3D9]/30 bg-[#4DA3D9]/12 px-4 py-2 text-sm text-[#9DD2F2]">
-              <Workflow className="w-4 h-4" strokeWidth={1.6} />
+              <Workflow className="h-4 w-4" strokeWidth={1.6} />
               Plataforma de integraciones
             </div>
 
-            <h1 className="mt-8 max-w-3xl text-4xl font-light leading-tight text-white text-balance md:text-5xl lg:text-6xl">
+            <h1 className="mt-8 max-w-3xl text-balance text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">
               Una experiencia premium para conectar sitios, equipos y alertas.
             </h1>
 
@@ -98,7 +98,7 @@ export default function IntegracionesPage() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Link href="/contacto" className="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
                 Solicitar demo
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/app" className="btn-secondary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
                 Ver portal
@@ -128,7 +128,7 @@ export default function IntegracionesPage() {
                   </div>
                   <div>
                     <p className="text-sm text-white/45">Lectura ejecutiva</p>
-                    <p className="text-lg text-white">Una sola vista para operación y cliente</p>
+                    <p className="text-lg text-white">Una sola vista para operacion y cliente</p>
                   </div>
                 </div>
 
@@ -164,7 +164,7 @@ export default function IntegracionesPage() {
       <section className="bg-[#123A5A] py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
+            <h2 className="text-balance text-3xl font-light text-white md:text-4xl">
               Hecho para que el cliente entienda en segundos
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-white/62">
@@ -190,7 +190,7 @@ export default function IntegracionesPage() {
         <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
           <div>
             <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Lo que resuelve</p>
-            <h2 className="mt-3 text-3xl font-light text-white text-balance md:text-4xl">
+            <h2 className="mt-3 text-balance text-3xl font-light text-white md:text-4xl">
               Un portal limpio, comercial y listo para crecer.
             </h2>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/62">
@@ -240,7 +240,7 @@ export default function IntegracionesPage() {
 
       <section className="bg-[#E6F1F8] py-24">
         <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <h2 className="text-3xl font-light text-[#0A1B2E] text-balance md:text-4xl">
+          <h2 className="text-balance text-3xl font-light text-[#0A1B2E] md:text-4xl">
             La base que necesita una version pro
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-[#6B7280]">

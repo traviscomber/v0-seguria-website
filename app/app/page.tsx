@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { ArrowRight, Camera, CircleAlert, ShieldAlert } from 'lucide-react'
+import { ArrowRight, Camera, CircleAlert, LayoutGrid, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -136,6 +136,15 @@ export default async function ClientAppPage() {
     .filter(({ device }) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
     .slice(0, 2)
 
+  const spaces = sites.slice(0, 4).map((site) => ({
+    label: site.label,
+    location: site.location,
+    status: site.statusLabel,
+    cameraCount: site.cameraCount,
+    sensorCount: site.sensorCount,
+    alertCount: site.alertCount,
+  }))
+
   const headline =
     alerts.length > 0
       ? 'Hay alertas activas en zonas puntuales.'
@@ -146,47 +155,99 @@ export default async function ClientAppPage() {
     <div className="space-y-8">
       <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.22),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05)_0%,transparent_35%,rgba(255,255,255,0.02)_100%)]" />
-        <div className="relative space-y-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="w-fit border-[#4DA3D9]/30 bg-[#4DA3D9]/15 text-[#9DD2F2] hover:bg-[#4DA3D9]/15">
-              Portal de cliente
-            </Badge>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
-              {primarySite?.label || 'Cliente'}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
-              {updatedLabel}
-            </span>
-          </div>
-          <div className="max-w-3xl space-y-4">
-            <h1 className="max-w-2xl text-4xl font-light text-white md:text-5xl">Tu seguridad, clara y lista para decidir.</h1>
-            <p className="text-base leading-7 text-white/68 md:text-lg">
-              Aqui ves lo importante sin ruido: estado general, camaras y alertas que necesitan atencion.
-            </p>
+        <div className="relative grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="w-fit border-[#4DA3D9]/30 bg-[#4DA3D9]/15 text-[#9DD2F2] hover:bg-[#4DA3D9]/15">
+                Portal de cliente
+              </Badge>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+                {primarySite?.label || 'Cliente'}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+                {updatedLabel}
+              </span>
+            </div>
+
+            <div className="max-w-3xl space-y-4">
+              <h1 className="max-w-2xl text-balance text-4xl font-light leading-tight text-white md:text-5xl">
+                Tu seguridad, clara y lista para decidir.
+              </h1>
+              <p className="text-base leading-7 text-white/68 md:text-lg">
+                Una sola pantalla para revisar camaras, espacios vigilados y alertas que necesitan atencion.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
+                <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
+                  Ver sitio principal
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+                <Link href="/contacto">Pedir ayuda</Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Metric label="Sitios" value={totals.sites} />
+              <Metric label="Camaras" value={totals.cameras} />
+              <Metric label="Alertas" value={totals.alerts} />
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild className="rounded-full bg-[#4DA3D9] text-white hover:bg-[#4DA3D9]/90">
-              <Link href={primarySite ? `/app/properties/${primarySite.propertyId}` : '/contacto'}>
-                Ver sitio principal
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
-              <Link href="/contacto">Pedir ayuda</Link>
-            </Button>
-          </div>
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {primaryCamera.length === 0 ? (
+                <div className="sm:col-span-2 rounded-[24px] border border-white/10 bg-white/5 p-8 text-sm text-white/55">
+                  Todavia no hay camaras cargadas.
+                </div>
+              ) : (
+                primaryCamera.map(({ site, device }, index) => (
+                  <CameraTile
+                    key={`${site.propertyId}-${device.id}`}
+                    title={device.displayName || 'Camara'}
+                    location={device.ubicacionDescripcion || site.location}
+                    siteLabel={site.label}
+                    status={device.estado}
+                    updatedAt={device.lastSeenAt || device.fechaActualizacion}
+                    index={index}
+                  />
+                ))
+              )}
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Metric label="Sitios" value={totals.sites} />
-            <Metric label="Camaras" value={totals.cameras} />
-            <Metric label="Alertas" value={totals.alerts} />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Vista clara</div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Acceso directo</div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">Alertas visibles</div>
+            <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4 text-[#9DD2F2]" />
+                <p className="text-sm uppercase tracking-[0.2em] text-white/45">Espacios vigilados</p>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {spaces.length === 0 ? (
+                  <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/55">
+                    Todavia no hay espacios asociados a esta cuenta.
+                  </p>
+                ) : (
+                  spaces.map((space) => (
+                    <div key={space.label} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm text-white">{space.label}</p>
+                          <p className="mt-1 text-xs text-white/55">{space.location}</p>
+                        </div>
+                        <Badge className={getStatusTone(space.status.toLowerCase())}>{space.status}</Badge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-white/60">
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">Camaras {space.cameraCount}</span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">Sensores {space.sensorCount}</span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">Alertas {space.alertCount}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -215,54 +276,8 @@ export default async function ClientAppPage() {
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Camaras principales</CardTitle>
-            </div>
-            <CardDescription className="text-white/55">Solo las vistas que ayudan a decidir rapido.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            {primaryCamera.length === 0 ? (
-              <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/55">
-                Todavia no hay camaras cargadas.
-              </p>
-            ) : (
-              primaryCamera.map(({ site, device }, index) => (
-                <CameraTile
-                  key={`${site.propertyId}-${device.id}`}
-                  title={device.displayName || 'Camara'}
-                  location={device.ubicacionDescripcion || site.location}
-                  siteLabel={site.label}
-                  status={device.estado}
-                  updatedAt={device.lastSeenAt || device.fechaActualizacion}
-                  index={index}
-                />
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
               <CircleAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Resumen de hoy</CardTitle>
-            </div>
-            <CardDescription className="text-white/55">Un vistazo rapido para el cliente.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <InfoLine label="Alertas activas" value={String(alerts.length)} />
-            <InfoLine label="Camaras en foco" value={String(primaryCamera.length)} />
-            <InfoLine label="Siguiente paso" value={alerts.length > 0 ? 'Revisar los puntos con alerta.' : 'Seguir monitoreo normal.'} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Lo que conviene revisar</CardTitle>
+              <CardTitle className="text-lg font-normal text-white">Alertas de hoy</CardTitle>
             </div>
             <CardDescription className="text-white/55">Solo los elementos que necesitan atencion.</CardDescription>
           </CardHeader>
@@ -272,10 +287,15 @@ export default async function ClientAppPage() {
             ) : (
               alerts.slice(0, 3).map(({ site, device }) => (
                 <div key={`${site.propertyId}-${device.id}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm text-white">{device.displayName || 'Equipo'}</p>
-                  <p className="mt-1 text-sm text-white/60">
-                    {site.label} · {device.ubicacionDescripcion || site.location}
-                  </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-white">{device.displayName || 'Equipo'}</p>
+                      <p className="mt-1 text-sm text-white/60">
+                        {site.label} · {device.ubicacionDescripcion || site.location}
+                      </p>
+                    </div>
+                    <Badge className={getAlertTone(device.estado)}>{device.estado}</Badge>
+                  </div>
                 </div>
               ))
             )}
