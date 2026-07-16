@@ -19,18 +19,18 @@ import {
 const storyCards = [
   {
     icon: Camera,
-    title: 'Ves lo que importa',
-    description: 'Sin ruido. Sin cables confusos. Solo lo que necesitas saber, cuando lo necesitas.',
+    title: 'Ves sin ansiedad',
+    description: 'Todo claro. Sin ruido. Solo lo que importa, cuando lo necesitas ver.',
   },
   {
     icon: Cpu,
-    title: 'Todo conectado sin complicar',
-    description: 'Temperatura, movimiento, acceso. Una sola pantalla. Tu teléfono. Punto.',
+    title: 'Sencillo, siempre',
+    description: 'Temperatura, movimiento, acceso. Una pantalla. Tu teléfono. Nada más.',
   },
   {
     icon: Building2,
-    title: 'Para ti y para ellos',
-    description: 'Tu cliente entiende al instante. Tu equipo sabe qué hacer. Todos tranquilos.',
+    title: 'Tranquilidad compartida',
+    description: 'Tú descansas. Tu equipo sabe. Tu cliente entiende. Todos en paz.',
   },
 ]
 
@@ -45,26 +45,26 @@ const processSteps = [
   {
     step: '01',
     icon: Search,
-    title: 'Te escuchamos',
-    description: 'Visitamos. Preguntamos. Entendemos exactamente qué te quita el sueño.',
+    title: 'Escuchamos lo que necesitas',
+    description: 'Visitamos. Preguntamos. Entendemos qué te preocupa de verdad.',
   },
   {
     step: '02',
     icon: GitBranch,
-    title: 'Lo armamos juntos',
-    description: 'Sin tecnicismos innecesarios. Solo lo que funciona en Chile, con tu presupuesto.',
+    title: 'Lo instalamos con calma',
+    description: 'Sin apuro. Sin tecnicismos. Solo lo que te da tranquilidad hoy.',
   },
   {
     step: '03',
     icon: Monitor,
-    title: 'Ves, entiendes, actúas',
-    description: 'Tu portal listo. El de tu cliente también. Ambos saben qué hacer sin preguntar.',
+    title: 'Ya ves todo claro',
+    description: 'Tu app lista. Todo ordenado. Abres y sabes qué está pasando siempre.',
   },
   {
     step: '04',
     icon: Activity,
-    title: 'Crecemos contigo',
-    description: 'Hoy un campo, mañana cinco. La plataforma crece. Tú sigues tranquilo.',
+    title: 'Crecemos a tu ritmo',
+    description: 'Otra cámara mañana, más sensores después. La tranquilidad crece contigo.',
   },
 ]
 
@@ -133,12 +133,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
             <div className="space-y-6">
-              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">La realidad</p>
+              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Para ti</p>
               <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-                Hecha para que vendas sin explicar, para que tu cliente entienda al instante.
+                Aquí tu propiedad está segura. Aquí tu campo está cuidado. Aquí puedes respirar.
               </h2>
               <p className="max-w-xl text-lg leading-8 text-white/65">
-                Olvida los powerpoints largos. SegurIA se muestra sola. El cliente ve su campo, su casa, su negocio protegido. Punto. Firma en la siguiente página.
+                No hay sorpresas. No hay dudas. Abres la app y sabes exactamente cómo está todo. Punto. Ya descansas.
               </p>
               <div className="flex flex-wrap gap-2">
                 {platformHighlights.map((item) => (
@@ -171,10 +171,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <div className="space-y-6">
             <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-              Así se vende seguridad en Chile ahora.
+              Lo único que importa es que duermas tranquilo.
             </h2>
             <p className="max-w-2xl text-lg leading-8 text-white/65">
-              Sin jerga. Sin que el cliente necesite traducción. Un campo vigilado, una casa protegida, un negocio operando. Así. Hoy sale el proyecto. Mañana lo expanden.
+              Tu campo está vigilado. Tu casa está protegida. Tu negocio opera sin sorpresas. No es magia. Es SegurIA. Y tú ya puedes descansar.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {[
