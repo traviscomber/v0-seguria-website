@@ -94,6 +94,80 @@ export default function SolucionesPage() {
         </div>
       </section>
 
+      {/* Systems Intelligence Section */}
+      <section className="py-24 bg-[#123A5A]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-light text-white text-balance">
+              Tus sistemas existentes se vuelven inteligentes
+            </h2>
+            <p className="mt-4 text-white/60 text-lg max-w-2xl mx-auto">
+              No necesitas reemplazar lo que ya tienes. SegurIA lo transforma.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="space-y-6">
+              <div className="glass-card p-6">
+                <h3 className="text-xl font-light text-white mb-3">Cámaras que ven inteligente</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Tu cámara normal se vuelve experta. Reconoce animales, detecta movimiento anómalo, identifica intrusos. Si hay un puma cerca del rebaño, lo sabes antes de que suceda algo.
+                </p>
+              </div>
+
+              <div className="glass-card p-6">
+                <h3 className="text-xl font-light text-white mb-3">Sensores que predicen</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Temperatura anómala, acceso no autorizado, cambios en el perímetro. Los datos que siempre tuviste ahora tienen significado. Te avisan antes del problema.
+                </p>
+              </div>
+
+              <div className="glass-card p-6">
+                <h3 className="text-xl font-light text-white mb-3">Integraciones sin cambio</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Tuya, Home Assistant, cámaras Hikvision, sensores inalámbricos. Lo que ya tienes funciona con SegurIA. Sin reemplazos forzados. Sin inversión innecesaria.
+                </p>
+              </div>
+            </div>
+
+            <div className="glass-card p-8 lg:p-12">
+              <div className="space-y-6">
+                <div className="border-l-2 border-[#4DA3D9] pl-6">
+                  <p className="text-[14px] uppercase text-[#4DA3D9] font-light tracking-wider mb-2">Ejemplo real</p>
+                  <h4 className="text-2xl font-light text-white mb-3">Puma en la noche</h4>
+                  <p className="text-white/70 leading-relaxed">
+                    Tu cámara infrarroja ve movimiento. SegurIA lo reconoce como animal salvaje. Alertas solo a equipo de seguridad. Falsa alarma: 0. Protección: 100%.
+                  </p>
+                </div>
+
+                <div className="border-l-2 border-[#4DA3D9] pl-6">
+                  <p className="text-[14px] uppercase text-[#4DA3D9] font-light tracking-wider mb-2">Otro ejemplo</p>
+                  <h4 className="text-2xl font-light text-white mb-3">Temperatura en el galpón</h4>
+                  <p className="text-white/70 leading-relaxed">
+                    Tus sensores detectan cambio extremo. SegurIA sabe qué es normal (noche fría) y qué es riesgo (incendio). Reacciona solo cuando importa.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { title: 'Hikvision', subtitle: 'Cámaras IP' },
+              { title: 'Tuya', subtitle: 'Smart Devices' },
+              { title: 'Home Assistant', subtitle: 'Automatización' },
+              { title: 'Sensores', subtitle: 'LoRaWAN' }
+            ].map((item) => (
+              <div key={item.title} className="glass-card p-4 text-center">
+                <p className="text-[12px] uppercase text-[#9DD2F2] font-light tracking-wider mb-1">Compatible</p>
+                <h4 className="text-white font-light">{item.title}</h4>
+                <p className="text-[13px] text-white/50 mt-1">{item.subtitle}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Integration Layer */}
       <section className="py-24 bg-[#0A1B2E]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-[0.9fr_1.1fr] gap-12 items-center">

@@ -19,18 +19,18 @@ import {
 const storyCards = [
   {
     icon: Camera,
-    title: 'Camaras y visibilidad',
-    description: 'Cada sitio puede verse con orden, claridad y foco en lo que importa.',
+    title: 'Ves sin ansiedad',
+    description: 'Todo claro. Sin ruido. Solo lo que importa, cuando lo necesitas ver.',
   },
   {
     icon: Cpu,
-    title: 'Sensores y control',
-    description: 'Movimiento, acceso, clima y alertas en una misma lectura simple.',
+    title: 'Sencillo, siempre',
+    description: 'Temperatura, movimiento, acceso. Una pantalla. Tu teléfono. Nada más.',
   },
   {
     icon: Building2,
-    title: 'Sitios y clientes',
-    description: 'Una experiencia pensada para clientes, soporte y operación interna.',
+    title: 'Tú controlas',
+    description: 'Tú decides. Tu equipo actúa. Tu cliente confía. Todos seguros.',
   },
 ]
 
@@ -45,26 +45,26 @@ const processSteps = [
   {
     step: '01',
     icon: Search,
-    title: 'Diagnostico',
-    description: 'Entendemos el sitio, el entorno y el nivel de cobertura que necesita.',
+    title: 'Escuchamos lo que necesitas',
+    description: 'Visitamos. Preguntamos. Entendemos qué te preocupa de verdad.',
   },
   {
     step: '02',
     icon: GitBranch,
-    title: 'Configuracion',
-    description: 'Preparamos la cuenta, cargamos el sitio y dejamos todo ordenado.',
+    title: 'Lo instalamos con calma',
+    description: 'Sin apuro. Sin tecnicismos. Solo lo que te da tranquilidad hoy.',
   },
   {
     step: '03',
     icon: Monitor,
-    title: 'Portal',
-    description: 'Mostramos el estado en una interfaz simple para el cliente final.',
+    title: 'Ya ves todo claro',
+    description: 'Tu app lista. Todo ordenado. Abres y sabes qué está pasando siempre.',
   },
   {
     step: '04',
     icon: Activity,
-    title: 'Evolucion',
-    description: 'Escalamos la plataforma sin cambiar la experiencia central.',
+    title: 'Crecemos a tu ritmo',
+    description: 'Otra cámara mañana, más sensores después. La tranquilidad crece contigo.',
   },
 ]
 
@@ -98,12 +98,11 @@ export default function HomePage() {
           </div>
 
           <h1 className="mx-auto mt-8 max-w-5xl text-4xl font-light leading-tight text-white text-balance md:text-6xl lg:text-7xl">
-            Una sola plataforma para ver, entender y operar tu seguridad.
+            Todo lo que proteges, en un solo lugar que tiene sentido.
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/70 md:text-xl">
-            SegurIA une sitios, equipos y alertas en una vista clara. El cliente entiende rapido, tu equipo tiene
-            contexto y la operacion gana orden.
+            No vendemos cajas ni cables. Vendemos paz mental: tu campo cuidado de noche, tu casa vigilada siempre, tu negocio operando sin sorpresas.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -134,13 +133,12 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
             <div className="space-y-6">
-              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Plataforma</p>
+              <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Para ti</p>
               <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-                Diseñada para verse bien, entenderse rápido y crecer con cada cliente.
+                Aquí tu propiedad está segura. Aquí tu campo está cuidado. Aquí puedes respirar.
               </h2>
               <p className="max-w-xl text-lg leading-8 text-white/65">
-                No es una demo genérica. Es una base visual pensada para mostrar valor comercial y operar con
-                precisión en sitios reales.
+                No hay sorpresas. No hay dudas. Abres la app y sabes exactamente cómo está todo. Punto. Ya descansas.
               </p>
               <div className="flex flex-wrap gap-2">
                 {platformHighlights.map((item) => (
@@ -173,11 +171,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <div className="space-y-6">
             <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-              Una narrativa simple para presentar una plataforma seria.
+              Lo único que importa es que controles lo que protege tu vida.
             </h2>
             <p className="max-w-2xl text-lg leading-8 text-white/65">
-              Campos, propiedades, cámaras y sensores se explican con una sola historia. Menos ruido, más lectura
-              comercial y una ruta clara hacia la version pro.
+              Tu campo vigilado. Tu casa protegida. Tu negocio operando. Todo en tus manos. Actúas cuando importa. Decides antes de que sea tarde. Eso es SegurIA.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {[

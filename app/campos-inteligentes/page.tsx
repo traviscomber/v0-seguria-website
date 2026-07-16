@@ -5,43 +5,43 @@ import { Camera, Thermometer, Wifi, Sun, Search, PenTool, Wrench, Activity } fro
 
 const applicationCards = [
   {
-    title: 'Ganaderia',
-    description: 'Monitoreo y control para operaciones rurales con foco en seguridad y seguimiento.',
+    title: 'Ganadería sin sorpresas',
+    description: 'Ves tu rebaño incluso de noche. Temperatura ok. Acceso controlado. Movimiento vigilado. Duermes tranquilo.',
   },
   {
-    title: 'Agricultura',
-    description: 'Supervision de cultivos, clima, riego y condiciones clave para decidir mejor.',
+    title: 'Agricultura que responde',
+    description: 'Clima, riego, plagas. Tus cultivos te hablan. Actúas antes de que se quemen las pérdidas.',
   },
   {
-    title: 'Parcelas y lotes',
-    description: 'Control de accesos, perimetros y actividad remota en espacios dispersos.',
+    title: 'Parcelas que crecen',
+    description: 'Dispersas, remotas, lejanas. Todas vigiladas desde tu teléfono. Acceso. Intrusos. Control total.',
   },
   {
-    title: 'Infraestructura remota',
-    description: 'Galpones, bombas, bodegas y activos criticos con lectura simple de operacion.',
+    title: 'Infraestructura crítica siempre activa',
+    description: 'Bombas, bodegas, galpones. Si algo falla, lo sabes primero. No esperes a la llamada del operario.',
   },
 ]
 
 const capabilityCards = [
   {
     icon: Camera,
-    title: 'Camaras rurales',
-    description: 'Vision clara para exteriores y seguimiento en lugares complejos.',
+    title: 'Ves en la oscuridad',
+    description: 'Noche cerrada, lluvia, neblina. Las cámaras ven. Tu rebaño está donde debe estar.',
   },
   {
     icon: Thermometer,
-    title: 'Sensores ambientales',
-    description: 'Temperatura, humedad y otras lecturas que ayudan a actuar a tiempo.',
+    title: 'Te habla la naturaleza',
+    description: 'Temperatura, humedad, presión. Sabes antes de que tu cultivo o tu animal sufra.',
   },
   {
     icon: Wifi,
-    title: 'Redes rurales',
-    description: 'Conectividad estable para que la informacion llegue donde debe llegar.',
+    title: 'Conectado hasta el fin del mundo',
+    description: 'El sitio más remoto de Chile sigue reportando. Señal estable. Sin trucos.',
   },
   {
     icon: Sun,
-    title: 'Energia autonoma',
-    description: 'Paneles y baterias para mantener operacion en entornos exigentes.',
+    title: 'Funciona siempre, lluvia o no',
+    description: 'Paneles solares. Baterías inteligentes. Tu vigilancia no se apaga con la tormenta.',
   },
 ]
 
@@ -49,26 +49,26 @@ const processCards = [
   {
     icon: Search,
     step: '01',
-    title: 'Diagnostico',
-    description: 'Visitamos la operacion y entendemos el escenario real.',
+    title: 'Te visitamos',
+    description: 'Pisamos el barro. Vemos dónde está el riesgo. Entendemos tu operación de verdad.',
   },
   {
     icon: PenTool,
     step: '02',
-    title: 'Diseno',
-    description: 'Definimos una solucion simple, tecnica y facil de explicar.',
+    title: 'Lo diseñamos juntos',
+    description: 'Sin teoría. Cámaras donde necesitas verlas. Sensores donde falla la operación hoy.',
   },
   {
     icon: Wrench,
     step: '03',
-    title: 'Instalacion',
-    description: 'Montamos equipos, conectividad y puntos de control.',
+    title: 'Lo instalamos y te formamos',
+    description: 'Cables, equipos, wifi. Tu equipo sabe usarlo. Tú ya estás viendo desde el teléfono.',
   },
   {
     icon: Activity,
     step: '04',
-    title: 'Monitoreo',
-    description: 'La solucion queda lista para seguimiento y soporte continuo.',
+    title: 'Crece con nosotros',
+    description: 'Otro sitio, más cámaras, nuevos sensores. La plataforma responde. Tú en piloto automático.',
   },
 ]
 
