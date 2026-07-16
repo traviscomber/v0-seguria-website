@@ -29,8 +29,8 @@ const storyCards = [
   },
   {
     icon: Building2,
-    title: 'Tranquilidad compartida',
-    description: 'Tú descansas. Tu equipo sabe. Tu cliente entiende. Todos en paz.',
+    title: 'Tú controlas',
+    description: 'Tú decides. Tu equipo actúa. Tu cliente confía. Todos seguros.',
   },
 ]
 
@@ -171,10 +171,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <div className="space-y-6">
             <h2 className="text-3xl font-light text-white text-balance md:text-4xl">
-              Lo único que importa es que duermas tranquilo.
+              Lo único que importa es que controles lo que protege tu vida.
             </h2>
             <p className="max-w-2xl text-lg leading-8 text-white/65">
-              Tu campo está vigilado. Tu casa está protegida. Tu negocio opera sin sorpresas. No es magia. Es SegurIA. Y tú ya puedes descansar.
+              Tu campo vigilado. Tu casa protegida. Tu negocio operando. Todo en tus manos. Actúas cuando importa. Decides antes de que sea tarde. Eso es SegurIA.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {[
