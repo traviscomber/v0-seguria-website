@@ -27,6 +27,9 @@ export function Navigation() {
             <Link href="/propiedades-inteligentes" className="text-white/70 hover:text-white transition-colors text-sm">
               Propiedades Inteligentes
             </Link>
+            <Link href="/hoteleria-inteligente" className="text-white/70 hover:text-white transition-colors text-sm">
+              Hotelería Inteligente
+            </Link>
             <Link href="/soluciones" className="text-white/70 hover:text-white transition-colors text-sm">
               Soluciones
             </Link>
@@ -64,6 +67,13 @@ export function Navigation() {
               onClick={() => setIsOpen(false)}
             >
               Propiedades Inteligentes
+            </Link>
+            <Link
+              href="/hoteleria-inteligente"
+              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
+              onClick={() => setIsOpen(false)}
+            >
+              Hotelería Inteligente
             </Link>
             <Link
               href="/soluciones"
