@@ -5,39 +5,39 @@ import { Lock, Camera, Radio, Wifi, Search, PenTool, Wrench, Activity } from 'lu
 
 const propertyCards = [
   {
-    title: 'Hogares',
-    description: 'Seguridad, acceso y alertas para casas que necesitan control simple y claro.',
+    title: 'Tu casa, tu regla',
+    description: 'Ves quién entra. Alertas en el acto. Tus hijos solos, tu pareja fuera, la nañera dentro. Sabes qué pasa siempre.',
   },
   {
-    title: 'Condominios',
-    description: 'Gestion ordenada para accesos, camaras y espacios comunes.',
+    title: 'Condominios que respiran',
+    description: 'Portería, accesos, garaje. Todo ordenado. Vecinos tranquilos. Administración dormir de noche.',
   },
   {
-    title: 'Bodegas y oficinas',
-    description: 'Proteccion para espacios comerciales e industriales con lectura rapida.',
+    title: 'Negocios sin sorpresas',
+    description: 'Bodega, oficina, retail. Si entra alguien que no debe, lo sabes al instante. Fuera de horario, alertado.',
   },
 ]
 
 const capabilityCards = [
   {
     icon: Lock,
-    title: 'Control de acceso',
-    description: 'Portones, cerraduras, citofonos y gestion de ingresos.',
+    title: 'Controlas quién entra',
+    description: 'Portón automatizado. Citófono remoto. Acceso sin llaves. Solo gente que autorizas.',
   },
   {
     icon: Camera,
-    title: 'Camaras',
-    description: 'Monitoreo visual con vistas claras y estado visible.',
+    title: 'Ves todo en vivo',
+    description: 'Sala, entrada, patio, garage. HD. Noche. Lluvia. Todas las vistas en tu teléfono ahora.',
   },
   {
     icon: Radio,
-    title: 'Sensores',
-    description: 'Movimiento, apertura, presencia y alertas puntuales.',
+    title: 'Te avisa si algo se mueve',
+    description: 'Puerta abierta. Ventana forzada. Movimiento en patio. Lo sé antes que nadie.',
   },
   {
     icon: Wifi,
-    title: 'Redes estables',
-    description: 'Conectividad para que la operacion no dependa del azar.',
+    title: 'Siempre conectado',
+    description: 'Robusto. Redundante. Si cae el wifi, la 4G toma. Nunca sin signal.',
   },
 ]
 
@@ -45,26 +45,26 @@ const processCards = [
   {
     icon: Search,
     step: '01',
-    title: 'Diagnostico',
-    description: 'Levantamos la necesidad real y el nivel de cobertura esperado.',
+    title: 'Miramos dónde está el riesgo',
+    description: 'Recorremos la propiedad. Entradas, puntos ciegos, amenazas reales. No teoría.',
   },
   {
     icon: PenTool,
     step: '02',
-    title: 'Diseno',
-    description: 'Armamos una propuesta simple, entendible y escalable.',
+    title: 'Lo diseñamos para ti',
+    description: 'Cámaras donde las necesitas. Sensores inteligentes. Un plan que se entiende al instante.',
   },
   {
     icon: Wrench,
     step: '03',
-    title: 'Instalacion',
-    description: 'Implementamos equipos y dejamos todo listo para operar.',
+    title: 'Lo dejamos funcionando',
+    description: 'Todo instalado. Testeado. Tú ya ves desde el teléfono. Tu familia está protegida hoy.',
   },
   {
     icon: Activity,
     step: '04',
-    title: 'Monitoreo',
-    description: 'La solucion queda preparada para seguimiento y soporte.',
+    title: 'Soporte que responde',
+    description: 'Otra cámara mañana. Más sensores después. La plataforma crece. Nosotros aquí siempre.',
   },
 ]
 
