@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "db:health": "node scripts/database-health.mjs",
-    "smoke:operational": "node scripts/operational-smoke.mjs"
+    "smoke:operational": "node scripts/operational-smoke.mjs",
+    "security:contracts": "node scripts/security-contracts.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
