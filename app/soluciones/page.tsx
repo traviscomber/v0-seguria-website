@@ -125,7 +125,7 @@ export default function SolucionesPage() {
               <div className="glass-card p-6">
                 <h3 className="text-xl font-light text-white mb-3">Integraciones sin cambio</h3>
                 <p className="text-white/70 leading-relaxed">
-                  Tuya, Home Assistant, cámaras Hikvision, sensores inalámbricos. Lo que ya tienes funciona con SegurIA. Sin reemplazos forzados. Sin inversión innecesaria.
+                  Conectamos cámaras, sensores y sistemas compatibles en una sola operación. Aprovechamos lo que ya tienes, sin reemplazos forzados ni inversión innecesaria.
                 </p>
               </div>
             </div>
@@ -153,10 +153,10 @@ export default function SolucionesPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: 'Hikvision', subtitle: 'Cámaras IP' },
-              { title: 'Tuya', subtitle: 'Smart Devices' },
-              { title: 'Home Assistant', subtitle: 'Automatización' },
-              { title: 'Sensores', subtitle: 'LoRaWAN' }
+              { title: 'Cámaras', subtitle: 'Video y evidencia' },
+              { title: 'Sensores', subtitle: 'Estado y alertas' },
+              { title: 'Accesos', subtitle: 'Puertas y perímetros' },
+              { title: 'Automatización', subtitle: 'Respuesta coordinada' }
             ].map((item) => (
               <div key={item.title} className="glass-card p-4 text-center">
                 <p className="text-[12px] uppercase text-[#9DD2F2] font-light tracking-wider mb-1">Compatible</p>

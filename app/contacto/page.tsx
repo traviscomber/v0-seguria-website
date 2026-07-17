@@ -19,6 +19,7 @@ type FormData = {
   tipoServicio: string
   mensaje: string
   website: string
+  consent: boolean
 }
 
 const benefits = [
@@ -41,6 +42,7 @@ export default function ContactoPage() {
     tipoServicio: '',
     mensaje: '',
     website: '',
+    consent: false,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -50,7 +52,7 @@ export default function ContactoPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target instanceof HTMLInputElement && e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     })
   }
 
@@ -264,6 +266,18 @@ export default function ContactoPage() {
                   />
                 </Field>
               </div>
+
+              <label className="mt-5 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-white/65">
+                <input
+                  type="checkbox"
+                  name="consent"
+                  checked={formData.consent}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 h-4 w-4 accent-[#4DA3D9]"
+                />
+                <span>Acepto que SegurIA use estos datos para responder mi solicitud y realizar seguimiento comercial.</span>
+              </label>
 
               {submitError && (
                 <p className="mt-5 rounded-2xl border border-red-300/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">

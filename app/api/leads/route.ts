@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createLead } from '@/lib/store'
-import type { LeadSource, LeadStatus, ProjectType } from '@/lib/types'
+import { createHmac } from 'node:crypto'
+import { getAuthorizedRequest } from '@/lib/api-auth'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const leadSchema = z.object({
   nombre: z.string().trim().min(2).max(120),
@@ -16,11 +17,10 @@ const leadSchema = z.object({
   tipoServicio: z.enum(['diagnostico', 'instalacion', 'monitoreo', 'propuesta']).optional(),
   mensaje: z.string().trim().max(1000).optional(),
   website: z.string().max(0).optional(),
+  consent: z.literal(true),
 })
 
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 8
-const ipRequests = new Map<string, number[]>()
 
 function getClientIp(request: NextRequest) {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -29,31 +29,35 @@ function getClientIp(request: NextRequest) {
   return realIp?.trim() || 'unknown'
 }
 
-function isRateLimited(ip: string) {
-  const now = Date.now()
-  const attempts = ipRequests.get(ip) || []
-  const recentAttempts = attempts.filter((timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS)
+function hashClientIp(ip: string) {
+  const secret = process.env.LEAD_IP_HASH_SECRET || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!secret) return null
+  return createHmac('sha256', secret).update(ip).digest('hex')
+}
 
-  if (recentAttempts.length >= RATE_LIMIT_MAX_REQUESTS) {
-    ipRequests.set(ip, recentAttempts)
-    return true
+export async function GET(request: NextRequest) {
+  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
+
+  const { data, error } = await supabase
+    .from('leads')
+    .select('id,name,email,phone,property_type,message,source,status,created_at,updated_at')
+    .order('created_at', { ascending: false })
+    .limit(500)
+
+  if (error) {
+    console.error('Error reading leads:', error.message)
+    return NextResponse.json({ success: false, error: 'No fue posible cargar los contactos.' }, { status: 500 })
   }
 
-  recentAttempts.push(now)
-  ipRequests.set(ip, recentAttempts)
-  return false
+  return NextResponse.json({ success: true, data })
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIp = getClientIp(request)
-    if (isRateLimited(clientIp)) {
-      return NextResponse.json(
-        { success: false, error: 'Demasiados intentos. Espera unos minutos e intenta nuevamente.' },
-        { status: 429 }
-      )
-    }
-
     const payload = await request.json()
     const parsed = leadSchema.safeParse(payload)
 
@@ -68,25 +72,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Solicitud recibida.' })
     }
 
-    const lead = createLead({
-      nombre: parsed.data.nombre,
-      email: parsed.data.email,
-      telefono: parsed.data.telefono,
-      tipoProyecto: parsed.data.tipoProyecto as ProjectType,
+    const supabase = createSupabaseAdminClient()
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'El formulario no esta disponible temporalmente.' }, { status: 503 })
+    }
+
+    const ipHash = hashClientIp(getClientIp(request))
+    if (ipHash) {
+      const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      const { count, error: countError } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('ip_hash', ipHash)
+        .gte('created_at', cutoff)
+
+      if (countError) throw countError
+      if ((count || 0) >= RATE_LIMIT_MAX_REQUESTS) {
+        return NextResponse.json(
+          { success: false, error: 'Demasiados intentos. Espera unos minutos e intenta nuevamente.' },
+          { status: 429 }
+        )
+      }
+    }
+
+    const details = {
       ubicacion: parsed.data.ubicacion || '',
-      tamanoAproximado: parsed.data.tamanoAproximado,
-      necesidadPrincipal: parsed.data.necesidadPrincipal,
-      tieneCamaras: parsed.data.tieneCamaras,
-      tieneInternet: parsed.data.tieneInternet,
-      tipoServicio: parsed.data.tipoServicio,
-      mensaje: parsed.data.mensaje,
-      estado: 'nuevo' as LeadStatus,
-      origen: 'web' as LeadSource,
+      tamanoAproximado: parsed.data.tamanoAproximado || '',
+      necesidadPrincipal: parsed.data.necesidadPrincipal || '',
+      tieneCamaras: parsed.data.tieneCamaras || '',
+      tieneInternet: parsed.data.tieneInternet || '',
+      tipoServicio: parsed.data.tipoServicio || '',
+      mensaje: parsed.data.mensaje || '',
+    }
+    const { error: insertError } = await supabase.from('leads').insert({
+      name: parsed.data.nombre,
+      email: parsed.data.email,
+      phone: parsed.data.telefono,
+      property_type: parsed.data.tipoProyecto,
+      message: JSON.stringify(details),
+      source: 'contact_page',
+      status: 'new',
+      ip_hash: ipHash,
+      user_agent: request.headers.get('user-agent')?.slice(0, 500) || null,
+      source_path: '/contacto',
+      consent: parsed.data.consent,
     })
+    if (insertError) throw insertError
 
     return NextResponse.json({
       success: true,
-      data: lead,
       message: 'Solicitud enviada correctamente.',
     })
   } catch (error) {

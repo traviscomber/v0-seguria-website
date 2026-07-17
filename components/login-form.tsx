@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({ nextPath, registered = false }: { nextPath: string; registered?: boolean }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,6 +51,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {registered && <p className="rounded-[5px] border border-emerald-300/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">Cuenta creada. Si recibiste un correo de confirmacion, validalo antes de ingresar.</p>}
           <div>
             <label className="mb-2 block text-sm text-white/70">Correo autorizado</label>
             <input
@@ -90,10 +91,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-4">
-          <Link href="/" className="text-sm text-[#4DA3D9] hover:underline">
-            Volver al sitio
-          </Link>
-          <span className="text-xs text-white/35">Portal interno seguro</span>
+          <Link href="/signup" className="text-sm text-[#4DA3D9] hover:underline">Crear cuenta</Link>
+          <Link href="/" className="text-xs text-white/45 hover:text-white">Volver al sitio</Link>
         </div>
       </div>
     </main>

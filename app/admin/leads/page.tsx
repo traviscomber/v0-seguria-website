@@ -1,10 +1,58 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Phone, Mail } from 'lucide-react'
-import { getLeads } from '@/lib/store'
+import { useEffect, useState } from 'react'
+import { Plus, Search, Eye, Edit, X, Phone, Mail } from 'lucide-react'
 import type { Lead, LeadStatus } from '@/lib/types'
+
+type StoredLead = {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  property_type: string | null
+  message: string | null
+  source: string | null
+  status: string | null
+  created_at: string
+  updated_at: string
+}
+
+const storedStatus: Record<string, LeadStatus> = {
+  new: 'nuevo',
+  contacted: 'contactado',
+  qualified: 'diagnostico',
+  proposal_sent: 'propuesta',
+  won: 'ganado',
+  lost: 'perdido',
+}
+
+function mapStoredLead(row: StoredLead): Lead {
+  let details: Record<string, string> = {}
+  try {
+    details = row.message ? JSON.parse(row.message) : {}
+  } catch {
+    details = { mensaje: row.message || '' }
+  }
+
+  return {
+    id: row.id,
+    nombre: row.name,
+    email: row.email,
+    telefono: row.phone || '',
+    tipoProyecto: row.property_type === 'campo' ? 'campo' : 'propiedad',
+    ubicacion: details.ubicacion || '',
+    tamanoAproximado: details.tamanoAproximado,
+    necesidadPrincipal: details.necesidadPrincipal,
+    tieneCamaras: details.tieneCamaras,
+    tieneInternet: details.tieneInternet,
+    tipoServicio: details.tipoServicio,
+    mensaje: details.mensaje,
+    estado: storedStatus[row.status || 'new'] || 'nuevo',
+    origen: 'web',
+    fechaCreacion: new Date(row.created_at),
+    fechaActualizacion: new Date(row.updated_at),
+  }
+}
 
 const statusColors: Record<LeadStatus, { bg: string; text: string }> = {
   nuevo: { bg: 'bg-[#4DA3D9]/20', text: 'text-[#4DA3D9]' },
@@ -25,10 +73,25 @@ const statusLabels: Record<LeadStatus, string> = {
 }
 
 export default function LeadsPage() {
-  const leads = getLeads()
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'todos'>('todos')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/leads', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = await response.json().catch(() => null)
+        if (!response.ok || !result?.success) throw new Error(result?.error || 'No fue posible cargar los contactos.')
+        if (active) setLeads((result.data as StoredLead[]).map(mapStoredLead))
+      })
+      .catch((error) => active && setLoadError(error instanceof Error ? error.message : 'No fue posible cargar los contactos.'))
+      .finally(() => active && setIsLoading(false))
+    return () => { active = false }
+  }, [])
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,6 +172,7 @@ export default function LeadsPage() {
 
       {/* Table */}
       <div className="glass-card overflow-hidden">
+        {loadError && <p className="border-b border-red-300/20 bg-red-500/10 p-4 text-sm text-red-100">{loadError}</p>}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -123,7 +187,9 @@ export default function LeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredLeads.length === 0 ? (
+              {isLoading ? (
+                <tr><td colSpan={7} className="p-8 text-center text-white/50">Cargando contactos...</td></tr>
+              ) : filteredLeads.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-white/50">
                     No se encontraron leads
@@ -207,7 +273,7 @@ export default function LeadsPage() {
                 onClick={() => setSelectedLead(null)}
                 className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10"
               >
-                <Trash2 className="w-5 h-5" strokeWidth={1.5} />
+                <X className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </div>
             <div className="p-6 space-y-6">
