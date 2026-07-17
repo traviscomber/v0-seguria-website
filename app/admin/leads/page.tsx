@@ -57,6 +57,18 @@ const statusStyles: Record<LeadStatus, string> = {
 
 const orderedStatuses: LeadStatus[] = ['nuevo', 'contactado', 'diagnostico', 'propuesta', 'ganado', 'perdido']
 
+const urgencyLabels: Record<string, string> = {
+  normal: 'Evaluacion',
+  pronto: 'Avanzar pronto',
+  critica: 'Problema activo',
+}
+
+const siteCountLabels: Record<string, string> = {
+  uno: '1 sitio',
+  dos_a_cinco: '2 a 5 sitios',
+  mas_de_cinco: 'Mas de 5 sitios',
+}
+
 function parseDetails(message: string | null) {
   try {
     return message ? JSON.parse(message) as Record<string, string> : {}
@@ -80,6 +92,8 @@ function mapStoredLead(row: StoredLead): Lead {
     necesidadPrincipal: details.necesidadPrincipal,
     tieneCamaras: details.tieneCamaras,
     tieneInternet: details.tieneInternet,
+    cantidadSitios: details.cantidadSitios,
+    urgencia: details.urgencia,
     tipoServicio: details.tipoServicio,
     mensaje: details.mensaje,
     notas: details.crmNotes || '',
@@ -190,6 +204,9 @@ export default function LeadsPage() {
     count: leads.filter((lead) => lead.estado === status).length,
   }))
 
+  const urgentLeads = leads.filter((lead) => lead.urgencia === 'critica').length
+  const multiSiteLeads = leads.filter((lead) => lead.cantidadSitios === 'dos_a_cinco' || lead.cantidadSitios === 'mas_de_cinco').length
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -200,8 +217,10 @@ export default function LeadsPage() {
             Contactos capturados desde el sitio, con seguimiento real en base de datos y estados para convertirlos en proyecto.
           </p>
         </div>
-        <div className="rounded-[5px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
-          {leads.length} contactos en cartera
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SummaryPill label="Cartera" value={String(leads.length)} />
+          <SummaryPill label="Problema activo" value={String(urgentLeads)} tone={urgentLeads > 0 ? 'critical' : 'normal'} />
+          <SummaryPill label="Multi sitio" value={String(multiSiteLeads)} />
         </div>
       </div>
 
@@ -251,6 +270,7 @@ export default function LeadsPage() {
               <tr className="border-b border-white/10 text-left text-sm text-white/50">
                 <th className="p-4 font-normal">Contacto</th>
                 <th className="p-4 font-normal">Proyecto</th>
+                <th className="p-4 font-normal">Prioridad</th>
                 <th className="p-4 font-normal">Necesidad</th>
                 <th className="p-4 font-normal">Estado</th>
                 <th className="p-4 font-normal">Actualizado</th>
@@ -259,9 +279,9 @@ export default function LeadsPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="p-10 text-center text-white/50">Cargando contactos...</td></tr>
+                <tr><td colSpan={7} className="p-10 text-center text-white/50">Cargando contactos...</td></tr>
               ) : filteredLeads.length === 0 ? (
-                <tr><td colSpan={6} className="p-10 text-center text-white/50">No hay leads para este filtro.</td></tr>
+                <tr><td colSpan={7} className="p-10 text-center text-white/50">No hay leads para este filtro.</td></tr>
               ) : (
                 filteredLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-white/5 transition-colors hover:bg-white/5">
@@ -281,6 +301,12 @@ export default function LeadsPage() {
                     <td className="p-4 text-sm text-white/70">
                       <p>{lead.tipoProyecto === 'campo' ? 'Campo inteligente' : 'Propiedad inteligente'}</p>
                       <p className="mt-1 text-xs text-white/40">{lead.ubicacion || 'Ubicacion pendiente'}</p>
+                    </td>
+                    <td className="p-4 text-sm text-white/65">
+                      <p className={lead.urgencia === 'critica' ? 'text-red-200' : 'text-white/75'}>
+                        {urgencyLabels[lead.urgencia || ''] || 'Por ordenar'}
+                      </p>
+                      <p className="mt-1 text-xs text-white/35">{siteCountLabels[lead.cantidadSitios || ''] || 'Sitios por definir'}</p>
                     </td>
                     <td className="p-4 text-sm text-white/65">
                       <p>{lead.necesidadPrincipal || lead.tipoServicio || 'Por definir'}</p>
@@ -332,6 +358,8 @@ export default function LeadsPage() {
                 <InfoBlock label="Tipo de proyecto" value={selectedLead.tipoProyecto === 'campo' ? 'Campo inteligente' : 'Propiedad inteligente'} />
                 <InfoBlock label="Ubicacion" value={selectedLead.ubicacion || 'Pendiente'} />
                 <InfoBlock label="Tamano aproximado" value={selectedLead.tamanoAproximado || 'Pendiente'} />
+                <InfoBlock label="Cantidad de sitios" value={siteCountLabels[selectedLead.cantidadSitios || ''] || 'Pendiente'} />
+                <InfoBlock label="Urgencia" value={urgencyLabels[selectedLead.urgencia || ''] || 'Pendiente'} />
                 <InfoBlock label="Necesidad" value={selectedLead.necesidadPrincipal || selectedLead.tipoServicio || 'Por definir'} />
                 <div>
                   <p className="text-sm text-white/45">Mensaje</p>
@@ -390,6 +418,27 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-sm text-white/45">{label}</p>
       <p className="mt-1 text-white">{value}</p>
+    </div>
+  )
+}
+
+function SummaryPill({
+  label,
+  value,
+  tone = 'normal',
+}: {
+  label: string
+  value: string
+  tone?: 'normal' | 'critical'
+}) {
+  return (
+    <div className={`rounded-[5px] border px-4 py-3 text-sm ${
+      tone === 'critical'
+        ? 'border-red-300/25 bg-red-500/10 text-red-100'
+        : 'border-white/10 bg-white/5 text-white/55'
+    }`}>
+      <p className="text-xs uppercase tracking-[0.16em] opacity-70">{label}</p>
+      <p className="mt-1 text-2xl font-light text-white">{value}</p>
     </div>
   )
 }

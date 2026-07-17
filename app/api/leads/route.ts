@@ -15,6 +15,8 @@ const leadSchema = z.object({
   necesidadPrincipal: z.string().trim().max(80).optional(),
   tieneCamaras: z.enum(['si', 'no', 'parcial']).optional(),
   tieneInternet: z.enum(['si', 'no', 'inestable']).optional(),
+  cantidadSitios: z.enum(['uno', 'dos_a_cinco', 'mas_de_cinco']).optional(),
+  urgencia: z.enum(['normal', 'pronto', 'critica']).optional(),
   tipoServicio: z.enum(['diagnostico', 'instalacion', 'monitoreo', 'propuesta']).optional(),
   mensaje: z.string().trim().max(1000).optional(),
   website: z.string().max(0).optional(),
@@ -172,6 +174,8 @@ export async function POST(request: NextRequest) {
       necesidadPrincipal: parsed.data.necesidadPrincipal || '',
       tieneCamaras: parsed.data.tieneCamaras || '',
       tieneInternet: parsed.data.tieneInternet || '',
+      cantidadSitios: parsed.data.cantidadSitios || '',
+      urgencia: parsed.data.urgencia || '',
       tipoServicio: parsed.data.tipoServicio || '',
       mensaje: parsed.data.mensaje || '',
     }

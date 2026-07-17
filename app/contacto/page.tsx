@@ -16,6 +16,8 @@ type FormData = {
   necesidadPrincipal: string
   tieneCamaras: string
   tieneInternet: string
+  cantidadSitios: string
+  urgencia: string
   tipoServicio: string
   mensaje: string
   website: string
@@ -23,9 +25,9 @@ type FormData = {
 }
 
 const benefits = [
-  'Respuesta orientada a tu tipo de sitio',
-  'Seguimiento con contexto comercial',
-  'Propuesta pensada para crecer a version pro',
+  'Levantamiento claro para tu sitio',
+  'Seguimiento interno con datos reales',
+  'Ruta simple hacia portal cliente y monitoreo',
 ]
 
 export default function ContactoPage() {
@@ -39,6 +41,8 @@ export default function ContactoPage() {
     necesidadPrincipal: '',
     tieneCamaras: '',
     tieneInternet: '',
+    cantidadSitios: '',
+    urgencia: '',
     tipoServicio: '',
     mensaje: '',
     website: '',
@@ -127,10 +131,10 @@ export default function ContactoPage() {
               Hablemos de tu sitio
             </div>
             <h1 className="max-w-2xl text-4xl font-light leading-tight text-white text-balance md:text-5xl">
-              Cuéntanos qué necesitas y te ayudamos a ordenarlo en una propuesta clara.
+              Cuentanos que necesitas y lo ordenamos en una propuesta clara.
             </h1>
             <p className="max-w-xl text-lg leading-8 text-white/68">
-              Te respondemos con foco en tu operación, tu tipo de sitio y el nivel de control que quieres darle al
+              Te respondemos con foco en tu operacion, tu tipo de sitio y el nivel de control que quieres darle al
               cliente.
             </p>
 
@@ -145,8 +149,8 @@ export default function ContactoPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               <StatCard label="Santiago" value="Chile" />
-              <StatCard label="Respuesta" value="Rapida" />
-              <StatCard label="Enfoque" value="Version pro" />
+              <StatCard label="Respuesta" value="Priorizada" />
+              <StatCard label="Enfoque" value="Portal pro" />
             </div>
           </div>
 
@@ -164,7 +168,7 @@ export default function ContactoPage() {
                   <p className="text-white">Contacto directo</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-white/62">
-                  Si quieres una respuesta mas rapida, tambien puedes escribir por WhatsApp y te orientamos sobre el
+                  Si quieres una respuesta mas rapida, tambien puedes escribir directo y te orientamos sobre el
                   siguiente paso.
                 </p>
                 <a
@@ -174,7 +178,7 @@ export default function ContactoPage() {
                   className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366]/90 px-5 py-3 text-[15px] text-white transition-colors hover:bg-[#25D366]"
                 >
                   <MessageCircle className="h-4 w-4" strokeWidth={1.6} />
-                  Escribir por WhatsApp
+                  Escribir directo
                 </a>
               </div>
             </div>
@@ -183,7 +187,7 @@ export default function ContactoPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Formulario</p>
-                  <h2 className="mt-2 text-2xl font-light text-white">Cuéntanos sobre tu proyecto</h2>
+                  <h2 className="mt-2 text-2xl font-light text-white">Cuentanos sobre tu proyecto</h2>
                 </div>
                 <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/45 sm:block">
                   Respuesta comercial
@@ -228,7 +232,7 @@ export default function ContactoPage() {
                     <option value="integral">Solucion integral</option>
                   </Select>
                 </Field>
-                <Field label="¿Tiene camaras o sensores?">
+                <Field label="Tiene camaras o sensores?">
                   <Select name="tieneCamaras" value={formData.tieneCamaras} onChange={handleChange}>
                     <option value="">Seleccionar...</option>
                     <option value="si">Si, tengo equipos</option>
@@ -236,7 +240,7 @@ export default function ContactoPage() {
                     <option value="parcial">Tengo algunos, quiero ampliar</option>
                   </Select>
                 </Field>
-                <Field label="¿Tiene internet?">
+                <Field label="Tiene internet?">
                   <Select name="tieneInternet" value={formData.tieneInternet} onChange={handleChange}>
                     <option value="">Seleccionar...</option>
                     <option value="si">Si, tengo conexion</option>
@@ -244,7 +248,23 @@ export default function ContactoPage() {
                     <option value="inestable">Si, pero es inestable</option>
                   </Select>
                 </Field>
-                <Field label="¿Qué necesita?">
+                <Field label="Cantidad de sitios">
+                  <Select name="cantidadSitios" value={formData.cantidadSitios} onChange={handleChange}>
+                    <option value="">Seleccionar...</option>
+                    <option value="uno">Un sitio</option>
+                    <option value="dos_a_cinco">2 a 5 sitios</option>
+                    <option value="mas_de_cinco">Mas de 5 sitios</option>
+                  </Select>
+                </Field>
+                <Field label="Urgencia">
+                  <Select name="urgencia" value={formData.urgencia} onChange={handleChange}>
+                    <option value="">Seleccionar...</option>
+                    <option value="normal">Quiero evaluarlo</option>
+                    <option value="pronto">Necesito avanzar pronto</option>
+                    <option value="critica">Tengo un problema activo</option>
+                  </Select>
+                </Field>
+                <Field label="Que necesita?">
                   <Select name="tipoServicio" value={formData.tipoServicio} onChange={handleChange}>
                     <option value="">Seleccionar...</option>
                     <option value="diagnostico">Diagnostico inicial</option>
@@ -262,7 +282,7 @@ export default function ContactoPage() {
                     rows={5}
                     value={formData.mensaje}
                     onChange={handleChange}
-                    placeholder="Cuéntanos mas sobre tu proyecto..."
+                    placeholder="Cuentanos mas sobre tu proyecto..."
                   />
                 </Field>
               </div>

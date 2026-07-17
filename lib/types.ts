@@ -16,6 +16,8 @@ export interface Lead {
   necesidadPrincipal?: string
   tieneCamaras?: string
   tieneInternet?: string
+  cantidadSitios?: string
+  urgencia?: string
   tipoServicio?: string
   mensaje?: string
   estado: LeadStatus

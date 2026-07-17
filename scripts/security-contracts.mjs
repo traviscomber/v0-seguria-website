@@ -17,6 +17,7 @@ function assertNotContains(source, patterns, label) {
 const snapshotRoutePath = 'app/api/cameras/[deviceId]/snapshot/route.ts'
 const snapshotComponentPath = 'components/camera-snapshot.tsx'
 const clientProvisionRoutePath = 'app/api/clients/provision/route.ts'
+const contactPagePath = 'app/contacto/page.tsx'
 const leadsRoutePath = 'app/api/leads/route.ts'
 const adminLeadsPath = 'app/admin/leads/page.tsx'
 const signupRoutePath = 'app/api/auth/signup/route.ts'
@@ -24,12 +25,15 @@ const signupPagePath = 'app/signup/page.tsx'
 const loginFormPath = 'components/login-form.tsx'
 const incidentsRoutePath = 'app/api/admin/incidents/route.ts'
 const incidentCenterPath = 'components/incident-center.tsx'
+const notificationsRoutePath = 'app/api/notifications/route.ts'
+const clientNotificationsPath = 'components/client-notification-center.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
 const snapshotComponent = read(snapshotComponentPath)
 const clientProvisionRoute = read(clientProvisionRoutePath)
+const contactPage = read(contactPagePath)
 const leadsRoute = read(leadsRoutePath)
 const adminLeads = read(adminLeadsPath)
 const signupRoute = read(signupRoutePath)
@@ -37,6 +41,8 @@ const signupPage = read(signupPagePath)
 const loginForm = read(loginFormPath)
 const incidentsRoute = read(incidentsRoutePath)
 const incidentCenter = read(incidentCenterPath)
+const notificationsRoute = read(notificationsRoutePath)
+const clientNotifications = read(clientNotificationsPath)
 const adminIntegrations = read(adminIntegrationsPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
@@ -113,6 +119,18 @@ assert(
   `${adminLeadsPath} must persist CRM follow-up changes instead of showing read-only leads.`
 )
 assert(
+  /fetch\('\/api\/leads'/.test(contactPage) && /cantidadSitios/.test(contactPage) && /urgencia/.test(contactPage),
+  `${contactPagePath} must submit qualified leads to the Supabase-backed leads API.`
+)
+assert(
+  /cantidadSitios:\s*z\.enum/.test(leadsRoute) && /urgencia:\s*z\.enum/.test(leadsRoute),
+  `${leadsRoutePath} must validate lead site count and urgency before persistence.`
+)
+assert(
+  /cantidadSitios/.test(adminLeads) && /Problema activo/.test(adminLeads),
+  `${adminLeadsPath} must surface lead priority and site count for operators.`
+)
+assert(
   !fs.existsSync('lib/store.ts'),
   'lib/store.ts must not reintroduce the legacy in-memory demo store.'
 )
@@ -163,6 +181,23 @@ assert(
   /Cuenta operativa/.test(adminIntegrations) && /Puente local/.test(adminIntegrations),
   `${adminIntegrationsPath} must use neutral operational labels.`
 )
+assert(
+  /supabase\.rpc\('acknowledge_notification'/.test(notificationsRoute),
+  `${notificationsRoutePath} must acknowledge notifications through the audited RPC.`
+)
+assert(
+  /getCurrentAuthSession\(\)/.test(notificationsRoute) && /notificationId:\s*z\.string\(\)\.uuid\(\)/.test(notificationsRoute),
+  `${notificationsRoutePath} must require an authenticated user and a bounded notification id.`
+)
+assert(
+  /function acknowledgeNotification\(id: string\)/.test(clientNotifications) && /Confirmar recepcion/.test(clientNotifications),
+  `${clientNotificationsPath} must expose an explicit client acknowledgement action.`
+)
+assertNotContains(
+  clientNotifications,
+  [/ConfirmaciÃ/, /recepciÃ/, /CrÃ/, /AtenciÃ/, /Todo estÃ/, /tuya/i, /home assistant/i, /github/i],
+  clientNotificationsPath
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -172,9 +207,11 @@ console.log(JSON.stringify({
     'camera snapshot component does not receive signed storage URLs',
     'client provisioning is admin-only and audited',
     'lead CRM updates are persisted in Supabase',
+    'contact form qualifies leads before CRM follow-up',
     'legacy in-memory demo store is absent',
     'public signup remains closed and internal-only',
     'incident comments are explicit and audited',
     'admin integrations use neutral visible labels',
+    'client notifications are explicit and audited',
   ],
 }, null, 2))
