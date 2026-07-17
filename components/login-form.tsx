@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export function LoginForm({ nextPath, registered = false }: { nextPath: string; registered?: boolean }) {
+export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +51,6 @@ export function LoginForm({ nextPath, registered = false }: { nextPath: string; 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {registered && <p className="rounded-[5px] border border-emerald-300/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">Cuenta creada. Si recibiste un correo de confirmacion, validalo antes de ingresar.</p>}
           <div>
             <label className="mb-2 block text-sm text-white/70">Correo autorizado</label>
             <input

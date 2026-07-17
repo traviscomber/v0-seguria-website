@@ -19,6 +19,9 @@ const snapshotComponentPath = 'components/camera-snapshot.tsx'
 const clientProvisionRoutePath = 'app/api/clients/provision/route.ts'
 const leadsRoutePath = 'app/api/leads/route.ts'
 const adminLeadsPath = 'app/admin/leads/page.tsx'
+const signupRoutePath = 'app/api/auth/signup/route.ts'
+const signupPagePath = 'app/signup/page.tsx'
+const loginFormPath = 'components/login-form.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -26,6 +29,9 @@ const snapshotComponent = read(snapshotComponentPath)
 const clientProvisionRoute = read(clientProvisionRoutePath)
 const leadsRoute = read(leadsRoutePath)
 const adminLeads = read(adminLeadsPath)
+const signupRoute = read(signupRoutePath)
+const signupPage = read(signupPagePath)
+const loginForm = read(loginFormPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -104,6 +110,23 @@ assert(
   !fs.existsSync('lib/store.ts'),
   'lib/store.ts must not reintroduce the legacy in-memory demo store.'
 )
+assert(
+  /status:\s*410/.test(signupRoute) && /panel interno/.test(signupRoute),
+  `${signupRoutePath} must keep public signup closed.`
+)
+assert(
+  /redirect\('\/contacto'\)/.test(signupPage),
+  `${signupPagePath} must route unauthenticated account requests to contact instead of public signup.`
+)
+assert(
+  !fs.existsSync('components/signup-form.tsx'),
+  'components/signup-form.tsx must not reintroduce public account creation UI.'
+)
+assertNotContains(
+  loginForm,
+  [/registered/, /Cuenta creada/, /Crear cuenta/],
+  loginFormPath
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -114,5 +137,6 @@ console.log(JSON.stringify({
     'client provisioning is admin-only and audited',
     'lead CRM updates are persisted in Supabase',
     'legacy in-memory demo store is absent',
+    'public signup remains closed and internal-only',
   ],
 }, null, 2))
