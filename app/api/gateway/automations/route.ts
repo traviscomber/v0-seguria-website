@@ -11,6 +11,16 @@ const acknowledgementSchema = z.object({
   message: z.string().trim().max(500).optional(),
 })
 
+function sanitizeAutomationParameters(config: unknown) {
+  const source = config && typeof config === 'object' ? config as Record<string, unknown> : {}
+  const safeKeys = ['severity', 'offlineMinutes', 'cooldownMinutes', 'notifyClient', 'requiresAcknowledgement']
+  return Object.fromEntries(
+    safeKeys
+      .filter((key) => source[key] !== undefined)
+      .map((key) => [key, source[key]])
+  )
+}
+
 async function authorize(request: NextRequest) {
   const publicId = request.headers.get('x-seguria-gateway-id')
   if (!(await verifyGatewayCredential(publicId, request.headers.get('x-seguria-gateway-secret')))) return null
@@ -23,6 +33,7 @@ async function authorize(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const auth = await authorize(request)
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
   const { data, error } = await auth.supabase
     .from('property_automations')
     .select('id,name,config,desired_status,deployment_token,deployment_requested_at,automation_templates(template_key,trigger_kind,version)')
@@ -31,8 +42,21 @@ export async function GET(request: NextRequest) {
     .eq('status', 'ready')
     .not('deployment_token', 'is', null)
     .order('deployment_requested_at')
-  if (error) return NextResponse.json({ success: false, error: 'No fue posible cargar la configuración.' }, { status: 500 })
-  return NextResponse.json({ success: true, data: data || [] })
+
+  if (error) return NextResponse.json({ success: false, error: 'No fue posible cargar la configuracion.' }, { status: 500 })
+
+  return NextResponse.json({
+    success: true,
+    data: (data || []).map((automation) => ({
+      id: automation.id,
+      name: automation.name,
+      desired_status: automation.desired_status,
+      deployment_token: automation.deployment_token,
+      deployment_requested_at: automation.deployment_requested_at,
+      parameters: sanitizeAutomationParameters(automation.config),
+      automation_templates: automation.automation_templates,
+    })),
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -42,7 +66,7 @@ export async function POST(request: NextRequest) {
   const auth = await authorize(request)
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = acknowledgementSchema.safeParse(await request.json())
-  if (!parsed.success) return NextResponse.json({ success: false, error: 'Confirmación inválida.' }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ success: false, error: 'Confirmacion invalida.' }, { status: 400 })
 
   const { data: automation } = await auth.supabase
     .from('property_automations')
@@ -64,7 +88,7 @@ export async function POST(request: NextRequest) {
     status: nextStatus,
     deployed_version: applied ? template?.version : null,
     last_deployed_at: applied ? now : null,
-    last_error: applied ? null : parsed.data.message || 'La instalación rechazó el cambio.',
+    last_error: applied ? null : parsed.data.message || 'La instalacion rechazo el cambio.',
     desired_status: null,
     deployment_token: null,
   }).eq('id', automation.id)

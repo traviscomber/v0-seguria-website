@@ -33,6 +33,7 @@ const securityInventoryRoutePath = 'app/api/admin/security-inventory/route.ts'
 const auditPagePath = 'app/admin/auditoria/page.tsx'
 const gatewayConfigRoutePath = 'app/api/gateway/config/route.ts'
 const gatewayRuntimeBridgePath = 'gateway/src/home-assistant.js'
+const gatewayAutomationsRoutePath = 'app/api/gateway/automations/route.ts'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -54,6 +55,7 @@ const securityInventoryRoute = read(securityInventoryRoutePath)
 const auditPage = read(auditPagePath)
 const gatewayConfigRoute = read(gatewayConfigRoutePath)
 const gatewayRuntimeBridge = read(gatewayRuntimeBridgePath)
+const gatewayAutomationsRoute = read(gatewayAutomationsRoutePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -250,6 +252,15 @@ assert(
   /connection\.provider === 'local_bridge'/.test(gatewayRuntimeBridge),
   `${gatewayRuntimeBridgePath} must consume the neutral local_bridge alias from config delivery.`
 )
+assert(
+  /function sanitizeAutomationParameters\(config: unknown\)/.test(gatewayAutomationsRoute) && /parameters:\s*sanitizeAutomationParameters\(automation\.config\)/.test(gatewayAutomationsRoute),
+  `${gatewayAutomationsRoutePath} must expose sanitized automation parameters instead of raw config.`
+)
+assertNotContains(
+  gatewayAutomationsRoute,
+  [/return NextResponse\.json\(\{\s*success:\s*true,\s*data:\s*data \|\| \[\]\s*\}/, /config:\s*automation\.config/, /configuracionÃ/i, /ConfirmaciÃ/i, /instalaciÃ/i],
+  gatewayAutomationsRoutePath
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -268,5 +279,6 @@ console.log(JSON.stringify({
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
     'gateway config hides internal provider names',
+    'gateway automation delivery uses sanitized parameters',
   ],
 }, null, 2))
