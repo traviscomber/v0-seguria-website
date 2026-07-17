@@ -4,43 +4,45 @@
  * Database Initialization Script
  * Runs the SQL schema in Supabase
  * 
- * Usage: node scripts/init-db.js
+ * Usage: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/init-db.js
+ * Or in Supabase SQL Editor, copy-paste lib/db/init.sql
  */
 
-const fs = require('fs');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import pg from 'pg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function initializeDatabase() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const databaseUrl = process.env.POSTGRES_URL || process.env.SUPABASE_DB_URL;
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('[ERROR] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  if (!databaseUrl) {
+    console.error('[ERROR] Missing POSTGRES_URL or SUPABASE_DB_URL');
+    console.info('[INFO] You can also manually run the SQL from lib/db/init.sql in Supabase SQL Editor');
     process.exit(1);
   }
 
+  const client = new pg.Client({
+    connectionString: databaseUrl,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    application_name: 'seguria-init-db',
+  });
+
   try {
-    console.log('[INFO] Connecting to Supabase...');
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[INFO] Connecting to PostgreSQL...');
+    await client.connect();
 
     // Read the SQL file
     const sqlPath = path.join(__dirname, '../lib/db/init.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
 
     console.log('[INFO] Executing SQL schema...');
-    
-    // Execute SQL using the admin client
-    const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql }).catch(() => {
-      // If RPC doesn't exist, try direct execution
-      console.log('[INFO] Using direct SQL execution...');
-      return supabase.rpc('query', { sql }).catch(() => null);
-    });
-
-    if (error) {
-      console.error('[ERROR] Database initialization failed:', error);
-      process.exit(1);
-    }
+    await client.query(sql);
 
     console.log('[SUCCESS] Database initialized successfully!');
     console.log('[INFO] Tables created:');
@@ -57,7 +59,9 @@ async function initializeDatabase() {
   } catch (error) {
     console.error('[ERROR] Unexpected error:', error.message);
     process.exit(1);
+  } finally {
+    await client.end();
   }
 }
 
-initializeDatabase();
+initializeDatabase().catch(console.error);
