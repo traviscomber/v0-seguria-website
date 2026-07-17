@@ -1,21 +1,14 @@
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getAuthSessionFromToken } from '@/lib/auth-store'
+import { getCurrentAuthSession } from '@/lib/auth-store'
 import { ClientPortalShell } from '@/components/client-portal-shell'
+import { PortalRealtimeRefresh } from '@/components/portal-realtime-refresh'
 
 export default async function ClientAppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('seguria_session')?.value || null
-
-  if (!token) {
-    redirect('/login?next=/app')
-  }
-
-  const session = await getAuthSessionFromToken(token)
+  const session = await getCurrentAuthSession()
   if (!session) {
     redirect('/login?next=/app')
   }
@@ -26,6 +19,7 @@ export default async function ClientAppLayout({
 
   return (
     <ClientPortalShell userName={session.user.name} userRole={session.user.role}>
+      <PortalRealtimeRefresh organizationIds={session.user.clientIds} />
       {children}
     </ClientPortalShell>
   )

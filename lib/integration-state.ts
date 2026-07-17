@@ -1,185 +1,81 @@
 import 'server-only'
 
-import crypto from 'node:crypto'
-import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import type { IntegrationConnection, IntegrationEvent, IntegrationProvider } from './types'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import type { IntegrationConnection, IntegrationEvent, IntegrationProvider } from '@/lib/types'
 
-type IntegrationState = {
-  connections: IntegrationConnection[]
-  events: IntegrationEvent[]
+function getAdminClient() {
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) throw new Error('Integration data service is not configured.')
+  return supabase
 }
 
-const INTEGRATION_FILE = process.env.SEGURIA_INTEGRATION_FILE || path.join(os.homedir(), '.seguria', 'integration-state.json')
+export async function getIntegrationConnections(): Promise<IntegrationConnection[]> {
+  const supabase = getAdminClient()
+  const [integrationsResult, devicesResult] = await Promise.all([
+    supabase
+      .from('integrations')
+      .select('id, provider, display_name, status, endpoint, external_account_ref, last_sync_at, metadata'),
+    supabase.from('devices').select('integration_id'),
+  ])
 
-function createId() {
-  return crypto.randomBytes(12).toString('hex')
-}
+  const queryError = integrationsResult.error || devicesResult.error
+  if (queryError) throw new Error(`Integration query failed: ${queryError.message}`)
 
-function now() {
-  return new Date()
-}
-
-function seedState(): IntegrationState {
-  return {
-    connections: [
-      {
-        provider: 'tuya',
-        name: 'Conectores de dispositivos',
-        description: 'Sincronizacion de dispositivos via capa operativa o API dedicada.',
-        status: 'pending',
-        endpoint: '/api/integrations/tuya',
-        accountName: undefined,
-        accountEmail: undefined,
-        accountScope: undefined,
-        secretName: 'TUYA_SYNC_SECRET',
-        lastSyncAt: undefined,
-        totalEvents: 0,
-        totalDevices: 0,
-        notes: [
-          'Registro de dispositivos, estado y telemetria',
-          'Compatibilidad para switches, sensores y acceso',
-          'Cuenta maestra para todos los clientes del sitio',
-        ],
-      },
-      {
-        provider: 'home_assistant',
-        name: 'Capa operativa local',
-        description: 'Control plane para automatizaciones, escenas y telemetria local.',
-        status: 'pending',
-        endpoint: '/api/integrations/home-assistant',
-        accountName: undefined,
-        accountScope: undefined,
-        secretName: 'HOME_ASSISTANT_WEBHOOK_SECRET',
-        lastSyncAt: undefined,
-        totalEvents: 0,
-        totalDevices: 0,
-        notes: [
-          'Webhook de eventos para entidades y alertas',
-          'Sincronizacion de estado con dispositivos del sitio',
-        ],
-      },
-      {
-        provider: 'github',
-        name: 'GitHub',
-        description: 'Versionado de configuraciones, reglas y automatizaciones del proyecto.',
-        status: 'connected',
-        endpoint: 'https://github.com/traviscomber/v0-seguria-website',
-        accountName: 'traviscomber/v0-seguria-website',
-        accountScope: 'internal',
-        secretName: 'GITHUB_TOKEN',
-        lastSyncAt: now(),
-        totalEvents: 0,
-        totalDevices: 0,
-        notes: [
-          'Fuente de verdad para cambios de configuracion',
-          'Tracking de versiones para automatizaciones',
-        ],
-      },
-    ],
-    events: [
-      {
-        id: 'integration-seed-0',
-        provider: 'tuya',
-        eventType: 'sync',
-        title: 'Cuenta maestra conectada y lista para mostrar estado',
-        status: 'success',
-        payload: {
-          source: 'tuya',
-          scope: 'devices',
-        },
-        receivedAt: now(),
-      },
-      {
-        id: 'integration-seed-1',
-        provider: 'home_assistant',
-        eventType: 'bootstrap',
-        title: 'Capa operativa lista para recibir eventos',
-        status: 'info',
-        payload: {
-          mode: 'webhook',
-          scope: 'security-suite',
-        },
-        receivedAt: now(),
-      },
-    ],
-  }
-}
-
-function ensureFile() {
-  if (!fs.existsSync(INTEGRATION_FILE)) {
-    fs.mkdirSync(path.dirname(INTEGRATION_FILE), { recursive: true })
-    fs.writeFileSync(INTEGRATION_FILE, JSON.stringify(seedState(), null, 2), 'utf8')
-  }
-}
-
-function reviveEvent(event: IntegrationEvent): IntegrationEvent {
-  return {
-    ...event,
-    receivedAt: new Date(event.receivedAt),
-  }
-}
-
-function reviveConnection(connection: IntegrationConnection): IntegrationConnection {
-  return {
-    ...connection,
-    lastSyncAt: connection.lastSyncAt ? new Date(connection.lastSyncAt) : undefined,
-  }
-}
-
-function readState(): IntegrationState {
-  ensureFile()
-  const raw = fs.readFileSync(INTEGRATION_FILE, 'utf8')
-  const parsed = JSON.parse(raw) as IntegrationState
-  return {
-    connections: parsed.connections.map(reviveConnection),
-    events: parsed.events.map(reviveEvent),
-  }
-}
-
-function writeState(state: IntegrationState) {
-  fs.mkdirSync(path.dirname(INTEGRATION_FILE), { recursive: true })
-  fs.writeFileSync(INTEGRATION_FILE, JSON.stringify(state, null, 2), 'utf8')
-}
-
-function appendEvent(event: Omit<IntegrationEvent, 'id' | 'receivedAt'>) {
-  const state = readState()
-  const entry: IntegrationEvent = {
-    ...event,
-    id: createId(),
-    receivedAt: now(),
-  }
-  state.events = [entry, ...state.events].slice(0, 100)
-  const index = state.connections.findIndex((connection) => connection.provider === event.provider)
-  if (index >= 0) {
-    const current = state.connections[index]
-    state.connections[index] = {
-      ...current,
-      status: event.status === 'error' ? 'degraded' : 'connected',
-      lastSyncAt: entry.receivedAt,
-      totalEvents: current.totalEvents + 1,
+  const deviceCounts = new Map<string, number>()
+  for (const device of devicesResult.data || []) {
+    if (device.integration_id) {
+      deviceCounts.set(device.integration_id, (deviceCounts.get(device.integration_id) || 0) + 1)
     }
   }
-  writeState(state)
-  return entry
+
+  return (integrationsResult.data || []).map((integration) => ({
+    provider: integration.provider as IntegrationProvider,
+    name: integration.display_name,
+    description: 'Conexion operativa administrada por SegurIA.',
+    status: integration.status,
+    endpoint: integration.endpoint || '',
+    accountName: integration.external_account_ref || undefined,
+    accountScope: 'internal',
+    lastSyncAt: integration.last_sync_at ? new Date(integration.last_sync_at) : undefined,
+    totalEvents: 0,
+    totalDevices: deviceCounts.get(integration.id) || 0,
+    notes: Array.isArray(integration.metadata?.notes) ? integration.metadata.notes.map(String) : [],
+  }))
 }
 
-export function getIntegrationConnections(): IntegrationConnection[] {
-  return readState().connections
+export async function getIntegrationConnectionByProvider(provider: IntegrationProvider) {
+  return (await getIntegrationConnections()).find((connection) => connection.provider === provider)
 }
 
-export function getIntegrationConnectionByProvider(provider: IntegrationProvider): IntegrationConnection | undefined {
-  return readState().connections.find((connection) => connection.provider === provider)
+export async function getIntegrationEvents(limit = 25): Promise<IntegrationEvent[]> {
+  const supabase = getAdminClient()
+  const { data, error } = await supabase
+    .from('events')
+    .select('id, source, event_type, severity, state, entity_id, device_id, property_id, payload, received_at')
+    .order('received_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw new Error(`Integration events query failed: ${error.message}`)
+
+  return (data || []).map((event) => ({
+    id: event.id,
+    provider: event.source as IntegrationProvider,
+    eventType: event.event_type,
+    title: event.severity === 'critical' ? 'Alerta critica recibida' : 'Actualizacion de seguridad recibida',
+    status: event.severity === 'critical' ? 'warning' : 'success',
+    entityId: event.entity_id || undefined,
+    externalId: event.device_id || undefined,
+    projectId: event.property_id,
+    payload: { ...(event.payload as Record<string, unknown>), state: event.state },
+    receivedAt: new Date(event.received_at),
+  }))
 }
 
-export function getIntegrationEvents(limit = 25): IntegrationEvent[] {
-  return readState().events.slice(0, limit)
-}
-
-export function getIntegrationSummary() {
-  const connections = getIntegrationConnections()
-  const recentEvents = getIntegrationEvents(10)
+export async function getIntegrationSummary() {
+  const [connections, recentEvents] = await Promise.all([
+    getIntegrationConnections(),
+    getIntegrationEvents(10),
+  ])
   return {
     totalConnections: connections.length,
     connectedConnections: connections.filter((connection) => connection.status === 'connected').length,
@@ -188,63 +84,12 @@ export function getIntegrationSummary() {
   }
 }
 
-export function getIntegrationActivitySummary(limit = 10) {
-  const recentEvents = getIntegrationEvents(limit)
-  const connectedEvents = recentEvents.filter((event) => event.eventType === 'account.connected').length
-  const syncEvents = recentEvents.filter(
-    (event) => event.eventType.includes('sync') || event.eventType.includes('heartbeat') || event.eventType.includes('gateway.')
-  ).length
-  const alertEvents = recentEvents.filter(
-    (event) => event.eventType.includes('alert') || event.eventType.includes('error') || event.status === 'warning'
-  ).length
-
+export async function getIntegrationActivitySummary(limit = 10) {
+  const recentEvents = await getIntegrationEvents(limit)
   return {
     recentEvents,
-    connectedEvents,
-    syncEvents,
-    alertEvents,
+    connectedEvents: recentEvents.filter((event) => event.eventType === 'account.connected').length,
+    syncEvents: recentEvents.filter((event) => event.eventType.includes('sync') || event.eventType.includes('heartbeat')).length,
+    alertEvents: recentEvents.filter((event) => event.status === 'warning' || event.status === 'error').length,
   }
-}
-
-export function recordIntegrationConnectionEvent(event: Omit<IntegrationEvent, 'id' | 'receivedAt'>) {
-  return appendEvent(event)
-}
-
-export function connectTuyaIntegrationAccount(input: { accountName: string; accountEmail?: string; accountScope?: string; siteName?: string }) {
-  const state = readState()
-  const event: IntegrationEvent = {
-    id: createId(),
-    provider: 'tuya',
-    eventType: 'account.connected',
-    title: `Cuenta maestra conectada: ${input.accountName}`,
-    status: 'success',
-    payload: {
-      accountName: input.accountName,
-      accountEmail: input.accountEmail,
-      accountScope: input.accountScope || input.siteName || 'Sitio principal',
-    },
-    receivedAt: now(),
-  }
-
-  state.events = [event, ...state.events].slice(0, 100)
-  const index = state.connections.findIndex((connection) => connection.provider === 'tuya')
-  if (index >= 0) {
-    const current = state.connections[index]
-    state.connections[index] = {
-      ...current,
-      status: 'connected',
-      accountName: input.accountName,
-      accountEmail: input.accountEmail,
-      accountScope: input.accountScope || input.siteName || 'Sitio principal',
-      lastSyncAt: event.receivedAt,
-      totalEvents: current.totalEvents + 1,
-      notes: [
-        `Cuenta: ${input.accountName}`,
-        input.accountEmail ? `Correo: ${input.accountEmail}` : null,
-        input.siteName ? `Sitio: ${input.siteName}` : 'Cuenta lista para importar equipos',
-      ].filter(Boolean) as string[],
-    }
-  }
-  writeState(state)
-  return event
 }

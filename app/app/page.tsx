@@ -1,28 +1,28 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ArrowRight, Camera, CircleAlert, LayoutGrid, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { getAuthSessionFromToken } from '@/lib/auth-store'
+import { getCurrentAuthSession } from '@/lib/auth-store'
 import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
+import { CameraSnapshot } from '@/components/camera-snapshot'
 
 const sourceCards = [
   {
-    label: 'Fuente operativa',
-    value: 'Home Assistant',
-    description: 'La vista del cliente se alimenta desde una capa normalizada y estable.',
+    label: 'Cobertura',
+    value: 'Vista centralizada',
+    description: 'Camaras, sensores y alertas importantes reunidos en un solo lugar.',
   },
   {
-    label: 'Fallback directo',
-    value: 'Solo excepciones',
-    description: 'Si algo no pasa por Home Assistant, se trata como caso especial.',
+    label: 'Continuidad',
+    value: 'Supervision activa',
+    description: 'El estado de los espacios se mantiene actualizado para detectar cambios.',
   },
   {
-    label: 'Onboarding',
-    value: 'Primer cliente real',
-    description: 'Preparar cuenta, validar lectura y dejar el portal listo para operar.',
+    label: 'Respuesta',
+    value: 'Alertas con contexto',
+    description: 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
   },
 ]
 
@@ -80,6 +80,7 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 }
 
 function CameraTile({
+  deviceId,
   title,
   location,
   siteLabel,
@@ -87,6 +88,7 @@ function CameraTile({
   updatedAt,
   index,
 }: {
+  deviceId: string
   title: string
   location: string
   siteLabel: string
@@ -96,6 +98,7 @@ function CameraTile({
 }) {
   return (
     <div className={`relative min-h-[188px] overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-br ${getCameraFrameTint(index)}`}>
+      <CameraSnapshot deviceId={deviceId} alt={title} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_26%,rgba(255,255,255,0.18),transparent_22%),linear-gradient(180deg,transparent,rgba(2,6,23,0.72))]" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:22px_22px] opacity-25" />
       <div className="absolute left-[22%] top-[34%] h-16 w-24 rounded-2xl border border-cyan-300/70 bg-cyan-300/10 shadow-[0_0_0_1px_rgba(125,211,252,0.2),0_0_24px_rgba(56,189,248,0.25)]" />
@@ -133,19 +136,12 @@ function CameraTile({
 }
 
 export default async function ClientAppPage() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('seguria_session')?.value || null
-
-  if (!token) {
-    redirect('/login?next=/app')
-  }
-
-  const session = await getAuthSessionFromToken(token)
+  const session = await getCurrentAuthSession()
   if (!session || session.user.role !== 'client') {
     redirect('/login?next=/app')
   }
 
-  const sites = getAccessiblePortalSites(session.user)
+  const sites = await getAccessiblePortalSites(session.user)
   const totals = getPortalDashboardTotals(sites)
   const alerts = getPortalAlertDevices(sites)
   const primarySite = sites[0]
@@ -235,6 +231,7 @@ export default async function ClientAppPage() {
                 primaryCamera.map(({ site, device }, index) => (
                   <CameraTile
                     key={`${site.propertyId}-${device.id}`}
+                    deviceId={device.id}
                     title={device.displayName || 'Camara'}
                     location={device.ubicacionDescripcion || site.location}
                     siteLabel={site.label}

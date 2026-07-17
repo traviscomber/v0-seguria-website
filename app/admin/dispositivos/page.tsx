@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Plus,
   Search,
@@ -24,8 +24,24 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { getDevices, getProjects } from '@/lib/store'
 import type { Device, DeviceStatus, DeviceType } from '@/lib/types'
+
+type InventoryProperty = {
+  id: string
+  name: string
+}
+
+type InventoryResponse = {
+  devices: Device[]
+  properties: InventoryProperty[]
+  spaces: InventorySpace[]
+}
+
+type InventorySpace = {
+  id: string
+  name: string
+  propertyId: string
+}
 
 const typeLabels: Record<DeviceType, string> = {
   camara_ip: 'Camara IP',
@@ -35,6 +51,11 @@ const typeLabels: Record<DeviceType, string> = {
   sensor_temperatura: 'Sensor de Temperatura',
   sensor_humedad: 'Sensor de Humedad',
   sensor_puerta: 'Sensor de Puerta',
+  sensor_humo: 'Sensor de Humo',
+  sensor_gas: 'Sensor de Gas',
+  sensor_agua: 'Sensor de Agua',
+  sensor_vibracion: 'Sensor de Vibracion',
+  sensor_sabotaje: 'Sensor de Sabotaje',
   control_acceso: 'Control de Acceso',
   router: 'Router',
   access_point: 'Access Point',
@@ -61,16 +82,91 @@ const statusLabels: Record<DeviceStatus, string> = {
 const chartColors = ['#22C55E', '#F59E0B', '#6B7280', '#EF4444']
 
 export default function DevicesPage() {
-  const devices = getDevices()
-  const projects = getProjects()
+  const [devices, setDevices] = useState<Device[]>([])
+  const [properties, setProperties] = useState<InventoryProperty[]>([])
+  const [spaces, setSpaces] = useState<InventorySpace[]>([])
+  const [assigningDeviceId, setAssigningDeviceId] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<DeviceStatus | 'todos'>('todos')
 
-  const tuyaDevices = devices.filter((device) => device.integrationSource === 'tuya')
-  const homeAssistantDevices = devices.filter((device) => device.integrationSource === 'home_assistant')
+  useEffect(() => {
+    let isActive = true
+
+    async function loadInventory() {
+      try {
+        const response = await fetch('/api/admin/security-inventory', { cache: 'no-store' })
+        const payload = (await response.json()) as InventoryResponse & { error?: string }
+        if (!response.ok) throw new Error(payload.error || 'No fue posible cargar el inventario.')
+        if (!isActive) return
+
+        setDevices(
+          payload.devices.map((device) => ({
+            ...device,
+            lastSeenAt: device.lastSeenAt ? new Date(device.lastSeenAt) : undefined,
+            fechaCreacion: new Date(device.fechaCreacion),
+            fechaActualizacion: new Date(device.fechaActualizacion),
+          }))
+        )
+        setProperties(payload.properties)
+        setSpaces(payload.spaces)
+      } catch (error) {
+        if (isActive) setLoadError(error instanceof Error ? error.message : 'No fue posible cargar el inventario.')
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    loadInventory()
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  async function assignSpace(deviceId: string, spaceId: string) {
+    setAssigningDeviceId(deviceId)
+    setLoadError('')
+    try {
+      const response = await fetch('/api/admin/security-inventory', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ deviceId, spaceId: spaceId || null }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'No fue posible asignar el espacio.')
+
+      const selectedSpace = spaces.find((space) => space.id === spaceId)
+      setDevices((current) => current.map((device) =>
+        device.id === deviceId
+          ? {
+              ...device,
+              ubicacionDescripcion: selectedSpace?.name || 'Espacio por asignar',
+              metadata: { ...device.metadata, spaceId: spaceId || undefined },
+            }
+          : device
+      ))
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'No fue posible asignar el espacio.')
+    } finally {
+      setAssigningDeviceId('')
+    }
+  }
+
+  const connectedDevices = devices.filter((device) => device.integrationSource !== 'manual')
   const cameraDevices = devices.filter((device) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
   const sensorDevices = devices.filter((device) =>
-    ['sensor_movimiento', 'sensor_temperatura', 'sensor_humedad', 'sensor_puerta'].includes(device.tipo)
+    [
+      'sensor_movimiento',
+      'sensor_temperatura',
+      'sensor_humedad',
+      'sensor_puerta',
+      'sensor_humo',
+      'sensor_gas',
+      'sensor_agua',
+      'sensor_vibracion',
+      'sensor_sabotaje',
+    ].includes(device.tipo)
   )
   const alertDevices = devices.filter((device) => device.estado === 'falla' || device.estado === 'mantencion')
 
@@ -84,8 +180,8 @@ export default function DevicesPage() {
   })
 
   const getProjectName = (projectId: string) => {
-    const project = projects.find((p) => p.id === projectId)
-    return project?.clienteNombre || 'Sin proyecto'
+    const property = properties.find((entry) => entry.id === projectId)
+    return property?.name || 'Sin propiedad'
   }
 
   const stats = {
@@ -105,8 +201,8 @@ export default function DevicesPage() {
   const deviceTypeChartData = [
     { name: 'Camaras', value: cameraDevices.length },
     { name: 'Sensores', value: sensorDevices.length },
-    { name: 'Cuenta maestra', value: tuyaDevices.length },
-    { name: 'Local', value: homeAssistantDevices.length },
+    { name: 'Conectados', value: connectedDevices.length },
+    { name: 'Otros', value: Math.max(devices.length - connectedDevices.length, 0) },
   ]
 
   const recentDevices = [...devices]
@@ -276,8 +372,8 @@ export default function DevicesPage() {
                 <span className="text-white/80">{alertDevices.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-white/45">Integracion local</span>
-                <span className="text-white/80">{homeAssistantDevices.length}</span>
+                <span className="text-white/45">Equipos conectados</span>
+                <span className="text-white/80">{connectedDevices.length}</span>
               </div>
             </div>
           </div>
@@ -351,7 +447,7 @@ export default function DevicesPage() {
           <div className="grid grid-cols-2 gap-3 mt-5">
             <div className="rounded-[5px] bg-white/5 p-4">
               <p className="text-white/45 text-sm">Equipos</p>
-              <p className="text-white text-2xl font-light mt-1">{tuyaDevices.length}</p>
+              <p className="text-white text-2xl font-light mt-1">{connectedDevices.length}</p>
             </div>
             <div className="rounded-[5px] bg-white/5 p-4">
               <p className="text-white/45 text-sm">Foco Pro</p>
@@ -408,7 +504,18 @@ export default function DevicesPage() {
         </select>
       </div>
 
-      {devices.length === 0 ? (
+      {isLoading ? (
+        <div className="glass-card p-12 text-center">
+          <Activity className="w-12 h-12 text-[#4DA3D9] mx-auto mb-4 animate-pulse" strokeWidth={1} />
+          <p className="text-white/60">Cargando inventario seguro...</p>
+        </div>
+      ) : loadError ? (
+        <div className="glass-card p-12 text-center border border-red-500/30">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" strokeWidth={1} />
+          <h3 className="text-xl font-light text-white mb-2">Inventario no disponible</h3>
+          <p className="text-white/50">{loadError}</p>
+        </div>
+      ) : devices.length === 0 ? (
         <div className="glass-card p-12 text-center">
           <Cpu className="w-16 h-16 text-white/20 mx-auto mb-6" strokeWidth={1} />
           <h3 className="text-xl font-light text-white mb-2">Sin dispositivos registrados</h3>
@@ -463,6 +570,22 @@ export default function DevicesPage() {
                     <span className="text-white/40">Ubicacion</span>
                     <span className="text-white/70">{device.ubicacionDescripcion || '-'}</span>
                   </div>
+                  <label className="grid gap-1 pt-2 text-white/40">
+                    Espacio asignado
+                    <select
+                      value={String(device.metadata?.spaceId || '')}
+                      disabled={assigningDeviceId === device.id}
+                      onChange={(event) => assignSpace(device.id, event.target.value)}
+                      className="rounded-[5px] bg-white/10 px-3 py-2 text-white outline-none ring-[#4DA3D9] focus:ring-1 disabled:opacity-50"
+                    >
+                      <option value="" className="bg-[#123A5A]">Por asignar</option>
+                      {spaces
+                        .filter((space) => space.propertyId === device.proyectoId)
+                        .map((space) => (
+                          <option key={space.id} value={space.id} className="bg-[#123A5A]">{space.name}</option>
+                        ))}
+                    </select>
+                  </label>
                   {device.ipUrl && (
                     <div className="flex justify-between">
                       <span className="text-white/40">IP/URL</span>

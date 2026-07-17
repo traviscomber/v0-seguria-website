@@ -1,184 +1,629 @@
-# SegurIA Roadmap
+# SegurIA: roadmap de seguridad integral
 
-Objetivo: dejar lista una plataforma interna simple para que nuestro equipo configure la cuenta del cliente, traiga sus dispositivos y muestre sus datos en un portal claro.
+## Vision
 
-## Ruta recomendada para la conexion real
+SegurIA sera un centro de seguridad simple para clientes y potente para operadores. Unira camaras, sensores, alarmas, accesos y automatizaciones en una sola experiencia, sin exponer al cliente las marcas, cuentas o herramientas tecnicas que operan por debajo.
 
-Para simplificar la operacion, la conexion real de la marca debe pasar primero por Home Assistant y no directo a SegurIA.
+La propuesta no es construir otro dashboard domotico. Es convertir senales dispersas en decisiones claras:
 
-Flujo recomendado:
+- que esta ocurriendo,
+- donde esta ocurriendo,
+- que nivel de riesgo tiene,
+- que respuesta fue ejecutada,
+- y quien debe actuar ahora.
 
-- El cliente conecta sus equipos en Home Assistant usando la integracion oficial de Tuya.
-- Home Assistant expone camaras, sensores, escenas y estados como entidades normalizadas.
-- SegurIA consume esas entidades desde Home Assistant y las presenta en el portal.
-- Si una funcion no queda expuesta por Home Assistant, se evalua como excepcion y no como camino principal.
+## Objetivo principal
 
-Resultado:
+En 90 dias, dejar una version Pro lista para operar el primer grupo de clientes reales con:
 
-- una sola capa tecnica para operar,
-- menos dependencia directa de la marca,
-- mejor control de estados, alertas y soporte,
-- una base mas simple para escalar a version pro.
+- acceso seguro por cliente,
+- separacion estricta entre empresas y propiedades,
+- alta guiada de cuentas y sitios,
+- inventario sincronizado de camaras y sensores,
+- eventos en tiempo real,
+- video en vivo y capturas protegidas,
+- alertas accionables,
+- automatizaciones de seguridad,
+- trazabilidad completa de acciones,
+- y operacion degradada cuando internet o un proveedor externo falla.
 
-## Objetivo autonomo de 8 horas
+## Estado de ejecucion
 
-Construir el portal operativo base en una sola jornada de trabajo enfocada:
+Objetivo autonomo activo desde el 17 de julio de 2026.
 
-- Hora 1: revisar estado actual y cerrar el modelo de cuenta del cliente.
-- Hora 2: terminar el alta persistente y la confirmacion visual.
-- Hora 3: importar dispositivos y normalizar tipos.
-- Hora 4: mostrar eventos recientes y estados.
-- Hora 5: afinar el dashboard para lectura rapida.
-- Hora 6: limpiar textos, flujos y estados vacios.
-- Hora 7: validar que recarga y persistencia funcionen.
-- Hora 8: revisar, corregir detalles y dejar listo para siguiente fase.
+Completado en la base P0:
 
-Resultado esperado al cierre de las 8 horas:
+- arquitectura y roadmap de 90 dias,
+- migracion inicial multiempresa con organizaciones, propiedades, gateways, dispositivos, eventos e incidentes,
+- politicas RLS basadas en membresias,
+- relaciones de base de datos que impiden asociaciones cruzadas entre empresas,
+- autenticacion SSR de Supabase con renovacion de sesion,
+- eliminacion de usuarios y contrasenas demo del codigo,
+- rutas administrativas protegidas por rol,
+- webhooks cerrados cuando falta configuracion,
+- secretos maquina-a-maquina movidos a encabezados,
+- alta transaccional de usuario, empresa y propiedad,
+- referencias tecnicas retiradas del portal del cliente.
 
-- cuenta del cliente lista y persistente,
-- dispositivos visibles,
-- alertas comprensibles,
-- portal simple y util para operacion interna.
+Pendiente para cerrar P0:
 
-## Modo de trabajo autonomo
+- vincular un proyecto Supabase dedicado a SegurIA,
+- aplicar y validar la migracion,
+- ejecutar pruebas RLS con dos organizaciones,
+- reemplazar el almacenamiento JSON y en memoria de dispositivos y eventos,
+- reemplazar el secreto global por una identidad rotatoria para cada Gateway,
+- validar login y aislamiento de extremo a extremo en staging.
 
-- Avanzar por etapas, en orden.
-- Si una etapa no bloquea, seguir sin detenerse.
-- Si una dependencia externa falta, dejarla documentada y continuar con la siguiente parte util.
-- Mantener la interfaz simple para operacion interna.
-- Priorizar el cierre del portal antes de agregar mas complejidad.
-- Validar cada cambio contra el agente de compliance de marca en [`.agents/brandbook-compliance.md`](.agents/brandbook-compliance.md).
+## Principio de producto
 
-## Regla de prioridad
+El cliente solo ve SegurIA. Los nombres Home Assistant y Tuya son internos y no deben aparecer en el sitio comercial, portal del cliente, correos, alertas ni documentos comerciales.
 
-1. Configurar la cuenta del cliente.
-2. Traer dispositivos y eventos.
-3. Mostrar dashboard claro.
-4. Preparar la capa pro.
+Home Assistant sera la capa de compatibilidad y operacion. La integracion oficial de Tuya sera uno de sus conectores de dispositivos. El acceso directo a la nube del fabricante quedara reservado para funciones que no esten disponibles a traves del puente.
 
-## Fase 1. Seteo de cuenta
+## Lo que ya permiten los proyectos oficiales
 
-Meta:
+La integracion oficial disponible en Home Assistant usa autorizacion por QR, actualizacion cloud push y expone entidades normalizadas. Actualmente contempla, entre otras, estas plataformas:
 
-- Registrar la cuenta del cliente.
-- Guardar el estado del vinculo.
-- Confirmar que la cuenta quedo lista para operar.
+- paneles de alarma,
+- sensores binarios y sensores numericos,
+- camaras,
+- sirenas,
+- cerraduras y accesos representados por entidades compatibles,
+- interruptores, botones, escenas y selectores,
+- valvulas, climatizacion y otros equipos auxiliares.
 
-Tareas:
+Para seguridad, las capacidades mas valiosas son:
 
-- Crear formulario interno de alta.
-- Guardar nombre de cuenta, sitio y alcance.
-- Persistir el estado entre recargas.
-- Mostrar un resumen visible en el panel.
-- Dejar un mensaje claro de cuenta lista.
+- camaras con fuente de stream y captura de imagen,
+- deteccion de movimiento y estado de grabacion,
+- sensores de movimiento, apertura, humo, gas, agua, vibracion y sabotaje,
+- paneles con armado, desarmado, modos y disparo,
+- sirenas y actuadores para respuestas automaticas,
+- estados push que evitan depender solo de consultas periodicas.
+
+Home Assistant aporta las APIs REST y WebSocket, el registro de dispositivos, entidades, areas, servicios, automatizaciones, historial y una capa local que puede seguir operando aunque SegurIA o internet no esten disponibles temporalmente.
+
+## Arquitectura objetivo
+
+```text
+Dispositivos del sitio
+        |
+        v
+Home Assistant por cliente o propiedad
+  - integraciones oficiales
+  - automatizaciones locales
+  - buffer de eventos
+  - acceso a video
+        |
+        | REST inicial + WebSocket + webhooks firmados
+        v
+SegurIA Gateway
+  - identidad unica por instalacion
+  - normalizacion
+  - reintentos y cola offline
+  - proxy de imagen/video
+        |
+        v
+SegurIA Cloud
+  - API de ingestion
+  - motor de eventos y reglas
+  - Supabase/Postgres con RLS
+  - almacenamiento protegido
+  - notificaciones
+        |
+        +-------------------+
+        |                   |
+        v                   v
+Portal cliente         Centro de operaciones
+```
+
+### Por que esta arquitectura
+
+- Home Assistant resuelve la diversidad de equipos y mantiene control local.
+- El Gateway evita exponer una instalacion domestica directamente a internet.
+- SegurIA Cloud concentra identidad, clientes, reglas, incidentes y auditoria.
+- El portal muestra una experiencia uniforme aunque cambie el fabricante.
+- La separacion por cliente reduce el riesgo de mezclar propiedades de una cuenta maestra.
+
+## Regla de aislamiento
+
+La cuenta maestra actual puede utilizarse para un piloto controlado, pero no debe convertirse en el limite de seguridad entre clientes.
+
+Modelo recomendado:
+
+- una organizacion de SegurIA por empresa,
+- una o mas propiedades por organizacion,
+- un Gateway con credenciales unicas por instalacion,
+- un puente Home Assistant por cliente o por propiedad,
+- un mapeo explicito de cada dispositivo a una propiedad,
+- y politicas RLS que impidan cualquier lectura cruzada.
+
+Si durante el piloto varios clientes comparten una cuenta externa, ningun dispositivo se publica automaticamente. Un operador debe asignarlo a una propiedad y una segunda validacion debe confirmar el alcance antes de hacerlo visible.
+
+## Dominios funcionales
+
+### 1. Estado de seguridad
+
+La portada del portal responde en menos de cinco segundos:
+
+- estado general: protegido, atencion o incidente,
+- propiedades vigiladas,
+- equipos conectados y desconectados,
+- ultima actividad relevante,
+- incidentes abiertos,
+- y acciones recomendadas.
+
+### 2. Camaras
+
+- mosaico por propiedad y espacio,
+- imagen reciente con hora de captura,
+- transmision en vivo bajo demanda,
+- indicador de conexion, grabacion y movimiento,
+- captura asociada a una alerta,
+- vista de pantalla completa,
+- permisos por usuario,
+- y registro de quien abrio una transmision.
+
+El stream entregado por el conector es una fuente temporal. SegurIA debe consumirlo mediante un proxy de medios; nunca debe enviar credenciales, tokens o URL privadas al navegador. La grabacion continua y retencion de clips requieren un NVR o servicio de almacenamiento separado.
+
+### 3. Sensores
+
+- apertura de puertas y ventanas,
+- movimiento y presencia,
+- humo, monoxido, gas y calidad de aire,
+- fuga de agua,
+- vibracion, golpe y sabotaje,
+- bateria baja,
+- perdida de comunicacion,
+- temperatura y humedad cuando afecten el riesgo.
+
+Cada sensor se normaliza en un modelo comun con estado, severidad, propiedad, espacio, ultima lectura, ultima comunicacion y calidad de senal cuando exista.
+
+### 4. Alarmas y accesos
+
+- armado total, perimetral y nocturno,
+- desarmado con confirmacion reforzada,
+- disparo de sirena,
+- estado de puertas y cerraduras,
+- bitacora de cambios,
+- responsable de cada accion,
+- y reglas que eviten comandos peligrosos por error.
+
+Las acciones sensibles requieren permisos especificos, reautenticacion y registro de auditoria. Un cliente no debe ejecutar comandos sobre otra propiedad aunque conozca un identificador interno.
+
+### 5. Incidentes
+
+Una alerta aislada se convierte en un incidente cuando cumple una regla. El incidente agrupa:
+
+- senal inicial,
+- eventos correlacionados,
+- imagen o clip disponible,
+- propiedad y espacio,
+- nivel de riesgo,
+- estado de atencion,
+- responsable,
+- acciones ejecutadas,
+- comentarios y cierre.
+
+Estados: `nuevo`, `validando`, `confirmado`, `en_respuesta`, `resuelto`, `falsa_alarma`.
+
+### 6. Automatizaciones de seguridad
+
+Las respuestas que deben sobrevivir una caida de internet se ejecutan localmente en Home Assistant. SegurIA administra plantillas, parametros y auditoria.
+
+Primeras automatizaciones:
+
+- movimiento fuera de horario + propiedad armada -> alerta prioritaria y captura,
+- puerta abierta por tiempo excesivo -> aviso escalonado,
+- humo o gas -> sirena local y alerta critica inmediata,
+- sensor de agua -> alerta y cierre de valvula si existe,
+- camara o gateway offline -> incidente tecnico,
+- bateria baja -> tarea preventiva,
+- desarme fuera de horario -> validacion de responsable,
+- multiples senales en una zona -> elevar severidad.
+
+## Modelo de datos minimo
+
+- `organizations`: cliente o empresa.
+- `memberships`: usuario, organizacion y rol.
+- `properties`: propiedad, instalacion o faena.
+- `spaces`: accesos, bodegas, patios, oficinas y zonas.
+- `gateways`: identidad, version, salud y ultima conexion.
+- `integrations`: puente, estado y referencia cifrada a secretos.
+- `devices`: equipo fisico y procedencia tecnica.
+- `entities`: capacidad normalizada expuesta por el puente.
+- `entity_states`: estado actual y ultima comunicacion.
+- `events`: registro inmutable de senales recibidas.
+- `incidents`: correlacion, severidad y flujo de respuesta.
+- `incident_evidence`: capturas, clips y documentos.
+- `automation_templates`: reglas versionadas.
+- `notifications`: canal, entrega, lectura y escalamiento.
+- `audit_log`: accesos, cambios y comandos sensibles.
+
+Toda tabla operativa debe incluir `organization_id`. Las politicas RLS se prueban con usuarios de dos organizaciones antes de habilitar produccion.
+
+## Contrato normalizado de eventos
+
+```json
+{
+  "eventId": "evt_...",
+  "occurredAt": "2026-07-16T20:15:00Z",
+  "organizationId": "org_...",
+  "propertyId": "prop_...",
+  "gatewayId": "gw_...",
+  "deviceId": "dev_...",
+  "entityId": "binary_sensor.puerta_bodega",
+  "type": "security.entry.opened",
+  "severity": "warning",
+  "state": "open",
+  "source": "home_assistant",
+  "evidence": [],
+  "deduplicationKey": "...",
+  "payloadVersion": 1
+}
+```
+
+Requisitos del contrato:
+
+- identificadores estables y no reutilizables,
+- version de payload,
+- fecha del origen y fecha de recepcion,
+- idempotencia para evitar eventos duplicados,
+- severidad calculada por reglas de SegurIA,
+- payload original conservado para diagnostico,
+- y rechazo de eventos sin una relacion valida gateway-propiedad.
+
+## Seguridad obligatoria
+
+- Ninguna ruta de ingestion puede quedar abierta cuando falta una variable de entorno.
+- Cada Gateway usa una identidad propia, firma HMAC o certificado, timestamp y nonce.
+- Los secretos se guardan cifrados y nunca en JSON local, logs o respuestas del portal.
+- Supabase Auth administra sesiones; Postgres y RLS administran autorizacion multiempresa.
+- El backend valida organizacion y propiedad en cada consulta y comando.
+- Video, imagenes y clips usan URL firmadas de corta duracion.
+- Los comandos de alarma, cerradura y sirena son deny-by-default.
+- Toda accion sensible queda en `audit_log`.
+- Se definen retencion, exportacion y eliminacion de datos conforme a la operacion en Chile.
+- Se monitorean intentos fallidos, gateways silenciosos y cambios de credenciales.
+- Backups y restauracion se prueban, no solo se configuran.
+
+## Fases de ejecucion
+
+### Fase 0: cerrar riesgos del prototipo - Semana 1
+
+Objetivo: transformar el esqueleto actual en una base segura.
+
+Entregables:
+
+- eliminar persistencia operativa en archivos locales,
+- crear esquema Supabase multiempresa,
+- activar RLS y pruebas de aislamiento,
+- hacer fail-closed todos los secretos de ingestion,
+- separar datos demo de datos reales,
+- crear ambientes desarrollo, staging y produccion,
+- documentar gestion y rotacion de secretos.
 
 Hecho cuando:
 
-- La cuenta queda guardada.
-- El panel la muestra despues de recargar.
-- El equipo puede verla sin repetir el alta.
+- reiniciar o redeployar no elimina datos,
+- una peticion sin credenciales siempre falla,
+- un usuario de Cliente A no puede leer ningun dato de Cliente B,
+- y el portal funciona solo con datos persistidos.
 
-## Fase 2. Traer dispositivos
+### Fase 1: onboarding real - Semanas 2 y 3
 
-Meta:
+Objetivo: conectar un cliente sin editar codigo.
 
-- Importar equipos del cliente desde Home Assistant.
-- Normalizar camaras, sensores, cerraduras, switches y alertas.
-- Guardar el estado de cada dispositivo.
+Entregables:
 
-Tareas:
-
-- Leer dispositivos desde la fuente conectada en Home Assistant.
-- Mapear cada equipo a un tipo interno.
-- Guardar estado, ubicacion y ultimo evento.
-- Registrar eventos de sincronizacion.
-- Preparar soporte para lectura inicial y actualizaciones.
-
-Hecho cuando:
-
-- Los dispositivos aparecen en el panel.
-- Los estados quedan clasificados.
-- Los eventos recientes se ven en la linea de tiempo.
-
-## Fase 3. Dashboard operativo
-
-Meta:
-
-- Mostrar lo importante sin ruido.
-- Hacer visible lo que esta activo, lo que requiere revision y lo que esta fallando.
-- Separar bien camaras, sensores y alertas.
-
-Tareas:
-
-- Vista de estado general.
-- Vista de dispositivos por tipo.
-- Vista de alertas recientes.
-- Tarjetas claras para operacion interna.
-- Busqueda y filtros simples.
+- asistente interno para crear organizacion, propiedad y espacios,
+- registro de Gateway con codigo de activacion de un solo uso,
+- vinculacion por QR en el puente Home Assistant,
+- importacion de registro de dispositivos, entidades y areas,
+- pantalla de asignacion dispositivo -> propiedad -> espacio,
+- lista de compatibilidad y excepciones,
+- prueba de conexion y checklist de puesta en marcha.
 
 Hecho cuando:
 
-- Se entiende el estado general en pocos segundos.
-- Las camaras y sensores se distinguen rapido.
-- Las alertas criticas quedan visibles.
+- un tecnico puede activar una instalacion en menos de 30 minutos,
+- ningun dato externo aparece al cliente sin asignacion,
+- y reconectar credenciales no requiere soporte de desarrollo.
 
-## Fase 4. Capa pro
+### Fase 2: sincronizacion confiable - Semanas 3 y 4
 
-Meta:
+Objetivo: mantener estado e historial casi en tiempo real.
 
-- Escalar a varios clientes y propiedades.
-- Sumar roles.
-- Mejorar reportes y alertas.
-- Dejar lista una base para puente local y automatizacion.
+Entregables:
 
-Tareas:
-
-- Soporte multi-cliente.
-- Soporte multi-propiedad.
-- Roles internos y externos.
-- Reportes basicos.
-- Integracion local opcional.
+- sincronizacion inicial por REST,
+- consumidor persistente de WebSocket para cambios de estado,
+- webhook firmado para eventos priorizados,
+- heartbeat, health score y version del Gateway,
+- cola offline con reintentos exponenciales,
+- deduplicacion e idempotencia,
+- reconciliacion periodica del inventario,
+- metricas de retraso y perdida de eventos.
 
 Hecho cuando:
 
-- El sistema soporta mas de una cuenta.
-- Se entiende quien ve que.
-- La base queda lista para vender una version pro.
+- 95% de eventos llega al portal en menos de 3 segundos,
+- duplicados visibles son cero,
+- una desconexion temporal se recupera sin perder eventos criticos,
+- y un gateway offline genera una alerta tecnica.
 
-## Entregables por etapa
+### Fase 3: portal de seguridad - Semanas 5 y 6
 
-### Entregable 1
+Objetivo: entregar una experiencia que cualquier cliente entienda.
 
-- Cuenta guardada y visible.
-- Estado persistente.
-- Mensaje claro de alta exitosa.
+Entregables:
 
-### Entregable 2
+- inicio con estado general y proxima accion,
+- navegacion por propiedad y espacio,
+- mosaico de camaras con imagen reciente,
+- sensores agrupados por riesgo, no por tecnologia,
+- timeline de actividad,
+- centro de incidentes,
+- filtros por propiedad, severidad y estado,
+- vista movil completa,
+- estados vacios, degradados y sin conexion.
 
-- Dispositivos importados.
-- Tipos internos definidos.
-- Eventos registrados.
+Hecho cuando:
 
-### Entregable 3
+- un usuario entiende el estado de su propiedad en menos de 10 segundos,
+- una alerta critica se encuentra en dos interacciones o menos,
+- y no aparece ningun nombre de proveedor tecnico.
 
-- Dashboard simple.
-- Estado general.
-- Alertas y detalles utiles.
+### Fase 4: video seguro - Semanas 6 y 7
 
-### Entregable 4
+Objetivo: incorporar video sin filtrar secretos ni saturar la plataforma.
 
-- Base preparada para clientes multiples.
-- Base preparada para soporte avanzado.
+Entregables:
 
-## Criterio de exito
+- servicio proxy para streams temporales,
+- generacion de snapshots con cache corto,
+- renovacion controlada de fuentes,
+- limites de concurrencia y ancho de banda,
+- capturas asociadas a incidentes,
+- integracion opcional con NVR para clips y retencion,
+- auditoria de visualizacion y exportacion.
 
-El sistema esta bien resuelto cuando nuestro equipo puede:
+Hecho cuando:
 
-- dejar una cuenta operativa rapido,
-- ver sus dispositivos sin friccion,
-- entender que esta bien y que esta mal,
-- y saber que hacer despues.
+- ninguna URL de origen llega al navegador,
+- una camara compatible abre en tiempos definidos,
+- los fallos muestran estado util y no una pantalla rota,
+- y la evidencia respeta permisos y retencion.
 
-## Regla de producto
+### Fase 5: motor de incidentes - Semanas 8 y 9
 
-La marca no debe depender del camino directo a la nube del fabricante para el MVP. Home Assistant es el puente operativo recomendado.
+Objetivo: pasar de mostrar eventos a gestionar seguridad.
+
+Entregables:
+
+- reglas por horario, modo y propiedad,
+- correlacion de multiples senales,
+- severidad dinamica,
+- flujo de asignacion y cierre,
+- evidencia adjunta,
+- alertas por canales configurables,
+- escalamiento si nadie confirma,
+- resumen diario y reporte mensual.
+
+Hecho cuando:
+
+- cada alerta critica tiene responsable y trazabilidad,
+- falsas alarmas pueden clasificarse y aprenderse,
+- y el operador distingue incidentes reales de ruido tecnico.
+
+### Fase 6: automatizacion y operacion local - Semanas 10 y 11
+
+Objetivo: responder incluso con conectividad degradada.
+
+Entregables:
+
+- paquete versionado de automatizaciones para Home Assistant,
+- plantillas parametrizables por propiedad,
+- despliegue seguro y rollback,
+- estado de regla visible desde SegurIA,
+- simulacion antes de activar,
+- bloqueo de comandos inseguros,
+- registro completo de ejecucion.
+
+Hecho cuando:
+
+- una regla critica funciona sin internet,
+- cada cambio puede rastrearse y revertirse,
+- y el portal refleja la respuesta local al recuperar conexion.
+
+### Fase 7: SegurIA Pro - Semana 12
+
+Objetivo: preparar venta, soporte y crecimiento.
+
+Entregables:
+
+- planes por numero de propiedades, camaras y retencion,
+- roles `owner`, `operator`, `viewer` y `technician`,
+- panel interno de salud de clientes,
+- SLA y runbooks de incidentes,
+- exportacion de informes,
+- onboarding repetible,
+- telemetria de uso y costos,
+- piloto formal con tres clientes.
+
+Hecho cuando:
+
+- tres organizaciones operan sin mezclar datos,
+- soporte puede diagnosticar sin acceder a secretos,
+- el costo por instalacion es medible,
+- y existe un procedimiento probado para alta, falla y baja.
+
+## Backlog priorizado
+
+### P0: antes de conectar cuentas reales
+
+- esquema Supabase y RLS,
+- autenticacion real y membresias,
+- secretos fail-closed,
+- identidad de Gateway,
+- aislamiento por organizacion y propiedad,
+- inventario persistente,
+- auditoria de comandos,
+- eliminacion de datos demo en produccion.
+
+### P1: primer piloto util
+
+- importacion desde Home Assistant,
+- WebSocket de estados,
+- dashboard por propiedad,
+- sensores y alertas normalizados,
+- snapshots de camaras,
+- incidentes basicos,
+- salud del Gateway,
+- notificaciones operativas.
+
+### P2: experiencia Pro
+
+- stream en vivo protegido,
+- correlacion de eventos,
+- automatizaciones versionadas,
+- clips y NVR,
+- reportes,
+- escalamiento multicanal,
+- app movil o PWA,
+- analitica de falsas alarmas.
+
+### P3: diferenciacion futura
+
+- deteccion inteligente en video ejecutada localmente,
+- mapas y planos interactivos,
+- rondas virtuales,
+- prediccion de fallas,
+- puntuacion de riesgo por propiedad,
+- despacho coordinado de respuesta,
+- integraciones con centrales de monitoreo,
+- API para partners e instaladores.
+
+## Indicadores de exito
+
+Producto:
+
+- tiempo para entender el estado general: menos de 10 segundos,
+- tiempo de activacion de cliente: menos de 30 minutos,
+- disponibilidad mensual del portal: 99.9%,
+- eventos visibles en menos de 3 segundos: al menos 95%,
+- alertas criticas confirmadas dentro del SLA: al menos 95%.
+
+Tecnicos:
+
+- cero lecturas cruzadas entre organizaciones,
+- cero secretos de origen expuestos al navegador,
+- cero rutas de ingestion abiertas por configuracion incompleta,
+- recuperacion automatica despues de una desconexion,
+- trazabilidad del 100% de comandos sensibles.
+
+Negocio:
+
+- costo mensual medible por propiedad,
+- tasa de activacion exitosa sin desarrollo,
+- reduccion de falsas alarmas por cliente,
+- retencion y uso semanal del portal,
+- tiempo medio de resolucion de incidentes.
+
+## Decisiones que no deben postergarse
+
+1. Definir si el despliegue estandar sera un Home Assistant por cliente o por propiedad.
+2. Elegir el Gateway administrado y su mecanismo de actualizacion remota.
+3. Definir politica de video: solo vivo y capturas, o tambien clips y grabacion continua.
+4. Definir canales de alerta iniciales y SLA humano.
+5. Definir retencion de eventos, imagenes, clips y auditoria.
+6. Separar formalmente datos piloto, staging y produccion.
+
+## Primer sprint recomendado
+
+Duracion: 10 dias habiles.
+
+Objetivo: conectar una propiedad real de N3uralia de forma segura y mostrar estados reales sin exponer tecnologia subyacente.
+
+Entregables:
+
+- migraciones Supabase para organizaciones, propiedades, gateways, dispositivos, entidades y eventos,
+- RLS y pruebas con dos organizaciones ficticias,
+- provisionamiento de un Gateway,
+- importacion inicial de entidades desde Home Assistant,
+- consumidor de eventos con idempotencia,
+- mapeo manual a espacios,
+- dashboard real de una propiedad,
+- snapshots de una camara compatible,
+- timeline de sensores,
+- una alerta critica y una alerta tecnica,
+- checklist de seguridad y evidencia de pruebas.
+
+Fuera de alcance del primer sprint:
+
+- grabacion continua,
+- analisis avanzado de video,
+- facturacion,
+- aplicacion movil nativa,
+- acceso directo del cliente a configuraciones tecnicas,
+- soporte automatico para dispositivos no expuestos por el puente.
+
+## Criterio final
+
+SegurIA estara lista para venderse como solucion Pro cuando nuestro equipo pueda activar un cliente, asignar sus equipos, detectar un incidente, mostrar evidencia, ejecutar una respuesta y demostrar quien hizo cada accion, sin revelar proveedores, sin mezclar datos y sin depender de una conexion permanente a la nube para las reglas criticas.
+
+## Estado de ejecucion
+
+Actualizado: 17 de julio de 2026.
+
+Completado en codigo:
+
+- autenticacion SSR con Supabase Auth y sesiones seguras,
+- esquema multiempresa para organizaciones, membresias, propiedades, espacios, gateways, integraciones, equipos, entidades, estados, eventos, incidentes y auditoria,
+- politicas RLS y permisos deny-by-default para tablas operativas,
+- provision de clientes mediante RPC transaccional,
+- identidad y secreto independiente por gateway, almacenado unicamente como hash,
+- provision de conectores desde el panel interno y entrega del secreto una sola vez,
+- ingestion atomica e idempotente de eventos, estados y heartbeat,
+- importacion inicial de hasta 500 dispositivos y 1000 entidades por solicitud,
+- inventario y KPI administrativos alimentados por datos persistidos,
+- portal cliente alimentado por propiedades y equipos autorizados,
+- eliminacion del login demo y de la persistencia de integraciones en memoria,
+- contrato tecnico del gateway y baseline de seguridad documentados.
+- snapshots privados de camaras con carga autenticada y URL firmada de corta duracion,
+- timeline de eventos reales y refresco Realtime bajo RLS,
+- asignacion administrativa de equipos a espacios,
+- creacion idempotente de incidentes criticos y deteccion de gateways silenciosos.
+
+Validado localmente:
+
+- TypeScript sin errores,
+- higiene de diff sin errores,
+- build de produccion como puerta de salida de cada bloque,
+- rutas de maquina sin credenciales globales compartidas.
+
+Pendiente de infraestructura:
+
+- vincular el repositorio al proyecto Supabase definitivo de SegurIA,
+- aplicar y verificar la migracion en staging antes de produccion,
+- configurar URL y publishable/secret keys en Vercel,
+- ejecutar pruebas RLS con usuarios de dos organizaciones,
+- provisionar la primera propiedad real y confirmar el primer heartbeat.
+
+Siguiente bloque autonomo:
+
+1. Crear asignacion de equipos a espacios desde el panel interno.
+2. Implementar timeline de eventos y actualizacion Realtime por propiedad.
+3. Marcar gateways degradados por heartbeat vencido.
+4. Crear incidentes basicos desde eventos criticos.
+5. Incorporar snapshots mediante proxy sin exponer URL ni credenciales de origen.
+
+## Fuentes tecnicas oficiales
+
+- [Home Assistant Core](https://github.com/home-assistant/core)
+- [Integracion oficial en Home Assistant](https://github.com/home-assistant/core/tree/dev/homeassistant/components/tuya)
+- [Implementacion oficial de camaras](https://github.com/home-assistant/core/blob/dev/homeassistant/components/tuya/camera.py)
+- [API REST de Home Assistant](https://developers.home-assistant.io/docs/api/rest/)
+- [API WebSocket de Home Assistant](https://developers.home-assistant.io/docs/api/websocket/)
+- [Repositorio oficial Smart Life](https://github.com/tuya/tuya-smart-life)
+- [Conector oficial Node.js](https://github.com/tuya/tuya-connector-nodejs)

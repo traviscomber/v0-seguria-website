@@ -86,7 +86,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </form>
 
         <div className="mt-6 rounded-[5px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
-          Usa una cuenta autorizada por el equipo interno. La validacion de acceso se resuelve en Supabase.
+          Usa una cuenta autorizada por el equipo interno. El acceso se valida de forma segura.
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-4">

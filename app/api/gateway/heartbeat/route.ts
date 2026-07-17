@@ -1,55 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { recordIntegrationConnectionEvent } from '@/lib/integration-state'
+import { ingestSecurityEvent } from '@/lib/security-repository'
+import { verifyGatewayCredential } from '@/lib/secret-auth'
 
 const heartbeatSchema = z.object({
   gatewayId: z.string().trim().min(1).max(120),
-  propertyId: z.string().trim().min(1).max(120),
   status: z.enum(['online', 'offline', 'warning']),
-  localTime: z.string().trim().min(1).max(64),
+  localTime: z.string().datetime(),
   version: z.string().trim().min(1).max(64),
 })
 
-function isAuthorized(request: NextRequest) {
-  const expected = process.env.SEGURIA_GATEWAY_SECRET
-  if (!expected) return true
-  return request.headers.get('x-seguria-gateway-secret') === expected
-}
-
 export async function POST(request: NextRequest) {
   try {
-    if (!isAuthorized(request)) {
+    const parsed = heartbeatSchema.safeParse(await request.json())
+    if (!parsed.success) return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
+
+    if (!(await verifyGatewayCredential(parsed.data.gatewayId, request.headers.get('x-seguria-gateway-secret')))) {
       return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
     }
 
-    const payload = await request.json()
-    const parsed = heartbeatSchema.safeParse(payload)
-
-    if (!parsed.success) {
-      return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
-    }
-
-    const event = recordIntegrationConnectionEvent({
+    const result = await ingestSecurityEvent({
+      gatewayPublicId: parsed.data.gatewayId,
       provider: 'home_assistant',
+      externalEventId: `${parsed.data.gatewayId}:${parsed.data.localTime}:heartbeat`,
+      externalDeviceId: parsed.data.gatewayId,
+      externalEntityId: `binary_sensor.${parsed.data.gatewayId}_connectivity`,
+      deviceName: 'Gateway de seguridad',
+      deviceKind: 'gateway',
+      entityName: 'Conectividad del sitio',
+      entityDomain: 'binary_sensor',
+      entityDeviceClass: 'connectivity',
+      entityState: parsed.data.status,
       eventType: 'gateway.heartbeat',
-      title: `Heartbeat de gateway ${parsed.data.gatewayId}`,
-      status: parsed.data.status === 'offline' ? 'warning' : 'success',
-      projectId: parsed.data.propertyId,
-      externalId: parsed.data.gatewayId,
-      payload: {
-        localTime: parsed.data.localTime,
-        version: parsed.data.version,
-        status: parsed.data.status,
-      },
+      severity: parsed.data.status === 'online' ? 'info' : 'warning',
+      occurredAt: parsed.data.localTime,
+      payload: { version: parsed.data.version },
     })
 
-    return NextResponse.json({
-      success: true,
-      data: event,
-      message: 'Heartbeat recibido.',
-    })
+    return NextResponse.json({ success: true, data: result, message: 'Heartbeat recibido.' })
   } catch (error) {
-    console.error('Error receiving gateway heartbeat:', error)
-    return NextResponse.json({ success: false, error: 'Error interno del servidor.' }, { status: 500 })
+    console.error('Gateway heartbeat ingestion error:', error)
+    return NextResponse.json({ success: false, error: 'No fue posible registrar el heartbeat.' }, { status: 500 })
   }
 }

@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import {
   ArrowLeft,
@@ -16,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { getAuthSessionFromToken } from '@/lib/auth-store'
+import { getCurrentAuthSession } from '@/lib/auth-store'
 import { getPortalActivityFeed, getPortalDeviceBuckets, getPortalSiteForUser } from '@/lib/client-portal'
 
 function formatDate(value?: Date) {
@@ -59,19 +58,12 @@ export default async function PropertyPage({
   params: Promise<{ propertyId: string }>
 }) {
   const { propertyId } = await params
-  const cookieStore = await cookies()
-  const token = cookieStore.get('seguria_session')?.value || null
-
-  if (!token) {
-    redirect(`/login?next=/app/properties/${propertyId}`)
-  }
-
-  const session = await getAuthSessionFromToken(token)
+  const session = await getCurrentAuthSession()
   if (!session || session.user.role !== 'client') {
     redirect('/admin')
   }
 
-  const site = getPortalSiteForUser(session.user, propertyId)
+  const site = await getPortalSiteForUser(session.user, propertyId)
   if (!site) {
     notFound()
   }
@@ -262,7 +254,9 @@ export default async function PropertyPage({
               activity.map((item) => (
                 <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                    {item.kind === 'device' ? (
+                    {item.kind === 'event' ? (
+                      <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
+                    ) : item.kind === 'device' ? (
                       item.status === 'falla' ? (
                         <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
                       ) : (
@@ -276,7 +270,7 @@ export default async function PropertyPage({
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-white">{item.title}</p>
                       <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                        {item.kind === 'device' ? 'Equipo' : 'Documento'}
+                        {item.kind === 'event' ? 'Evento' : item.kind === 'device' ? 'Equipo' : 'Documento'}
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-white/55">{item.detail}</p>

@@ -23,7 +23,9 @@ import {
 } from '@/lib/integration-state'
 import { cameraCatalog, cameraCommonCapabilities } from '@/lib/camera-catalog'
 import { deviceCatalogGroups, deviceCatalogHighlights } from '@/lib/device-catalog'
-import { TuyaConnectForm } from '@/components/tuya-connect-form'
+import { GatewayProvisionForm } from '@/components/gateway-provision-form'
+import { getCurrentAuthSession } from '@/lib/auth-store'
+import { getAccessiblePortalSites } from '@/lib/client-portal'
 
 export const dynamic = 'force-dynamic'
 
@@ -133,12 +135,15 @@ const onboardingSteps = [
   },
 ]
 
-export default function IntegrationsAdminPage() {
-  const summary = getIntegrationSummary()
-  const activity = getIntegrationActivitySummary(12)
-  const connections = getIntegrationConnections()
-  const recentEvents = getIntegrationEvents(12)
-  const tuyaConnection = connections.find((connection) => connection.provider === 'tuya')
+export default async function IntegrationsAdminPage() {
+  const auth = await getCurrentAuthSession()
+  const [summary, activity, connections, recentEvents, sites] = await Promise.all([
+    getIntegrationSummary(),
+    getIntegrationActivitySummary(12),
+    getIntegrationConnections(),
+    getIntegrationEvents(12),
+    auth ? getAccessiblePortalSites(auth.user) : Promise.resolve([]),
+  ])
 
   return (
     <div className="space-y-8">
@@ -184,23 +189,23 @@ export default function IntegrationsAdminPage() {
       <div className="glass-card border border-[#4DA3D9]/20 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-[#4DA3D9] mb-2">Conexion activa</p>
-            <h2 className="text-2xl font-light text-white">
-              {tuyaConnection?.accountName || 'Aun no hay cuenta vinculada'}
-            </h2>
+            <p className="text-sm text-[#4DA3D9] mb-2">Conexiones verificadas</p>
+            <h2 className="text-2xl font-light text-white">Datos reales por propiedad</h2>
             <p className="mt-2 text-sm text-white/55">
-              {tuyaConnection?.accountEmail || 'Completa el formulario para guardar el correo y el alcance.'}
+              Las conexiones aparecen cuando una propiedad tiene un Gateway provisionado y recibe su primer evento valido.
             </p>
           </div>
           <div className="grid gap-2 text-sm text-white/65 sm:text-right">
-            <p>Alcance: {tuyaConnection?.accountScope || 'Sin definir'}</p>
-            <p>Estado: {tuyaConnection?.status || 'pending'}</p>
-            <p>Ultima sincronizacion: {tuyaConnection?.lastSyncAt ? tuyaConnection.lastSyncAt.toLocaleString('es-CL') : 'Sin datos'}</p>
+            <p>Activas: {summary.connectedConnections}</p>
+            <p>Pendientes: {summary.pendingConnections}</p>
+            <p>Equipos: {connections.reduce((total, connection) => total + connection.totalDevices, 0)}</p>
           </div>
         </div>
       </div>
 
-      <TuyaConnectForm />
+      <GatewayProvisionForm
+        properties={sites.map((site) => ({ id: site.propertyId, name: site.label, location: site.location }))}
+      />
 
       <div className="grid sm:grid-cols-3 gap-6">
         <div className="glass-card p-6">

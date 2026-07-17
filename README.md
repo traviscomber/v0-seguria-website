@@ -8,32 +8,26 @@ This repository is linked to a [v0](https://v0.app) project. You can continue de
 
 [Continue working on v0 ->](https://v0.app/chat/projects/prj_3kTNF2QMxVmGVRjdLzfBj9mGHkEn)
 
-## Integrations
+## Security platform
 
-The portal now includes a first integration layer for the security platform:
+The operational platform uses Supabase Auth and a multi-tenant Postgres schema with RLS. Each property receives an independent gateway identity and secret from the internal admin portal.
 
-- `GET /api/integrations/status`
-- `POST /api/integrations/home-assistant`
-- `POST /api/integrations/tuya`
+Core machine endpoints:
 
-Required environment variables:
+- `POST /api/gateway/inventory`
+- `POST /api/gateway/devices/state`
+- `POST /api/gateway/events`
+- `POST /api/gateway/heartbeat`
 
-- `HOME_ASSISTANT_WEBHOOK_SECRET`
-- `TUYA_SYNC_SECRET`
+See `docs/security/gateway-connector-contract.md` and `.env.example`.
 
 ## Auth
 
-The portal now includes a persistent local auth scaffold with roles and tenant scope:
+The portal uses Supabase Auth with roles and tenant scope:
 
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
-
-Demo accounts:
-
-- `admin@seguria.local` / `seguria-admin`
-- `tech@seguria.local` / `seguria-tech`
-- `client@seguria.local` / `seguria-client`
 
 ## Local Gateway
 

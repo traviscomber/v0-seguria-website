@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthTokenFromRequest, revokeAuthSession, clearSessionCookie } from '@/lib/auth-store'
+import { NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-export async function POST(request: NextRequest) {
-  const token = getAuthTokenFromRequest(request)
-  if (token) {
-    await revokeAuthSession(token)
-  }
+export async function POST() {
+  const supabase = await createSupabaseServerClient()
+  if (supabase) await supabase.auth.signOut()
 
-  const response = NextResponse.json({ success: true, message: 'Sesion cerrada.' })
-  response.headers.set('Set-Cookie', clearSessionCookie())
-  return response
+  return NextResponse.json({ success: true, message: 'Sesion cerrada.' })
 }

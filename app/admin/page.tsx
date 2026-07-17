@@ -10,9 +10,24 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { getDashboardStats, getLeads, getProjects, getProposals } from '@/lib/store'
+import { getCurrentAuthSession } from '@/lib/auth-store'
+import { getAccessiblePortalSites } from '@/lib/client-portal'
 
-export default function AdminDashboard() {
-  const stats = getDashboardStats()
+export const dynamic = 'force-dynamic'
+
+export default async function AdminDashboard() {
+  const auth = await getCurrentAuthSession()
+  const sites = auth ? await getAccessiblePortalSites(auth.user) : []
+  const operationalDevices = sites.flatMap((site) => site.devices)
+  const legacyStats = getDashboardStats()
+  const stats = {
+    ...legacyStats,
+    dispositivos: {
+      total: operationalDevices.length,
+      activos: operationalDevices.filter((device) => device.estado === 'activo').length,
+      enFalla: operationalDevices.filter((device) => device.estado === 'falla').length,
+    },
+  }
   const recentLeads = getLeads().slice(0, 5)
   const activeProjects = getProjects().filter(p => p.estado !== 'cerrado').slice(0, 3)
   const pendingProposals = getProposals().filter(p => p.estado === 'enviada').slice(0, 3)

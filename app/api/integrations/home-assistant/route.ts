@@ -1,79 +1,68 @@
+import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { recordIntegrationConnectionEvent } from '@/lib/integration-state'
-import { upsertDeviceFromIntegration } from '@/lib/store'
+import {
+  inferSecurityDeviceKind,
+  inferSecuritySeverity,
+  ingestSecurityEvent,
+} from '@/lib/security-repository'
+import { verifyGatewayCredential } from '@/lib/secret-auth'
 
-const homeAssistantSchema = z.object({
+const eventSchema = z.object({
+  event_id: z.string().trim().min(1).max(160).optional(),
   event_type: z.string().trim().min(1).max(80),
-  entity_id: z.string().trim().min(1).max(120),
-  state: z.string().trim().max(80).optional(),
+  entity_id: z.string().trim().min(1).max(160),
+  device_id: z.string().trim().min(1).max(160).optional(),
+  state: z.string().trim().max(80).default('unknown'),
   friendly_name: z.string().trim().max(120).optional(),
-  site_id: z.string().trim().max(80).optional(),
   device_class: z.string().trim().max(80).optional(),
+  occurred_at: z.string().datetime().optional(),
   attributes: z.record(z.unknown()).optional(),
-  webhook_secret: z.string().trim().max(256).optional(),
 })
-
-function isAuthorized(requestSecret: string | undefined, expectedSecret: string | undefined) {
-  if (!expectedSecret) return true
-  return requestSecret === expectedSecret
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json()
-    const parsed = homeAssistantSchema.safeParse(payload)
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, error: 'Payload invalido para Home Assistant.' },
-        { status: 400 }
-      )
+    const gatewayPublicId = request.headers.get('x-seguria-gateway-id')
+    if (!gatewayPublicId) {
+      return NextResponse.json({ success: false, error: 'Gateway requerido.' }, { status: 400 })
     }
 
-    const expectedSecret = process.env.HOME_ASSISTANT_WEBHOOK_SECRET
-    if (!isAuthorized(parsed.data.webhook_secret, expectedSecret)) {
+    if (!(await verifyGatewayCredential(gatewayPublicId, request.headers.get('x-seguria-gateway-secret')))) {
       return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
     }
 
-    const device = upsertDeviceFromIntegration({
-      provider: 'home_assistant',
-      externalId: parsed.data.entity_id,
-      deviceName: parsed.data.friendly_name,
-      displayName: parsed.data.friendly_name || parsed.data.entity_id,
-      projectId: parsed.data.site_id || 'integration',
-      entityId: parsed.data.entity_id,
-      category: parsed.data.device_class,
-      state: parsed.data.state,
-      notes: 'Sincronizado desde Home Assistant',
-      metadata: {
-        eventType: parsed.data.event_type,
-        attributes: parsed.data.attributes || {},
-      },
-    })
+    const parsed = eventSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
+    }
 
-    const event = recordIntegrationConnectionEvent({
+    const occurredAt = parsed.data.occurred_at || new Date().toISOString()
+    const result = await ingestSecurityEvent({
+      gatewayPublicId,
       provider: 'home_assistant',
+      externalEventId: parsed.data.event_id || crypto.randomUUID(),
+      externalDeviceId: parsed.data.device_id || parsed.data.entity_id,
+      externalEntityId: parsed.data.entity_id,
+      deviceName: parsed.data.friendly_name || parsed.data.entity_id,
+      deviceKind: inferSecurityDeviceKind(parsed.data.entity_id, parsed.data.device_class),
+      entityName: parsed.data.friendly_name || parsed.data.entity_id,
+      entityDomain: parsed.data.entity_id.split('.')[0] || 'unknown',
+      entityDeviceClass: parsed.data.device_class,
+      entityState: parsed.data.state,
       eventType: parsed.data.event_type,
-      title: `Home Assistant reporto ${parsed.data.event_type}`,
-      status: parsed.data.state === 'unavailable' ? 'warning' : 'success',
-      entityId: parsed.data.entity_id,
-      deviceName: parsed.data.friendly_name,
-      projectId: parsed.data.site_id,
-      externalId: parsed.data.entity_id,
-      payload: parsed.data.attributes || {},
+      severity: inferSecuritySeverity(parsed.data.state, parsed.data.device_class),
+      occurredAt,
+      attributes: parsed.data.attributes,
+      payload: parsed.data,
     })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        event,
-        device,
-      },
-      message: 'Evento de Home Assistant recibido.',
-    })
+    return NextResponse.json({ success: true, data: result, message: 'Evento recibido.' })
   } catch (error) {
-    console.error('Error receiving Home Assistant event:', error)
-    return NextResponse.json({ success: false, error: 'Error interno del servidor.' }, { status: 500 })
+    console.error('Security event ingestion error:', error)
+    const unavailable = error instanceof Error && error.message.includes('not configured')
+    return NextResponse.json(
+      { success: false, error: unavailable ? 'Servicio no configurado.' : 'No fue posible registrar el evento.' },
+      { status: unavailable ? 503 : 500 }
+    )
   }
 }

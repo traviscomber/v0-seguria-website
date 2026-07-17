@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { upsertAuthUser } from '@/lib/auth-store'
-import { connectTuyaIntegrationAccount } from '@/lib/integration-state'
-import { importTuyaAccountPortfolio } from '@/lib/tuya-import'
-import { upsertProjectWithId, createDocument } from '@/lib/store'
+import { getAuthorizedRequest } from '@/lib/api-auth'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const provisionSchema = z.object({
-  company_name: z.string().trim().min(1).max(120),
-  property_id: z.string().trim().max(120).optional(),
-  client_email: z.string().trim().email().optional(),
-  site_name: z.string().trim().max(120).optional(),
-  account_scope: z.string().trim().max(120).optional(),
-  password: z.string().trim().min(8).max(128).optional(),
+  company_name: z.string().trim().min(2).max(120),
+  client_email: z.string().trim().email(),
+  password: z.string().min(12).max(128),
+  site_name: z.string().trim().min(2).max(120),
+  address: z.string().trim().max(240).optional(),
 })
 
 function slugify(value: string) {
@@ -24,77 +21,71 @@ function slugify(value: string) {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const payload = await request.json()
-    const parsed = provisionSchema.safeParse(payload)
+  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+  }
 
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, error: 'El servicio de provision no esta configurado.' },
+      { status: 503 }
+    )
+  }
+
+  try {
+    const parsed = provisionSchema.safeParse(await request.json())
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: 'Datos invalidos.' }, { status: 400 })
     }
 
-    const propertyId = parsed.data.property_id || slugify(parsed.data.company_name)
-    const clientEmail = parsed.data.client_email || `${propertyId}@seguria.client`
-    const password = parsed.data.password || `${propertyId}-portal-2026`
-    const siteName = parsed.data.site_name || parsed.data.company_name
-    const accountScope = parsed.data.account_scope || siteName
-
-    const project = upsertProjectWithId(propertyId, {
-      leadId: 'provisioned-client',
-      clienteNombre: parsed.data.company_name,
-      clienteEmail: clientEmail,
-      clienteTelefono: '+56 9 0000 0000',
-      tipo: 'propiedad',
-      ubicacion: siteName,
-      descripcion: `Portal provisionado para ${parsed.data.company_name}`,
-      estado: 'monitoreo',
-      prioridad: 'media',
-      responsable: 'SegurIA',
-      notasTecnicas: `Cuenta provisionada para ${parsed.data.company_name}`,
+    const organizationSlug = slugify(parsed.data.company_name)
+    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+      email: parsed.data.client_email,
+      password: parsed.data.password,
+      email_confirm: true,
+      user_metadata: { full_name: parsed.data.company_name },
+      app_metadata: { platform_role: 'client' },
     })
 
-    await upsertAuthUser({
-      name: parsed.data.company_name,
-      email: clientEmail,
-      role: 'client',
-      password,
-      clientIds: [propertyId],
-      propertyIds: [propertyId],
-    })
+    if (userError || !userData.user) {
+      const duplicate = userError?.message.toLowerCase().includes('already')
+      return NextResponse.json(
+        { success: false, error: duplicate ? 'El usuario ya existe.' : 'No fue posible crear el usuario.' },
+        { status: duplicate ? 409 : 400 }
+      )
+    }
 
-    const integrationEvent = connectTuyaIntegrationAccount({
-      accountName: parsed.data.company_name,
-      siteName,
-      accountScope,
-    })
+    const { data: provisioned, error: provisionError } = await supabase.rpc(
+      'provision_client_account',
+      {
+        target_user_id: userData.user.id,
+        organization_name: parsed.data.company_name,
+        organization_slug: organizationSlug,
+        property_name: parsed.data.site_name,
+        property_address: parsed.data.address || null,
+      }
+    )
 
-    const imported = importTuyaAccountPortfolio({
-      accountName: parsed.data.company_name,
-      siteName,
-      accountScope,
-    })
-
-    createDocument({
-      proyectoId: project.id,
-      tipo: 'informe_instalacion',
-      titulo: `Resumen de provision - ${parsed.data.company_name}`,
-      version: '1.0',
-      estado: 'aprobado',
-      autor: 'SegurIA',
-      resumenIA: 'Portal provisionado con equipos base, acceso y monitoreo.',
-    })
+    if (provisionError) {
+      await supabase.auth.admin.deleteUser(userData.user.id)
+      console.error('Error provisioning client data:', provisionError.message)
+      return NextResponse.json(
+        { success: false, error: 'No fue posible crear la empresa y propiedad.' },
+        { status: 400 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       data: {
         companyName: parsed.data.company_name,
-        propertyId,
-        clientEmail,
-        password,
-        project,
-        integrationEvent,
-        importedDevices: imported.importedDevices.length,
+        clientEmail: parsed.data.client_email,
+        organizationId: provisioned?.organization_id,
+        propertyId: provisioned?.property_id,
       },
-      message: 'Cliente provisionado.',
+      message: 'Cliente y propiedad creados.',
     })
   } catch (error) {
     console.error('Error provisioning client:', error)
