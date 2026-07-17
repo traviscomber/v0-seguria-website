@@ -118,7 +118,7 @@ const onboardingSteps = [
   {
     step: '01',
     title: 'Preparar puente',
-    description: 'Configurar Home Assistant como capa operativa y validar que los equipos aparezcan.',
+    description: 'Configurar la capa local de operacion y validar que los equipos aparezcan.',
   },
   {
     step: '02',
@@ -133,7 +133,7 @@ const onboardingSteps = [
   {
     step: '04',
     title: 'Registrar excepciones',
-    description: 'Dejar el acceso directo solo para casos especiales que no pasen por Home Assistant.',
+    description: 'Dejar accesos directos solo para casos especiales que no pasen por la capa local.',
   },
 ]
 
@@ -152,7 +152,7 @@ export default async function IntegrationsAdminPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-light text-white">Integraciones</h1>
-        <p className="mt-1 text-white/60">Operacion interna: Home Assistant debe ser el puente recomendado y SegurIA debe leer desde ahi.</p>
+        <p className="mt-1 text-white/60">Operacion interna: la capa local debe ser el puente recomendado y SegurIA debe leer desde ahi.</p>
       </div>
 
       <div className="glass-card p-6">
@@ -168,7 +168,7 @@ export default async function IntegrationsAdminPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="glass-card p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-white/40">Vista cliente</p>
-          <h3 className="mt-2 text-lg font-light text-white">Home Assistant primero</h3>
+          <h3 className="mt-2 text-lg font-light text-white">Capa local primero</h3>
           <p className="mt-2 text-sm leading-6 text-white/55">
             El portal debe leer desde la capa normalizada para dar una experiencia simple y confiable.
           </p>
@@ -177,7 +177,7 @@ export default async function IntegrationsAdminPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-white/40">Excepcion</p>
           <h3 className="mt-2 text-lg font-light text-white">Fallback directo</h3>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Solo si Home Assistant no expone algo relevante, se revisa un camino alternativo.
+            Solo si la capa local no expone algo relevante, se revisa un camino alternativo.
           </p>
         </div>
         <div className="glass-card p-5">

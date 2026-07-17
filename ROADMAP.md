@@ -77,6 +77,8 @@ Completado y validado en produccion:
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - rollback manual y automatico de automatizaciones sin confirmacion del sitio,
 - guardrails de ambiente para impedir mutaciones de datos productivos desde preview o desarrollo,
+- smoke test operacional reversible para validar provisioning, gateway, eventos, incidentes y camaras antes de pilotos,
+- health-check no destructivo de Supabase para validar tablas, columnas y evidencia privada antes de conectar cuentas reales,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:

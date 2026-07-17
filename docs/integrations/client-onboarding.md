@@ -16,6 +16,26 @@ Internal activation checklist for each production client.
 - Confirm placeholder devices are clearly shown as pending connection and do not mention underlying providers.
 - Confirm the client cannot access another organization's data.
 
+## 2.4 Check database health
+
+Before creating or connecting a real client, confirm the configured Supabase project has the expected schema:
+
+```powershell
+pnpm db:health
+```
+
+This does not create data. It checks the tables, columns and private evidence bucket needed by the portal, admin panel, gateway and camera flows.
+
+## 2.5 Run the operational smoke test
+
+Before using a real client account, run the reversible smoke test against the intended Supabase project:
+
+```powershell
+pnpm smoke:operational
+```
+
+The script creates a temporary client, gateway, critical event, incident action and camera signaling session, verifies the counts, then deletes the temporary organization and user. Do not proceed with a pilot if this command fails.
+
 ## 3. Activate the local connector
 
 - Create one connector credential for the property.

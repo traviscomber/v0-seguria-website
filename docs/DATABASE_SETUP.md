@@ -65,5 +65,26 @@ Before deployment:
 1. Confirm migration versions in `supabase_migrations.schema_migrations`.
 2. Confirm no public table is missing RLS.
 3. Confirm no `anon` role can select or insert commercial or operational data.
-4. Run `tsc --noEmit` and `next build --webpack`.
-5. Test registration, login, tenant isolation, gateway ingestion and signed camera evidence.
+4. Run `pnpm db:health`.
+5. Run `tsc --noEmit` and `next build --webpack`.
+6. Test registration, login, tenant isolation, gateway ingestion and signed camera evidence.
+
+## Database health check
+
+Use the non-destructive health check after applying migrations or changing Supabase projects:
+
+```powershell
+pnpm db:health
+```
+
+It verifies the required operational tables, core columns and private evidence bucket without creating client data. If this command fails, fix the schema before running the operational smoke test.
+
+## Operational smoke test
+
+Use the reversible smoke test before a pilot or after schema/security changes:
+
+```powershell
+pnpm smoke:operational
+```
+
+It verifies client provisioning, membership, gateway creation, event ingestion, critical incident creation, incident management, camera stream signaling metadata and cleanup against the configured Supabase project.
