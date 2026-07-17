@@ -16,6 +16,7 @@ function assertNotContains(source, patterns, label) {
 
 const snapshotRoutePath = 'app/api/cameras/[deviceId]/snapshot/route.ts'
 const snapshotComponentPath = 'components/camera-snapshot.tsx'
+const streamFrameRoutePath = 'app/api/cameras/[deviceId]/stream/frame/route.ts'
 const clientProvisionRoutePath = 'app/api/clients/provision/route.ts'
 const contactPagePath = 'app/contacto/page.tsx'
 const leadsRoutePath = 'app/api/leads/route.ts'
@@ -38,6 +39,7 @@ const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
 const snapshotComponent = read(snapshotComponentPath)
+const streamFrameRoute = read(streamFrameRoutePath)
 const clientProvisionRoute = read(clientProvisionRoutePath)
 const contactPage = read(contactPagePath)
 const leadsRoute = read(leadsRoutePath)
@@ -95,6 +97,15 @@ assertNotContains(
 assert(
   /src=\{`\/api\/cameras\/\$\{encodeURIComponent\(deviceId\)\}\/snapshot`\}/.test(snapshotComponent),
   `${snapshotComponentPath} must render the SegurIA snapshot proxy route directly.`
+)
+assertNotContains(
+  streamFrameRoute,
+  [/createSignedUrl/, /signedUrl/],
+  streamFrameRoutePath
+)
+assert(
+  /\.download\(snapshot\.object_path\)/.test(streamFrameRoute) && /return new NextResponse\(bytes/.test(streamFrameRoute),
+  `${streamFrameRoutePath} must proxy private frame bytes without signed storage URLs.`
 )
 
 assert(
@@ -268,6 +279,7 @@ console.log(JSON.stringify({
   contracts: [
     'camera snapshot route proxies private image bytes',
     'camera snapshot component does not receive signed storage URLs',
+    'camera stream frame route proxies private image bytes',
     'client provisioning is admin-only and audited',
     'lead CRM updates are persisted in Supabase',
     'contact form qualifies leads before CRM follow-up',

@@ -68,16 +68,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ dev
     return NextResponse.json({ success: false, error: 'Sin imagen disponible.' }, { status: 404 })
   }
 
-  const { data: signed, error: signedError } = await supabase.storage
+  const { data: frame, error: frameError } = await supabase.storage
     .from('seguria-evidence')
-    .createSignedUrl(snapshot.object_path, 20)
+    .download(snapshot.object_path)
 
-  if (signedError || !signed?.signedUrl) {
-    return NextResponse.json({ success: false, error: 'Imagen no disponible.' }, { status: 503 })
-  }
-
-  const frame = await fetch(signed.signedUrl, { cache: 'no-store' })
-  if (!frame.ok) {
+  if (frameError || !frame) {
     return NextResponse.json({ success: false, error: 'Imagen no disponible.' }, { status: 503 })
   }
 
@@ -86,7 +81,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ dev
     status: 200,
     headers: {
       'Cache-Control': 'private, no-store, max-age=0',
-      'Content-Type': snapshot.mime_type || frame.headers.get('content-type') || 'image/jpeg',
+      'Content-Type': snapshot.mime_type || frame.type || 'image/jpeg',
       'Content-Length': String(bytes.byteLength),
       'X-Seguria-Captured-At': snapshot.captured_at,
     },
