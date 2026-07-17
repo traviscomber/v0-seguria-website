@@ -22,6 +22,8 @@ const adminLeadsPath = 'app/admin/leads/page.tsx'
 const signupRoutePath = 'app/api/auth/signup/route.ts'
 const signupPagePath = 'app/signup/page.tsx'
 const loginFormPath = 'components/login-form.tsx'
+const incidentsRoutePath = 'app/api/admin/incidents/route.ts'
+const incidentCenterPath = 'components/incident-center.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -32,6 +34,8 @@ const adminLeads = read(adminLeadsPath)
 const signupRoute = read(signupRoutePath)
 const signupPage = read(signupPagePath)
 const loginForm = read(loginFormPath)
+const incidentsRoute = read(incidentsRoutePath)
+const incidentCenter = read(incidentCenterPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -127,6 +131,23 @@ assertNotContains(
   [/registered/, /Cuenta creada/, /Crear cuenta/],
   loginFormPath
 )
+assert(
+  /supabase\.rpc\('manage_incident'/.test(incidentsRoute),
+  `${incidentsRoutePath} must use the audited incident management function.`
+)
+assert(
+  /note:\s*z\.string\(\)\.trim\(\)\.max\(2000\)\.optional\(\)/.test(incidentsRoute),
+  `${incidentsRoutePath} must accept bounded incident notes.`
+)
+assert(
+  /function recordComment\(\)/.test(incidentCenter) && /updateIncident\(\{\s*note:\s*cleanNote\s*\}\)/.test(incidentCenter),
+  `${incidentCenterPath} must persist incident comments through an explicit bitacora action.`
+)
+assertNotContains(
+  incidentCenter,
+  [/update\(\{\}\)/, /situaciÃ/, /bitÃ/, /CrÃ/, /AtenciÃ/, /PrÃ/],
+  incidentCenterPath
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -138,5 +159,6 @@ console.log(JSON.stringify({
     'lead CRM updates are persisted in Supabase',
     'legacy in-memory demo store is absent',
     'public signup remains closed and internal-only',
+    'incident comments are explicit and audited',
   ],
 }, null, 2))
