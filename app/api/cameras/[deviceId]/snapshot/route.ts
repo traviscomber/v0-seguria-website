@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAuthSession } from '@/lib/auth-store'
+import { canAccessProperty, getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,19 +9,19 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
   if (!auth) return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
 
   const { deviceId } = await context.params
-  const supabase = await createSupabaseServerClient()
   const admin = createSupabaseAdminClient()
-  if (!supabase || !admin) return NextResponse.json({ error: 'Servicio no configurado.' }, { status: 503 })
+  if (!admin) return NextResponse.json({ error: 'Servicio no configurado.' }, { status: 503 })
 
-  const { data: device } = await supabase
+  const { data: device } = await admin
     .from('devices')
-    .select('id')
+    .select('id, property_id')
     .eq('id', deviceId)
     .eq('kind', 'camera')
     .maybeSingle()
   if (!device) return NextResponse.json({ error: 'Camara no encontrada.' }, { status: 404 })
+  if (!canAccessProperty(auth.user, device.property_id)) return NextResponse.json({ error: 'No autorizado.' }, { status: 403 })
 
-  const { data: snapshot } = await supabase
+  const { data: snapshot } = await admin
     .from('camera_snapshots')
     .select('object_path, captured_at, mime_type')
     .eq('device_id', device.id)

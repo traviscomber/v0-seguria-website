@@ -84,6 +84,11 @@ assert(
   `${snapshotRoutePath} must download private evidence server-side.`
 )
 assert(
+  /canAccessProperty\(auth\.user, device\.property_id\)/.test(snapshotRoute) &&
+    /\.select\('id, property_id'\)/.test(snapshotRoute),
+  `${snapshotRoutePath} must explicitly authorize snapshot access by device property.`
+)
+assert(
   /return new NextResponse\(image/.test(snapshotRoute),
   `${snapshotRoutePath} must return proxied image bytes.`
 )
