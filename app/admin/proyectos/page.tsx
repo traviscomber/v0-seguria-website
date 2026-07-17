@@ -93,12 +93,34 @@ export default async function ProjectsPage() {
     )
   }
 
+  let propertiesQuery = supabase.from('properties').select('id,organization_id,name,address,status,created_at,updated_at').order('updated_at', { ascending: false })
+  let organizationsQuery = supabase.from('organizations').select('id,name,status')
+  let devicesQuery = supabase.from('devices').select('id,property_id,kind,status,last_seen_at')
+  let incidentsQuery = supabase.from('incidents').select('id,property_id,status,severity')
+  let gatewaysQuery = supabase.from('gateways').select('id,property_id,status,last_seen_at')
+
+  if (auth.user.role !== 'admin') {
+    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+      propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      organizationsQuery = organizationsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      devicesQuery = devicesQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      incidentsQuery = incidentsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      gatewaysQuery = gatewaysQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+    } else {
+      propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
+      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
+      incidentsQuery = incidentsQuery.in('property_id', auth.user.propertyIds)
+      gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
+    }
+  }
+
   const [propertiesResult, organizationsResult, devicesResult, incidentsResult, gatewaysResult] = await Promise.all([
-    supabase.from('properties').select('id,organization_id,name,address,status,created_at,updated_at').order('updated_at', { ascending: false }),
-    supabase.from('organizations').select('id,name,status'),
-    supabase.from('devices').select('id,property_id,kind,status,last_seen_at'),
-    supabase.from('incidents').select('id,property_id,status,severity'),
-    supabase.from('gateways').select('id,property_id,status,last_seen_at'),
+    propertiesQuery,
+    organizationsQuery,
+    devicesQuery,
+    incidentsQuery,
+    gatewaysQuery,
   ])
 
   const queryError = propertiesResult.error || organizationsResult.error || devicesResult.error || incidentsResult.error || gatewaysResult.error
@@ -111,15 +133,12 @@ export default async function ProjectsPage() {
     )
   }
 
-  const allowedPropertyIds = new Set(auth.user.propertyIds)
-  const scopedProperties = ((propertiesResult.data || []) as PropertyRow[]).filter((property) =>
-    auth.user.role === 'admin' || allowedPropertyIds.has(property.id)
-  )
+  const scopedProperties = (propertiesResult.data || []) as PropertyRow[]
 
   const organizationById = new Map(((organizationsResult.data || []) as OrganizationRow[]).map((organization) => [organization.id, organization]))
-  const devices = ((devicesResult.data || []) as DeviceRow[]).filter((device) => scopedProperties.some((property) => property.id === device.property_id))
-  const incidents = ((incidentsResult.data || []) as IncidentRow[]).filter((incident) => scopedProperties.some((property) => property.id === incident.property_id))
-  const gateways = ((gatewaysResult.data || []) as GatewayRow[]).filter((gateway) => scopedProperties.some((property) => property.id === gateway.property_id))
+  const devices = (devicesResult.data || []) as DeviceRow[]
+  const incidents = (incidentsResult.data || []) as IncidentRow[]
+  const gateways = (gatewaysResult.data || []) as GatewayRow[]
 
   const openIncidents = incidents.filter((incident) => isOpenIncident(incident.status)).length
   const cameraCount = devices.filter((device) => device.kind === 'camera').length

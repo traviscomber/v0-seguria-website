@@ -40,6 +40,8 @@ const gatewayAutomationsRoutePath = 'app/api/gateway/automations/route.ts'
 const adminAutomationsRoutePath = 'app/api/admin/automations/route.ts'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
+const adminProjectsPath = 'app/admin/proyectos/page.tsx'
+const adminDocumentsPath = 'app/admin/documentos/page.tsx'
 const authStorePath = 'lib/auth-store.ts'
 const snapshotRoute = read(snapshotRoutePath)
 const snapshotComponent = read(snapshotComponentPath)
@@ -67,6 +69,8 @@ const gatewayAutomationsRoute = read(gatewayAutomationsRoutePath)
 const adminAutomationsRoute = read(adminAutomationsRoutePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
+const adminProjects = read(adminProjectsPath)
+const adminDocuments = read(adminDocumentsPath)
 const authStore = read(authStorePath)
 
 assertNotContains(
@@ -161,6 +165,20 @@ assert(
   /scopedOrganizationIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.clientIds\)/.test(adminClients) &&
     /scopedPropertyIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.propertyIds\)/.test(adminClients),
   `${adminClientsPath} must filter non-admin client visibility by authenticated scope.`
+)
+assert(
+  /propertiesQuery = propertiesQuery\.in\('id', auth\.user\.propertyIds\)/.test(adminProjects) &&
+    /organizationsQuery = organizationsQuery\.in\('id', auth\.user\.clientIds\)/.test(adminProjects) &&
+    /devicesQuery = devicesQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(adminProjects) &&
+    !/allowedPropertyIds/.test(adminProjects),
+  `${adminProjectsPath} must query project operations through authenticated client and property scope.`
+)
+assert(
+  /snapshotsQuery = snapshotsQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(adminDocuments) &&
+    /propertiesQuery = propertiesQuery\.in\('id', auth\.user\.propertyIds\)/.test(adminDocuments) &&
+    /devicesQuery = devicesQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(adminDocuments) &&
+    !/allowedPropertyIds/.test(adminDocuments),
+  `${adminDocumentsPath} must query evidence through authenticated property scope.`
 )
 assert(
   /export async function PATCH\(request: NextRequest\)/.test(leadsRoute),
@@ -367,6 +385,7 @@ console.log(JSON.stringify({
     'camera stream frame route proxies private image bytes',
     'client provisioning is admin-only and audited',
     'admin dashboard counts are scoped by authenticated clients and properties',
+    'admin project and evidence pages query through authenticated scope',
     'lead CRM updates are persisted in Supabase',
     'contact form qualifies leads before CRM follow-up',
     'legacy in-memory demo store is absent',

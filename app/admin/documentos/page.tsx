@@ -65,14 +65,30 @@ export default async function DocumentsPage() {
     )
   }
 
+  let snapshotsQuery = supabase
+    .from('camera_snapshots')
+    .select('id,property_id,device_id,object_path,mime_type,size_bytes,captured_at,created_at')
+    .order('captured_at', { ascending: false })
+    .limit(200)
+  let propertiesQuery = supabase.from('properties').select('id,name,address')
+  let devicesQuery = supabase.from('devices').select('id,name,kind,property_id')
+
+  if (auth.user.role !== 'admin') {
+    if (auth.user.propertyIds.length === 0) {
+      snapshotsQuery = snapshotsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      devicesQuery = devicesQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+    } else {
+      snapshotsQuery = snapshotsQuery.in('property_id', auth.user.propertyIds)
+      propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
+      devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
+    }
+  }
+
   const [snapshotsResult, propertiesResult, devicesResult] = await Promise.all([
-    supabase
-      .from('camera_snapshots')
-      .select('id,property_id,device_id,object_path,mime_type,size_bytes,captured_at,created_at')
-      .order('captured_at', { ascending: false })
-      .limit(200),
-    supabase.from('properties').select('id,name,address'),
-    supabase.from('devices').select('id,name,kind'),
+    snapshotsQuery,
+    propertiesQuery,
+    devicesQuery,
   ])
 
   const queryError = snapshotsResult.error || propertiesResult.error || devicesResult.error
@@ -85,10 +101,7 @@ export default async function DocumentsPage() {
     )
   }
 
-  const allowedPropertyIds = new Set(auth.user.propertyIds)
-  const snapshots = ((snapshotsResult.data || []) as SnapshotRow[]).filter((snapshot) =>
-    auth.user.role === 'admin' || allowedPropertyIds.has(snapshot.property_id)
-  )
+  const snapshots = (snapshotsResult.data || []) as SnapshotRow[]
   const propertiesById = new Map(((propertiesResult.data || []) as PropertyRow[]).map((property) => [property.id, property]))
   const devicesById = new Map(((devicesResult.data || []) as DeviceRow[]).map((device) => [device.id, device]))
   const totalBytes = snapshots.reduce((total, snapshot) => total + (snapshot.size_bytes || 0), 0)
