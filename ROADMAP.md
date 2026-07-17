@@ -60,7 +60,7 @@ Completado y validado en produccion:
 - preservacion de la identidad historica del actor al eliminar una cuenta,
 - notificaciones al cliente con confirmacion, vencimiento y escalamiento por SLA,
 - monitor programado para marcar Gateways obsoletos y escalar confirmaciones vencidas,
-- alta interna de cliente desde admin con Supabase Auth, empresa, sitio inicial y espacios base,
+- alta interna de cliente desde admin con Supabase Auth, empresa, sitio inicial, espacios base e inventario portal listo para enlace,
 - cierre del signup publico para que las cuentas de clientes sean creadas por el equipo interno,
 - registro interno de credenciales cifradas por propiedad para preparar conexiones reales,
 - migracion de credenciales internas aplicada y validada con insercion cifrada reversible,

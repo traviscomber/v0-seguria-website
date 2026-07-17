@@ -43,6 +43,120 @@ async function getAvailableOrganizationSlug(supabase: ReturnType<typeof createSu
   return `${normalized}-${crypto.randomUUID().slice(0, 8)}`
 }
 
+async function ensureDefaultPortalInventory(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  organizationId: string,
+  propertyId: string
+) {
+  const { data: spaces, error: spacesError } = await supabase
+    .from('spaces')
+    .select('id, name, kind')
+    .eq('property_id', propertyId)
+    .order('sort_order', { ascending: true })
+
+  if (spacesError) throw spacesError
+
+  const { count: existingPlaceholders, error: deviceCountError } = await supabase
+    .from('devices')
+    .select('id', { count: 'exact', head: true })
+    .eq('property_id', propertyId)
+    .eq('metadata->>onboardingPlaceholder', 'true')
+
+  if (deviceCountError) throw deviceCountError
+  if ((existingPlaceholders || 0) > 0) {
+    return { spaceCount: spaces?.length || 0, deviceCount: existingPlaceholders || 0 }
+  }
+
+  const findSpace = (kind: string, fallbackIndex = 0) =>
+    spaces?.find((space) => space.kind === kind)?.id || spaces?.[fallbackIndex]?.id || null
+
+  const entrySpaceId = findSpace('entry')
+  const interiorSpaceId = findSpace('interior', 1)
+  const perimeterSpaceId = findSpace('perimeter', 2)
+
+  const defaultDevices = [
+    {
+      organization_id: organizationId,
+      property_id: propertyId,
+      space_id: entrySpaceId,
+      external_id: `pending-${propertyId}-camera-entry`,
+      name: 'Camara acceso principal',
+      kind: 'camera',
+      manufacturer: 'Equipo conectado',
+      model: 'Pendiente de enlace',
+      status: 'maintenance',
+      capabilities: ['snapshot', 'secure_stream', 'motion_reference'],
+      metadata: {
+        portalGroup: 'camera',
+        onboardingPlaceholder: true,
+        replaceWithGatewayInventory: true,
+        coverage: 'entrada',
+      },
+    },
+    {
+      organization_id: organizationId,
+      property_id: propertyId,
+      space_id: perimeterSpaceId,
+      external_id: `pending-${propertyId}-camera-perimeter`,
+      name: 'Camara perimetro',
+      kind: 'camera',
+      manufacturer: 'Equipo conectado',
+      model: 'Pendiente de enlace',
+      status: 'maintenance',
+      capabilities: ['snapshot', 'secure_stream', 'perimeter_reference'],
+      metadata: {
+        portalGroup: 'camera',
+        onboardingPlaceholder: true,
+        replaceWithGatewayInventory: true,
+        coverage: 'perimetro',
+      },
+    },
+    {
+      organization_id: organizationId,
+      property_id: propertyId,
+      space_id: interiorSpaceId,
+      external_id: `pending-${propertyId}-motion-interior`,
+      name: 'Sensor movimiento interior',
+      kind: 'motion',
+      manufacturer: 'Equipo conectado',
+      model: 'Pendiente de enlace',
+      status: 'maintenance',
+      capabilities: ['motion', 'occupancy'],
+      metadata: {
+        portalGroup: 'sensor',
+        onboardingPlaceholder: true,
+        replaceWithGatewayInventory: true,
+      },
+    },
+    {
+      organization_id: organizationId,
+      property_id: propertyId,
+      space_id: entrySpaceId,
+      external_id: `pending-${propertyId}-entry-door`,
+      name: 'Sensor puerta acceso',
+      kind: 'entry',
+      manufacturer: 'Equipo conectado',
+      model: 'Pendiente de enlace',
+      status: 'maintenance',
+      capabilities: ['open_close', 'tamper'],
+      metadata: {
+        portalGroup: 'sensor',
+        onboardingPlaceholder: true,
+        replaceWithGatewayInventory: true,
+      },
+    },
+  ]
+
+  const { data: insertedDevices, error: insertError } = await supabase
+    .from('devices')
+    .insert(defaultDevices)
+    .select('id')
+
+  if (insertError) throw insertError
+
+  return { spaceCount: spaces?.length || 0, deviceCount: insertedDevices?.length || 0 }
+}
+
 export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) {
@@ -100,13 +214,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const organizationId = provisioned?.organization_id as string | undefined
+    const propertyId = provisioned?.property_id as string | undefined
+    const portalInventory = organizationId && propertyId
+      ? await ensureDefaultPortalInventory(supabase, organizationId, propertyId)
+      : { spaceCount: provisioned?.space_count || 0, deviceCount: provisioned?.device_count || 0 }
+
     return NextResponse.json({
       success: true,
       data: {
         companyName: parsed.data.company_name,
         clientEmail: parsed.data.client_email,
-        organizationId: provisioned?.organization_id,
-        propertyId: provisioned?.property_id,
+        organizationId,
+        propertyId,
+        spaceCount: portalInventory.spaceCount,
+        deviceCount: portalInventory.deviceCount,
       },
       message: 'Cliente y propiedad creados.',
     })

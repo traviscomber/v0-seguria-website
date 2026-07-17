@@ -15,6 +15,10 @@ SegurIA uses Supabase Auth, PostgreSQL, Row Level Security and a private Storage
 - `audit_log`: operational traceability.
 - `leads` and `contact_submissions`: commercial intake, readable only by staff.
 
+## Provisioning contract
+
+The internal client provision flow creates Supabase Auth access, tenant membership, one property, three base spaces and four onboarding devices. The backend also ensures those placeholder devices exist after the database RPC returns, so the portal is useful immediately even before the first connector sync. Real inventory should replace or complement placeholders through the authenticated gateway.
+
 ## Environment
 
 Use `.env.example` as the variable contract. Pull Vercel-linked values into a local ignored file when needed:

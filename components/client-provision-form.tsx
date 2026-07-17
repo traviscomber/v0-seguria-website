@@ -8,6 +8,8 @@ type ProvisionResult = {
   clientEmail: string
   organizationId: string
   propertyId: string
+  spaceCount: number
+  deviceCount: number
 }
 
 const initialForm = {
@@ -129,6 +131,9 @@ export function ClientProvisionForm() {
                   <p className="text-sm text-emerald-100">Portal creado para {result.companyName}.</p>
                   <p className="mt-1 text-xs text-white/45">
                     Organizacion {result.organizationId} | Sitio {result.propertyId}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-100/80">
+                    Portal inicial: {result.spaceCount} espacios y {result.deviceCount} equipos listos para enlace.
                   </p>
                 </div>
               </div>
