@@ -15,6 +15,10 @@ function getStreamMediaUrl(deviceId: string, sessionId: string) {
   return `/api/cameras/${encodeURIComponent(deviceId)}/stream/frame?sessionId=${encodeURIComponent(sessionId)}`
 }
 
+function getStreamHlsUrl(deviceId: string, sessionId: string) {
+  return `/api/cameras/${encodeURIComponent(deviceId)}/stream/hls/manifest?sessionId=${encodeURIComponent(sessionId)}`
+}
+
 async function getAuthorizedCamera(deviceId: string) {
   const auth = await getCurrentAuthSession()
   if (!auth) return { status: 401 as const, error: 'No autorizado.' }
@@ -57,6 +61,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
       ? {
           ...session,
           mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
+          hlsManifestUrl: getStreamHlsUrl(authorized.device.id, session.id),
         }
       : null,
   }, { headers: { 'Cache-Control': 'private, no-store' } })
@@ -102,6 +107,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
         expires_at: existingOwnSession.expires_at,
         created_at: existingOwnSession.created_at,
         mediaUrl: getStreamMediaUrl(authorized.device.id, existingOwnSession.id),
+        hlsManifestUrl: getStreamHlsUrl(authorized.device.id, existingOwnSession.id),
         reused: true,
       },
       message: 'Vista ya solicitada.',
@@ -161,6 +167,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
       ...session,
       expiresAt,
       mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
+      hlsManifestUrl: getStreamHlsUrl(authorized.device.id, session.id),
     },
     message: 'Sesion solicitada.',
   })

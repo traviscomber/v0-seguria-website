@@ -45,7 +45,7 @@ Completado y validado en produccion:
 - alta transaccional de usuario, empresa y propiedad,
 - referencias tecnicas retiradas del portal del cliente.
 - proyecto Supabase dedicado vinculado desde Vercel,
-- 10 migraciones aplicadas con historial,
+- 11 migraciones aplicadas con historial,
 - 20 tablas multiempresa con RLS y permisos de minimo privilegio,
 - prueba RLS real con dos organizaciones y cero lecturas cruzadas,
 - identidad y secreto hasheado individual por Gateway,
@@ -70,14 +70,15 @@ Completado y validado en produccion:
 - migracion de sesiones de video aplicada y validada con prueba reversible contra Supabase,
 - control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
 - proxy inicial de frames seguros desde evidencia privada hacia el portal sin URL firmada visible,
+- proxy HLS privado con ingesta autenticada del Gateway, manifest reescrito y segmentos protegidos,
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - rollback manual y automatico de automatizaciones sin confirmacion del sitio,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
-- agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
-- evolucionar el reproductor del portal desde frames seguros hacia video WebRTC/HLS,
+- agregar WebRTC para baja latencia sobre las sesiones de video ya modeladas,
+- endurecer reproduccion HLS en todos los navegadores con player dedicado,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto
@@ -633,7 +634,7 @@ Validado localmente:
 - higiene de diff sin errores,
 - build de produccion como puerta de salida de cada bloque,
 - rutas de maquina sin credenciales globales compartidas.
-- 10 migraciones aplicadas en la base productiva,
+- 11 migraciones aplicadas en la base productiva,
 - aislamiento RLS probado con usuarios de dos organizaciones,
 - solicitud de vista de camara con reutilizacion de sesion propia y bloqueo por concurrencia,
 - generacion, lectura aislada, confirmacion, escalamiento, auditoria y limpieza de avisos probados contra Supabase.

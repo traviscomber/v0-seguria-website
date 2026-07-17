@@ -13,6 +13,7 @@ type StreamSession = {
   created_at?: string
   createdAt?: string
   mediaUrl?: string
+  hlsManifestUrl?: string
   reused?: boolean
 }
 
@@ -43,6 +44,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
   const [error, setError] = useState('')
   const [frameRevision, setFrameRevision] = useState(0)
   const [frameReady, setFrameReady] = useState(false)
+  const [videoReady, setVideoReady] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -98,6 +100,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
 
       setSession(payload.data)
       setFrameReady(false)
+      setVideoReady(false)
       setState('ready')
     } catch {
       setError('No fue posible preparar la vista.')
@@ -111,6 +114,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
   const frameUrl = session?.mediaUrl
     ? `${session.mediaUrl}${session.mediaUrl.includes('?') ? '&' : '?'}t=${frameRevision}`
     : ''
+  const showVideo = Boolean(session?.hlsManifestUrl && active)
 
   return (
     <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3 backdrop-blur">
@@ -129,8 +133,24 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
           {active ? 'Activa' : 'Abrir'}
         </button>
       </div>
+      {showVideo && (
+        <div className={`relative mt-3 overflow-hidden rounded-xl border border-white/10 bg-[#071524] ${videoReady ? 'block' : 'hidden'}`}>
+          <video
+            src={session?.hlsManifestUrl}
+            className="h-full min-h-[160px] w-full object-cover"
+            controls
+            muted
+            playsInline
+            onLoadedData={() => setVideoReady(true)}
+            onError={() => setVideoReady(false)}
+          />
+          <div className="pointer-events-none absolute left-2 top-2 rounded-full border border-white/10 bg-slate-950/75 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100">
+            Video SegurIA
+          </div>
+        </div>
+      )}
       {session?.mediaUrl && active && (
-        <div className="relative mt-3 min-h-[120px] overflow-hidden rounded-xl border border-white/10 bg-[#071524]">
+        <div className={`relative mt-3 min-h-[120px] overflow-hidden rounded-xl border border-white/10 bg-[#071524] ${videoReady ? 'hidden' : 'block'}`}>
           {!frameReady && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-[11px] text-white/45">
               <ImageIcon className="h-5 w-5 text-[#9DD2F2]" />

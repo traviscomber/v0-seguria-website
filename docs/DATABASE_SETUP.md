@@ -44,7 +44,7 @@ Validate each migration in a transaction before applying it. Never reuse the rem
 - Internal connection credentials should use `SEGURIA_CREDENTIAL_ENCRYPTION_KEY` and are stored only as ciphertext. If the dedicated key is missing, the server-only Supabase secret is used as a fallback so production does not block onboarding.
 - Public forms never receive direct table grants.
 - Gateway secrets are generated per installation and stored only as hashes.
-- Camera evidence uses the private `seguria-evidence` bucket and signed URLs.
+- Camera evidence uses the private `seguria-evidence` bucket. Browser routes proxy signed storage access for snapshots, HLS manifests and HLS segments so clients never receive raw storage URLs.
 
 ## Production checks
 

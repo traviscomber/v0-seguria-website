@@ -140,6 +140,21 @@ GET /api/cameras/:deviceId/stream/frame?sessionId=<session_uuid>
 
 Esta ruta valida sesion, usuario, propiedad, camara y vencimiento antes de entregar bytes de imagen desde el bucket privado. El navegador nunca recibe una URL firmada de storage ni una referencia local del gateway.
 
+Para video HLS, el gateway sube playlist y segmentos al storage privado con:
+
+```text
+POST /api/gateway/cameras/stream-sessions/hls
+```
+
+Campos `multipart/form-data`: `sessionId`, `kind` (`manifest` o `segment`), `name` y `file`. El backend valida gateway, sesion vigente, tipo de archivo y nombre seguro antes de guardar. El portal consume:
+
+```text
+GET /api/cameras/:deviceId/stream/hls/manifest?sessionId=<session_uuid>
+GET /api/cameras/:deviceId/stream/hls/:segment?sessionId=<session_uuid>
+```
+
+El manifest se reescribe para que los segmentos apunten solo a rutas SegurIA. No se aceptan URLs externas ni subdirectorios en los segmentos.
+
 El gateway consulta sesiones pendientes con:
 
 ```text

@@ -134,3 +134,26 @@ export async function reportCameraStreamSession(config, sessionId, status, optio
 
   return response.json()
 }
+
+export async function uploadCameraStreamHlsFile(config, sessionId, kind, name, bytes, contentType) {
+  const form = new FormData()
+  form.set('sessionId', sessionId)
+  form.set('kind', kind)
+  form.set('name', name)
+  form.set('file', new Blob([bytes], { type: contentType }), name)
+
+  const response = await fetch(`${config.apiBaseUrl}/api/gateway/cameras/stream-sessions/hls`, {
+    method: 'POST',
+    headers: {
+      'x-seguria-gateway-id': config.gatewayId,
+      'x-seguria-gateway-secret': config.gatewaySecret,
+    },
+    body: form,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Camera stream HLS upload failed: ${response.status}`)
+  }
+
+  return response.json()
+}
