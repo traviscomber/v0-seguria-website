@@ -134,6 +134,13 @@ assert(
   `${adminDashboardPath} must hide client provisioning from non-admin users.`
 )
 assert(
+  /hasScopedAccess = auth\.user\.role === 'admin' \|\| \(auth\.user\.clientIds\.length > 0 && auth\.user\.propertyIds\.length > 0\)/.test(adminDashboard) &&
+    /\.in\('id', auth\.user\.clientIds\)/.test(adminDashboard) &&
+    /\.in\('property_id', auth\.user\.propertyIds\)/.test(adminDashboard) &&
+    /auth\.user\.role === 'admin'\s*\?\s*supabase\.from\('leads'\)/.test(adminDashboard),
+  `${adminDashboardPath} must scope dashboard counts by authenticated clients and properties.`
+)
+assert(
   /auth\.user\.role === 'admin' \? <ClientProvisionForm \/>/.test(adminClients),
   `${adminClientsPath} must hide client provisioning from non-admin users.`
 )
@@ -343,6 +350,7 @@ console.log(JSON.stringify({
     'camera snapshot component does not receive signed storage URLs',
     'camera stream frame route proxies private image bytes',
     'client provisioning is admin-only and audited',
+    'admin dashboard counts are scoped by authenticated clients and properties',
     'lead CRM updates are persisted in Supabase',
     'contact form qualifies leads before CRM follow-up',
     'legacy in-memory demo store is absent',

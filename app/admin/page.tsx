@@ -14,15 +14,30 @@ export default async function AdminDashboard() {
 
   const supabase = createSupabaseAdminClient()
   const empty = { count: 0 }
-  const [organizations, properties, devices, incidents, overdueNotifications, leadsResult, gatewaysResult] = supabase
+  const hasScopedAccess = auth.user.role === 'admin' || (auth.user.clientIds.length > 0 && auth.user.propertyIds.length > 0)
+  const [organizations, properties, devices, incidents, overdueNotifications, leadsResult, gatewaysResult] = supabase && hasScopedAccess
     ? await Promise.all([
-        supabase.from('organizations').select('id', { count: 'exact', head: true }),
-        supabase.from('properties').select('id', { count: 'exact', head: true }),
-        supabase.from('devices').select('id', { count: 'exact', head: true }),
-        supabase.from('incidents').select('id', { count: 'exact', head: true }).in('status', ['new', 'validating', 'confirmed', 'responding']),
-        supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('status', 'escalated'),
-        supabase.from('leads').select('id,name,email,property_type,status,created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('gateways').select('id,name,status,last_seen_at').order('updated_at', { ascending: false }).limit(6),
+        auth.user.role === 'admin'
+          ? supabase.from('organizations').select('id', { count: 'exact', head: true })
+          : supabase.from('organizations').select('id', { count: 'exact', head: true }).in('id', auth.user.clientIds),
+        auth.user.role === 'admin'
+          ? supabase.from('properties').select('id', { count: 'exact', head: true })
+          : supabase.from('properties').select('id', { count: 'exact', head: true }).in('id', auth.user.propertyIds),
+        auth.user.role === 'admin'
+          ? supabase.from('devices').select('id', { count: 'exact', head: true })
+          : supabase.from('devices').select('id', { count: 'exact', head: true }).in('property_id', auth.user.propertyIds),
+        auth.user.role === 'admin'
+          ? supabase.from('incidents').select('id', { count: 'exact', head: true }).in('status', ['new', 'validating', 'confirmed', 'responding'])
+          : supabase.from('incidents').select('id', { count: 'exact', head: true }).in('status', ['new', 'validating', 'confirmed', 'responding']).in('property_id', auth.user.propertyIds),
+        auth.user.role === 'admin'
+          ? supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('status', 'escalated')
+          : supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('status', 'escalated').in('property_id', auth.user.propertyIds),
+        auth.user.role === 'admin'
+          ? supabase.from('leads').select('id,name,email,property_type,status,created_at').order('created_at', { ascending: false }).limit(5)
+          : Promise.resolve({ data: [] }),
+        auth.user.role === 'admin'
+          ? supabase.from('gateways').select('id,name,status,last_seen_at').order('updated_at', { ascending: false }).limit(6)
+          : supabase.from('gateways').select('id,name,status,last_seen_at').in('property_id', auth.user.propertyIds).order('updated_at', { ascending: false }).limit(6),
       ])
     : [empty, empty, empty, empty, empty, { data: [] }, { data: [] }]
 
