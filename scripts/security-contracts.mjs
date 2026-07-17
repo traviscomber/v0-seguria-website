@@ -24,6 +24,7 @@ const signupPagePath = 'app/signup/page.tsx'
 const loginFormPath = 'components/login-form.tsx'
 const incidentsRoutePath = 'app/api/admin/incidents/route.ts'
 const incidentCenterPath = 'components/incident-center.tsx'
+const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -36,6 +37,7 @@ const signupPage = read(signupPagePath)
 const loginForm = read(loginFormPath)
 const incidentsRoute = read(incidentsRoutePath)
 const incidentCenter = read(incidentCenterPath)
+const adminIntegrations = read(adminIntegrationsPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -148,6 +150,19 @@ assertNotContains(
   [/update\(\{\}\)/, /situaciÃ/, /bitÃ/, /CrÃ/, /AtenciÃ/, /PrÃ/],
   incidentCenterPath
 )
+assertNotContains(
+  adminIntegrations,
+  [/GitHub/, /Listo para puente HA/, /Ã/, /Â/, /â€¢/],
+  adminIntegrationsPath
+)
+assert(
+  /function scrubVisibleText\(value: string\)/.test(adminIntegrations) && /scrubVisiblePayload/.test(adminIntegrations),
+  `${adminIntegrationsPath} must sanitize provider names from visible integration events.`
+)
+assert(
+  /Cuenta operativa/.test(adminIntegrations) && /Puente local/.test(adminIntegrations),
+  `${adminIntegrationsPath} must use neutral operational labels.`
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -160,5 +175,6 @@ console.log(JSON.stringify({
     'legacy in-memory demo store is absent',
     'public signup remains closed and internal-only',
     'incident comments are explicit and audited',
+    'admin integrations use neutral visible labels',
   ],
 }, null, 2))
