@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { canAccessProperty, getCurrentAuthSession } from '@/lib/auth-store'
 import {
   CAMERA_STREAM_MAX_ACTIVE_PER_DEVICE,
   CAMERA_STREAM_MAX_ACTIVE_PER_PROPERTY,
+  buildCameraStreamClientMetadata,
   generateCameraStreamToken,
+  getClientCameraStreamSignaling,
   getCameraStreamExpiry,
   hashCameraStreamToken,
+  normalizeCameraStreamTransport,
 } from '@/lib/camera-stream'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
+
+const iceCandidateSchema = z.object({
+  candidate: z.string().trim().min(1).max(2000),
+  sdpMid: z.string().trim().max(120).optional(),
+  sdpMLineIndex: z.number().int().min(0).max(20).optional(),
+})
+
+const streamRequestSchema = z.object({
+  preferredTransport: z.enum(['hls', 'webrtc']).optional(),
+  clientOffer: z.string().trim().max(20000).optional(),
+  clientIceCandidates: z.array(iceCandidateSchema).max(20).optional(),
+})
 
 function getStreamMediaUrl(deviceId: string, sessionId: string) {
   return `/api/cameras/${encodeURIComponent(deviceId)}/stream/frame?sessionId=${encodeURIComponent(sessionId)}`
@@ -63,14 +79,21 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
           ...session,
           mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
           hlsManifestUrl: getStreamHlsUrl(authorized.device.id, session.id),
+          signaling: getClientCameraStreamSignaling(session.metadata),
         }
       : null,
   }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 
-export async function POST(_request: NextRequest, context: { params: Promise<{ deviceId: string }> }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ deviceId: string }> }) {
   const guard = getOperationalGuardResponse({ operation: 'camera_stream.request' })
   if (guard) return guard
+
+  const body = await request.json().catch(() => ({}))
+  const parsedRequest = streamRequestSchema.safeParse(body)
+  if (!parsedRequest.success) {
+    return NextResponse.json({ success: false, error: 'Solicitud de vista invalida.' }, { status: 400 })
+  }
 
   const { deviceId } = await context.params
   const authorized = await getAuthorizedCamera(deviceId)
@@ -90,7 +113,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
 
   const { data: activeSessions, error: activeError } = await authorized.supabase
     .from('camera_stream_sessions')
-    .select('id, device_id, requested_by, status, expires_at, created_at')
+    .select('id, device_id, requested_by, status, expires_at, created_at, metadata')
     .eq('property_id', authorized.device.property_id)
     .in('status', ['requested', 'active'])
     .gt('expires_at', now)
@@ -112,6 +135,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
         created_at: existingOwnSession.created_at,
         mediaUrl: getStreamMediaUrl(authorized.device.id, existingOwnSession.id),
         hlsManifestUrl: getStreamHlsUrl(authorized.device.id, existingOwnSession.id),
+        signaling: getClientCameraStreamSignaling(existingOwnSession.metadata),
         reused: true,
       },
       message: 'Vista ya solicitada.',
@@ -129,6 +153,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
 
   const token = generateCameraStreamToken()
   const expiresAt = getCameraStreamExpiry()
+  const preferredTransport = normalizeCameraStreamTransport(parsedRequest.data.preferredTransport)
   const { data: session, error } = await authorized.supabase
     .from('camera_stream_sessions')
     .insert({
@@ -139,12 +164,15 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
       requested_by: authorized.auth.user.id,
       session_token_hash: hashCameraStreamToken(token),
       expires_at: expiresAt,
-      metadata: {
+      metadata: buildCameraStreamClientMetadata({
         requestedByRole: authorized.auth.user.role,
         deviceName: authorized.device.name,
-      },
+        preferredTransport,
+        clientOffer: parsedRequest.data.clientOffer,
+        clientIceCandidates: parsedRequest.data.clientIceCandidates,
+      }),
     })
-    .select('id, status, expires_at, created_at')
+    .select('id, status, expires_at, created_at, metadata')
     .single()
 
   if (error || !session) {
@@ -162,6 +190,8 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
     payload: {
       deviceId: authorized.device.id,
       expiresAt,
+      preferredTransport,
+      hasClientOffer: Boolean(parsedRequest.data.clientOffer),
     },
   })
 
@@ -172,6 +202,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
       expiresAt,
       mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
       hlsManifestUrl: getStreamHlsUrl(authorized.device.id, session.id),
+      signaling: getClientCameraStreamSignaling(session.metadata),
     },
     message: 'Sesion solicitada.',
   })

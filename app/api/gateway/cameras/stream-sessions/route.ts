@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import {
+  getGatewayCameraStreamSignaling,
+  mergeCameraStreamGatewayMetadata,
+} from '@/lib/camera-stream'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
@@ -7,7 +11,14 @@ import { verifyGatewayCredential } from '@/lib/secret-auth'
 const updateSchema = z.object({
   sessionId: z.string().uuid(),
   status: z.enum(['active', 'ended', 'failed']),
+  transport: z.enum(['hls', 'webrtc']).optional(),
   gatewayStreamRef: z.string().trim().max(240).optional(),
+  gatewayAnswer: z.string().trim().max(20000).optional(),
+  gatewayIceCandidates: z.array(z.object({
+    candidate: z.string().trim().min(1).max(2000),
+    sdpMid: z.string().trim().max(120).optional(),
+    sdpMLineIndex: z.number().int().min(0).max(20).optional(),
+  })).max(20).optional(),
   error: z.string().trim().max(500).optional(),
 })
 
@@ -47,7 +58,7 @@ export async function GET(request: NextRequest) {
 
   const { data: sessions, error } = await authorized.supabase
     .from('camera_stream_sessions')
-    .select('id, device_id, status, expires_at, created_at')
+    .select('id, device_id, status, expires_at, created_at, metadata')
     .eq('gateway_id', authorized.gateway.id)
     .in('status', ['requested', 'active'])
     .gt('expires_at', now)
@@ -75,6 +86,7 @@ export async function GET(request: NextRequest) {
       status: session.status,
       expiresAt: session.expires_at,
       createdAt: session.created_at,
+      signaling: getGatewayCameraStreamSignaling(session.metadata),
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
@@ -89,14 +101,31 @@ export async function POST(request: NextRequest) {
   const parsed = updateSchema.safeParse(await request.json())
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
 
+  const { data: existingSession, error: existingError } = await authorized.supabase
+    .from('camera_stream_sessions')
+    .select('id, organization_id, property_id, device_id, metadata')
+    .eq('id', parsed.data.sessionId)
+    .eq('gateway_id', authorized.gateway.id)
+    .single()
+
+  if (existingError || !existingSession) {
+    return NextResponse.json({ success: false, error: 'Sesion no encontrada.' }, { status: 404 })
+  }
+
   const now = new Date().toISOString()
   const update = {
     status: parsed.data.status,
     gateway_stream_ref: parsed.data.gatewayStreamRef || null,
-    started_at: parsed.data.status === 'active' ? now : undefined,
-    ended_at: parsed.data.status === 'ended' || parsed.data.status === 'failed' ? now : undefined,
+    ...(parsed.data.status === 'active' ? { started_at: now } : {}),
+    ...(parsed.data.status === 'ended' || parsed.data.status === 'failed' ? { ended_at: now } : {}),
     last_heartbeat_at: now,
-    metadata: parsed.data.error ? { gatewayError: parsed.data.error } : undefined,
+    metadata: mergeCameraStreamGatewayMetadata(existingSession.metadata, {
+      status: parsed.data.status,
+      transport: parsed.data.transport,
+      gatewayAnswer: parsed.data.gatewayAnswer,
+      gatewayIceCandidates: parsed.data.gatewayIceCandidates,
+      error: parsed.data.error,
+    }),
   }
 
   const { data: session, error } = await authorized.supabase
@@ -121,6 +150,8 @@ export async function POST(request: NextRequest) {
     payload: {
       deviceId: session.device_id,
       hasGatewayStreamRef: Boolean(parsed.data.gatewayStreamRef),
+      transport: parsed.data.transport || null,
+      hasGatewayAnswer: Boolean(parsed.data.gatewayAnswer),
       error: parsed.data.error || null,
     },
   })

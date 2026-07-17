@@ -157,6 +157,20 @@ El manifest se reescribe para que los segmentos apunten solo a rutas SegurIA. No
 
 El portal reproduce HLS con soporte nativo cuando el navegador lo permite y usa un player compatible cuando no existe soporte directo. Si la playlist no esta lista o el navegador no puede reproducirla, la interfaz vuelve a frames seguros proxificados sin exponer URLs de origen.
 
+Para baja latencia, la misma sesion puede solicitar `preferredTransport: "webrtc"` y guardar una oferta SDP e ICE candidates en `metadata`. El gateway recibe esos datos al consultar sesiones pendientes y responde con:
+
+```json
+{
+  "sessionId": "session_uuid",
+  "status": "active",
+  "transport": "webrtc",
+  "gatewayAnswer": "sdp-answer",
+  "gatewayIceCandidates": []
+}
+```
+
+La respuesta WebRTC queda asociada a la sesion efimera. El portal la consulta mediante `GET /api/cameras/:deviceId/stream` y nunca recibe credenciales, URL local, token de storage ni referencias internas del gateway. Si la negociacion de baja latencia falla, el gateway reporta `status: "failed"` o el portal mantiene HLS/frames seguros como fallback.
+
 El gateway consulta sesiones pendientes con:
 
 ```text
@@ -175,6 +189,7 @@ POST /api/gateway/cameras/stream-sessions
 {
   "sessionId": "session_uuid",
   "status": "active",
+  "transport": "hls",
   "gatewayStreamRef": "local-session-reference"
 }
 ```

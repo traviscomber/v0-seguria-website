@@ -123,7 +123,10 @@ export async function reportCameraStreamSession(config, sessionId, status, optio
     body: JSON.stringify({
       sessionId,
       status,
+      transport: options.transport,
       gatewayStreamRef: options.gatewayStreamRef,
+      gatewayAnswer: options.gatewayAnswer,
+      gatewayIceCandidates: options.gatewayIceCandidates,
       error: options.error,
     }),
   })

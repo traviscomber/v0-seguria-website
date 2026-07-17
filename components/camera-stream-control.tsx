@@ -15,6 +15,10 @@ type StreamSession = {
   createdAt?: string
   mediaUrl?: string
   hlsManifestUrl?: string
+  signaling?: {
+    preferredTransport: 'hls' | 'webrtc'
+    signalingState: 'hls_ready' | 'offer_pending' | 'answer_ready' | 'failed'
+  }
   reused?: boolean
 }
 
@@ -91,6 +95,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
       const response = await fetch(`/api/cameras/${encodeURIComponent(deviceId)}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferredTransport: 'hls' }),
       })
       const payload = await response.json().catch(() => null)
 

@@ -10,6 +10,7 @@ Responsibilities:
 - Send heartbeat to SegurIA
 - Buffer events and critical operations when internet is unavailable
 - Retry heartbeat, inventory and events after reconnect
+- Poll short-lived camera sessions and report HLS or low-latency signaling state
 
 ## Environment
 
@@ -52,3 +53,5 @@ When local overrides are absent, the gateway requests its operational configurat
 This runtime defines the boundary between the local property network and SegurIA. The customer portal never receives connector secrets or technical provider credentials.
 
 The operation queue is persisted locally and uses bounded exponential backoff. If SegurIA Cloud is unreachable, the gateway keeps running and retries queued heartbeat, inventory and event operations on the next sync.
+
+Camera session polling returns the preferred transport for each request. HLS sessions upload protected manifests and segments to SegurIA. Low-latency sessions receive the browser offer and candidates in the session payload; the gateway responds through `reportCameraStreamSession` with `transport: "webrtc"`, `gatewayAnswer` and optional candidates.
