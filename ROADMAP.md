@@ -70,11 +70,11 @@ Completado y validado en produccion:
 - migracion de sesiones de video aplicada y validada con prueba reversible contra Supabase,
 - control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
 - proxy inicial de frames seguros desde evidencia privada hacia el portal sin URL firmada visible,
+- cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
-- implementar cola offline y reintentos del agente local,
 - agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
 - probar recuperacion de desconexion y rollback de automatizaciones,
 - evolucionar el reproductor del portal desde frames seguros hacia video WebRTC/HLS,

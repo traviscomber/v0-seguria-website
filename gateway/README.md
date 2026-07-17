@@ -8,8 +8,8 @@ Responsibilities:
 - Connect to the local bridge
 - Publish MQTT events
 - Send heartbeat to SegurIA
-- Buffer events when internet is unavailable
-- Sync historical events after reconnect
+- Buffer events and critical operations when internet is unavailable
+- Retry heartbeat, inventory and events after reconnect
 
 ## Environment
 
@@ -29,6 +29,8 @@ HOME_ASSISTANT_TOKEN=
 MQTT_URL=
 MQTT_USERNAME=
 MQTT_PASSWORD=
+EVENT_BUFFER_FILE=./data/events.json
+OPERATION_QUEUE_FILE=./data/operations.json
 ```
 
 When local overrides are absent, the gateway requests its operational configuration from SegurIA using `/api/gateway/config`.
@@ -41,9 +43,12 @@ When local overrides are absent, the gateway requests its operational configurat
 - `src/home-assistant.js`
 - `src/mqtt.js`
 - `src/event-buffer.js`
+- `src/operation-queue.js`
 - `src/sync.js`
 - `src/commands.js`
 
 ## Notes
 
 This runtime defines the boundary between the local property network and SegurIA. The customer portal never receives connector secrets or technical provider credentials.
+
+The operation queue is persisted locally and uses bounded exponential backoff. If SegurIA Cloud is unreachable, the gateway keeps running and retries queued heartbeat, inventory and event operations on the next sync.

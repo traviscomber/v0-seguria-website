@@ -1,4 +1,4 @@
-export async function sendHeartbeat(config) {
+export async function sendHeartbeat(config, payload = {}) {
   const response = await fetch(`${config.apiBaseUrl}/api/gateway/heartbeat`, {
     method: 'POST',
     headers: {
@@ -11,6 +11,7 @@ export async function sendHeartbeat(config) {
       status: 'online',
       localTime: new Date().toISOString(),
       version: '0.1.0',
+      ...payload,
     }),
   })
 
@@ -66,7 +67,7 @@ export async function sendEvents(config, events) {
   return response.json()
 }
 
-export async function sendInventory(config, devices) {
+export async function sendInventory(config, devices, options = {}) {
   if (!Array.isArray(devices) || devices.length === 0) {
     return { importedDevices: 0, importedEntities: 0 }
   }
@@ -79,7 +80,7 @@ export async function sendInventory(config, devices) {
     },
     body: JSON.stringify({
       gatewayId: config.gatewayId,
-      synchronizedAt: new Date().toISOString(),
+      synchronizedAt: options.synchronizedAt || new Date().toISOString(),
       devices,
     }),
   })

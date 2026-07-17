@@ -19,5 +19,6 @@ export function loadConfig(env = process.env) {
     heartbeatIntervalSeconds: Number(env.HEARTBEAT_INTERVAL_SECONDS || 60),
     syncIntervalSeconds: Number(env.SYNC_INTERVAL_SECONDS || 30),
     eventBufferFile: env.EVENT_BUFFER_FILE || './data/events.json',
+    operationQueueFile: env.OPERATION_QUEUE_FILE || './data/operations.json',
   }
 }

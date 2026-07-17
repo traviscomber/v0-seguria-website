@@ -99,6 +99,10 @@ Limites: 500 dispositivos por solicitud y 80 entidades por dispositivo. La opera
 
 `POST /api/gateway/heartbeat` debe ejecutarse cada 60 segundos. Después de tres periodos sin comunicación, el monitor cloud debe marcar el gateway como degradado y crear una alerta técnica.
 
+## Continuidad offline
+
+El gateway mantiene una cola local persistente para operaciones criticas. Si SegurIA Cloud no responde, debe encolar heartbeat, inventario y eventos ya capturados, continuar ejecutando el ciclo local y reintentar con backoff exponencial en la siguiente sincronizacion. La cola local no guarda secretos del cliente ni URLs de origen; solo payloads normalizados hacia SegurIA.
+
 ## Snapshots de camara
 
 `POST /api/gateway/cameras/snapshot` recibe `multipart/form-data` con:
