@@ -64,6 +64,8 @@ Completado y validado en produccion:
 - cierre del signup publico para que las cuentas de clientes sean creadas por el equipo interno,
 - registro interno de credenciales cifradas por propiedad para preparar conexiones reales,
 - migracion de credenciales internas aplicada y validada con insercion cifrada reversible,
+- entrega autenticada de configuracion operativa al Gateway local,
+- agente local capaz de arrancar solo con identidad SegurIA y sincronizar inventario desde configuracion recibida,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
@@ -71,7 +73,7 @@ Siguiente bloque activo:
 - implementar cola offline y reintentos del agente local,
 - agregar proxy de video en vivo con limites de concurrencia,
 - probar recuperacion de desconexion y rollback de automatizaciones,
-- conectar el agente local para consumir credenciales internas sin exponerlas al cliente,
+- convertir snapshots y video en un canal operativo controlado por Gateway,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto

@@ -4,7 +4,8 @@ Local gateway scaffold for each property.
 
 Responsibilities:
 
-- Connect to Home Assistant
+- Request its operational connection from SegurIA
+- Connect to the local bridge
 - Publish MQTT events
 - Send heartbeat to SegurIA
 - Buffer events when internet is unavailable
@@ -12,7 +13,25 @@ Responsibilities:
 
 ## Environment
 
-Copy `.env.example` to `.env` and fill the values for the property.
+The standard deployment only needs:
+
+```text
+SEGURIA_GATEWAY_ID=
+SEGURIA_GATEWAY_SECRET=
+SEGURIA_API_BASE_URL=https://seguria.tech
+```
+
+Optional local overrides:
+
+```text
+HOME_ASSISTANT_URL=
+HOME_ASSISTANT_TOKEN=
+MQTT_URL=
+MQTT_USERNAME=
+MQTT_PASSWORD=
+```
+
+When local overrides are absent, the gateway requests its operational configuration from SegurIA using `/api/gateway/config`.
 
 ## Layout
 
@@ -27,4 +46,4 @@ Copy `.env.example` to `.env` and fill the values for the property.
 
 ## Notes
 
-This is a scaffold, not a production runtime yet. It defines the boundary between the local property network and the portal.
+This runtime defines the boundary between the local property network and SegurIA. The customer portal never receives connector secrets or technical provider credentials.

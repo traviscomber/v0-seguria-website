@@ -11,6 +11,44 @@ El panel interno genera dos valores por propiedad:
 
 El secreto se envia en `x-seguria-gateway-secret`. SegurIA guarda unicamente su hash SHA-256. Nunca debe escribirse en logs, snapshots, repositorios o interfaces de cliente.
 
+## Configuracion operativa
+
+`POST /api/gateway/config`
+
+El gateway usa su identidad SegurIA para solicitar la configuracion operativa de su propiedad. La respuesta puede incluir endpoint y secreto descifrado para el puente local asignado a esa propiedad. Esta respuesta es solo para el agente local autenticado; no se expone al portal del cliente.
+
+Payload:
+
+```json
+{
+  "gatewayId": "gw_example123456"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "success": true,
+  "data": {
+    "gateway": {
+      "publicId": "gw_example123456",
+      "propertyId": "property_uuid"
+    },
+    "connections": [
+      {
+        "provider": "local_bridge",
+        "label": "Conector principal",
+        "endpoint": "https://local.example",
+        "secret": "decrypted-runtime-secret"
+      }
+    ]
+  }
+}
+```
+
+Cada entrega queda registrada en `audit_log` como `gateway.config.delivered`.
+
 ## Sincronizacion inicial
 
 `POST /api/gateway/inventory`

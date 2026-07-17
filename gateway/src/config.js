@@ -8,12 +8,12 @@ export function loadConfig(env = process.env) {
 
   return {
     gatewayId: required(env.SEGURIA_GATEWAY_ID, 'SEGURIA_GATEWAY_ID'),
-    propertyId: required(env.SEGURIA_PROPERTY_ID, 'SEGURIA_PROPERTY_ID'),
+    propertyId: env.SEGURIA_PROPERTY_ID || '',
     apiBaseUrl: env.SEGURIA_API_BASE_URL || 'https://seguria.tech',
     gatewaySecret: required(env.SEGURIA_GATEWAY_SECRET, 'SEGURIA_GATEWAY_SECRET'),
-    homeAssistantUrl: required(env.HOME_ASSISTANT_URL, 'HOME_ASSISTANT_URL'),
+    homeAssistantUrl: env.HOME_ASSISTANT_URL || '',
     homeAssistantToken: env.HOME_ASSISTANT_TOKEN || '',
-    mqttUrl: required(env.MQTT_URL, 'MQTT_URL'),
+    mqttUrl: env.MQTT_URL || '',
     mqttUsername: env.MQTT_USERNAME || '',
     mqttPassword: env.MQTT_PASSWORD || '',
     heartbeatIntervalSeconds: Number(env.HEARTBEAT_INTERVAL_SECONDS || 60),
