@@ -1,231 +1,225 @@
-'use client'
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { AlertTriangle, Building2, Camera, FolderKanban, RadioTower, ShieldCheck } from 'lucide-react'
+import { getCurrentAuthSession } from '@/lib/auth-store'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
-import { useState } from 'react'
-import { Plus, Search, Eye, Edit, FolderKanban } from 'lucide-react'
-import { getProjects } from '@/lib/store'
-import type { Project, ProjectStatus, ProjectPriority } from '@/lib/types'
+export const dynamic = 'force-dynamic'
 
-const statusColors: Record<ProjectStatus, { bg: string; text: string }> = {
-  diagnostico: { bg: 'bg-[#4DA3D9]/20', text: 'text-[#4DA3D9]' },
-  diseno: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
-  propuesta: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
-  aprobado: { bg: 'bg-green-500/20', text: 'text-green-400' },
-  instalacion: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
-  monitoreo: { bg: 'bg-cyan-500/20', text: 'text-cyan-400' },
-  cerrado: { bg: 'bg-white/10', text: 'text-white/50' },
+type PropertyRow = {
+  id: string
+  organization_id: string
+  name: string
+  address: string | null
+  status: string | null
+  created_at: string
+  updated_at: string
 }
 
-const statusLabels: Record<ProjectStatus, string> = {
-  diagnostico: 'Diagnóstico',
-  diseno: 'Diseño',
-  propuesta: 'Propuesta',
-  aprobado: 'Aprobado',
-  instalacion: 'Instalación',
-  monitoreo: 'Monitoreo',
-  cerrado: 'Cerrado',
+type OrganizationRow = {
+  id: string
+  name: string
+  status: string | null
 }
 
-const priorityColors: Record<ProjectPriority, { bg: string; text: string }> = {
-  baja: { bg: 'bg-white/10', text: 'text-white/50' },
-  media: { bg: 'bg-[#4DA3D9]/20', text: 'text-[#4DA3D9]' },
-  alta: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
-  urgente: { bg: 'bg-red-500/20', text: 'text-red-400' },
+type DeviceRow = {
+  id: string
+  property_id: string
+  kind: string | null
+  status: string | null
+  last_seen_at: string | null
 }
 
-export default function ProjectsPage() {
-  const projects = getProjects()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'todos'>('todos')
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+type IncidentRow = {
+  id: string
+  property_id: string
+  status: string | null
+  severity: string | null
+}
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'todos' || project.estado === statusFilter
-    return matchesSearch && matchesStatus
-  })
+type GatewayRow = {
+  id: string
+  property_id: string
+  status: string | null
+  last_seen_at: string | null
+}
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-CL', { 
-      day: '2-digit', 
-      month: 'short',
-      year: 'numeric'
-    }).format(new Date(date))
+function formatDate(value: string | null) {
+  if (!value) return 'Sin actividad'
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function isOpenIncident(status: string | null) {
+  return !status || !['resolved', 'closed'].includes(status)
+}
+
+function getSiteState(property: PropertyRow, devices: DeviceRow[], incidents: IncidentRow[], gateways: GatewayRow[]) {
+  const openIncidents = incidents.filter((incident) => isOpenIncident(incident.status))
+  const onlineGateways = gateways.filter((gateway) => gateway.status === 'online').length
+  const activeDevices = devices.filter((device) => device.status === 'active' || device.status === 'online').length
+
+  if (openIncidents.some((incident) => incident.severity === 'critical' || incident.severity === 'high')) {
+    return { label: 'Atencion alta', className: 'bg-red-500/15 text-red-200 border-red-400/30' }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value)
+  if (openIncidents.length > 0 || devices.some((device) => device.status === 'fault' || device.status === 'falla')) {
+    return { label: 'Requiere revision', className: 'bg-amber-500/15 text-amber-200 border-amber-400/30' }
   }
+
+  if (property.status !== 'active' || onlineGateways === 0 || activeDevices === 0) {
+    return { label: 'En conexion', className: 'bg-sky-500/15 text-sky-200 border-sky-400/30' }
+  }
+
+  return { label: 'Operativo', className: 'bg-emerald-500/15 text-emerald-200 border-emerald-400/30' }
+}
+
+export default async function ProjectsPage() {
+  const auth = await getCurrentAuthSession()
+  if (!auth) redirect('/login?next=/admin/proyectos')
+  if (auth.user.role === 'client') redirect('/app')
+
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) {
+    return (
+      <div className="glass-card p-8">
+        <h1 className="text-3xl font-light text-white">Sitios protegidos</h1>
+        <p className="mt-3 text-white/60">Falta configurar la conexion segura de datos para leer los proyectos reales.</p>
+      </div>
+    )
+  }
+
+  const [propertiesResult, organizationsResult, devicesResult, incidentsResult, gatewaysResult] = await Promise.all([
+    supabase.from('properties').select('id,organization_id,name,address,status,created_at,updated_at').order('updated_at', { ascending: false }),
+    supabase.from('organizations').select('id,name,status'),
+    supabase.from('devices').select('id,property_id,kind,status,last_seen_at'),
+    supabase.from('incidents').select('id,property_id,status,severity'),
+    supabase.from('gateways').select('id,property_id,status,last_seen_at'),
+  ])
+
+  const queryError = propertiesResult.error || organizationsResult.error || devicesResult.error || incidentsResult.error || gatewaysResult.error
+  if (queryError) {
+    return (
+      <div className="glass-card p-8">
+        <h1 className="text-3xl font-light text-white">Sitios protegidos</h1>
+        <p className="mt-3 text-red-200">No se pudo leer la operacion: {queryError.message}</p>
+      </div>
+    )
+  }
+
+  const allowedPropertyIds = new Set(auth.user.propertyIds)
+  const scopedProperties = ((propertiesResult.data || []) as PropertyRow[]).filter((property) =>
+    auth.user.role === 'admin' || allowedPropertyIds.has(property.id)
+  )
+
+  const organizationById = new Map(((organizationsResult.data || []) as OrganizationRow[]).map((organization) => [organization.id, organization]))
+  const devices = ((devicesResult.data || []) as DeviceRow[]).filter((device) => scopedProperties.some((property) => property.id === device.property_id))
+  const incidents = ((incidentsResult.data || []) as IncidentRow[]).filter((incident) => scopedProperties.some((property) => property.id === incident.property_id))
+  const gateways = ((gatewaysResult.data || []) as GatewayRow[]).filter((gateway) => scopedProperties.some((property) => property.id === gateway.property_id))
+
+  const openIncidents = incidents.filter((incident) => isOpenIncident(incident.status)).length
+  const cameraCount = devices.filter((device) => device.kind === 'camera').length
+  const onlineGateways = gateways.filter((gateway) => gateway.status === 'online').length
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-light text-white">Proyectos</h1>
-          <p className="text-white/60 mt-1">Gestiona tus proyectos activos</p>
+          <p className="text-sm text-[#4DA3D9]">Operacion real</p>
+          <h1 className="text-3xl font-light text-white">Sitios protegidos</h1>
+          <p className="mt-1 text-white/60">Cada tarjeta nace de propiedades, equipos, enlaces e incidentes activos en la base.</p>
         </div>
-        <button className="btn-primary px-4 py-2.5 text-[15px] inline-flex items-center gap-2 w-fit">
-          <Plus className="w-4 h-4" strokeWidth={1.5} />
-          Nuevo Proyecto
-        </button>
+        <Link href="/admin/integraciones" className="btn-primary inline-flex w-fit items-center gap-2 px-4 py-2.5 text-[15px]">
+          <RadioTower className="h-4 w-4" strokeWidth={1.5} />
+          Conectar sitio
+        </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" strokeWidth={1.5} />
-          <input
-            type="text"
-            placeholder="Buscar por cliente o descripción..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-[5px] bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'todos')}
-          className="px-4 py-2.5 rounded-[5px] bg-white/10 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9] appearance-none min-w-[150px]"
-        >
-          <option value="todos" className="bg-[#123A5A]">Todos los estados</option>
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <option key={value} value={value} className="bg-[#123A5A]">{label}</option>
-          ))}
-        </select>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={Building2} label="Sitios" value={scopedProperties.length.toString()} />
+        <MetricCard icon={Camera} label="Camaras" value={cameraCount.toString()} />
+        <MetricCard icon={ShieldCheck} label="Enlaces online" value={onlineGateways.toString()} />
+        <MetricCard icon={AlertTriangle} label="Incidentes abiertos" value={openIncidents.toString()} tone={openIncidents > 0 ? 'text-amber-200' : 'text-white'} />
       </div>
 
-      {/* Projects Grid */}
-      {filteredProjects.length === 0 ? (
+      {scopedProperties.length === 0 ? (
         <div className="glass-card p-12 text-center">
-          <FolderKanban className="w-12 h-12 text-white/30 mx-auto mb-4" strokeWidth={1} />
-          <p className="text-white/50">No se encontraron proyectos</p>
+          <FolderKanban className="mx-auto mb-4 h-12 w-12 text-white/30" strokeWidth={1} />
+          <p className="text-white/70">Aun no hay sitios operativos para este usuario.</p>
+          <p className="mt-2 text-sm text-white/45">Cuando se cree una empresa y se conecte su instalacion, aparecera aqui.</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <div key={project.id} className="glass-card p-6 hover:bg-[rgba(18,58,90,0.6)] transition-all duration-300">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-white text-lg font-light">{project.clienteNombre}</p>
-                  <p className="text-white/50 text-sm">{project.ubicacion}</p>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {scopedProperties.map((property) => {
+            const propertyDevices = devices.filter((device) => device.property_id === property.id)
+            const propertyIncidents = incidents.filter((incident) => incident.property_id === property.id)
+            const propertyGateways = gateways.filter((gateway) => gateway.property_id === property.id)
+            const state = getSiteState(property, propertyDevices, propertyIncidents, propertyGateways)
+            const lastSeen = propertyDevices
+              .map((device) => device.last_seen_at)
+              .filter(Boolean)
+              .sort()
+              .at(-1) || property.updated_at
+            const organization = organizationById.get(property.organization_id)
+
+            return (
+              <article key={property.id} className="glass-card p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm text-white/45">{organization?.name || 'Empresa sin nombre'}</p>
+                    <h2 className="mt-1 text-xl font-light text-white">{property.name}</h2>
+                    <p className="mt-1 text-sm text-white/50">{property.address || 'Direccion pendiente'}</p>
+                  </div>
+                  <span className={`w-fit rounded-[5px] border px-2.5 py-1 text-xs ${state.className}`}>{state.label}</span>
                 </div>
-                <span className={`
-                  inline-block px-2 py-1 rounded-[5px] text-[12px]
-                  ${priorityColors[project.prioridad].bg} ${priorityColors[project.prioridad].text}
-                `}>
-                  {project.prioridad.charAt(0).toUpperCase() + project.prioridad.slice(1)}
-                </span>
-              </div>
-              
-              <p className="text-white/60 text-[14px] leading-relaxed mb-4 line-clamp-2">
-                {project.descripcion}
-              </p>
 
-              <div className="flex items-center justify-between mb-4">
-                <span className={`
-                  inline-block px-2 py-1 rounded-[5px] text-[12px]
-                  ${statusColors[project.estado].bg} ${statusColors[project.estado].text}
-                `}>
-                  {statusLabels[project.estado]}
-                </span>
-                {project.presupuestoEstimado && (
-                  <span className="text-white/50 text-[14px]">
-                    {formatCurrency(project.presupuestoEstimado)}
-                  </span>
-                )}
-              </div>
+                <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <InlineStat label="Equipos" value={propertyDevices.length.toString()} />
+                  <InlineStat label="Camaras" value={propertyDevices.filter((device) => device.kind === 'camera').length.toString()} />
+                  <InlineStat label="Enlaces" value={propertyGateways.length.toString()} />
+                  <InlineStat label="Alertas" value={propertyIncidents.filter((incident) => isOpenIncident(incident.status)).length.toString()} />
+                </div>
 
-              <div className="flex items-center gap-2 pt-4 border-t border-white/10">
-                <button 
-                  onClick={() => setSelectedProject(project)}
-                  className="flex-1 py-2 rounded-[5px] bg-white/5 hover:bg-white/10 text-white/70 text-[14px] transition-colors flex items-center justify-center gap-2"
-                >
-                  <Eye className="w-4 h-4" strokeWidth={1.5} />
-                  Ver
-                </button>
-                <button className="flex-1 py-2 rounded-[5px] bg-white/5 hover:bg-white/10 text-white/70 text-[14px] transition-colors flex items-center justify-center gap-2">
-                  <Edit className="w-4 h-4" strokeWidth={1.5} />
-                  Editar
-                </button>
-              </div>
-            </div>
-          ))}
+                <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-4 text-sm text-white/55 sm:flex-row sm:items-center sm:justify-between">
+                  <span>Ultima senal: {formatDate(lastSeen)}</span>
+                  <div className="flex gap-2">
+                    <Link href="/admin/dispositivos" className="rounded-[5px] bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10">Equipos</Link>
+                    <Link href="/admin/incidentes" className="rounded-[5px] bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10">Incidentes</Link>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
         </div>
       )}
+    </div>
+  )
+}
 
-      {/* Detail Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedProject(null)}>
-          <div className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-light text-white">Detalle del Proyecto</h2>
-              <button 
-                onClick={() => setSelectedProject(null)}
-                className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Cliente</p>
-                  <p className="text-white">{selectedProject.clienteNombre}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Estado</p>
-                  <span className={`
-                    inline-block px-2 py-1 rounded-[5px] text-[12px]
-                    ${statusColors[selectedProject.estado].bg} ${statusColors[selectedProject.estado].text}
-                  `}>
-                    {statusLabels[selectedProject.estado]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Tipo</p>
-                  <p className="text-white">{selectedProject.tipo === 'campo' ? 'Campo Inteligente' : 'Propiedad Inteligente'}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Prioridad</p>
-                  <span className={`
-                    inline-block px-2 py-1 rounded-[5px] text-[12px]
-                    ${priorityColors[selectedProject.prioridad].bg} ${priorityColors[selectedProject.prioridad].text}
-                  `}>
-                    {selectedProject.prioridad.charAt(0).toUpperCase() + selectedProject.prioridad.slice(1)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Ubicación</p>
-                  <p className="text-white">{selectedProject.ubicacion}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Presupuesto Estimado</p>
-                  <p className="text-white">{selectedProject.presupuestoEstimado ? formatCurrency(selectedProject.presupuestoEstimado) : '-'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-white/50 text-sm mb-1">Descripción</p>
-                <p className="text-white/80 bg-white/5 p-4 rounded-[5px]">{selectedProject.descripcion}</p>
-              </div>
-              {selectedProject.notasTecnicas && (
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Notas Técnicas</p>
-                  <p className="text-white/80 bg-white/5 p-4 rounded-[5px]">{selectedProject.notasTecnicas}</p>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button className="btn-primary px-4 py-2.5 text-[15px] flex-1">
-                  Ver Documentos
-                </button>
-                <button className="btn-secondary px-4 py-2.5 text-[15px] flex-1">
-                  Crear Propuesta
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+function MetricCard({ icon: Icon, label, value, tone = 'text-white' }: {
+  icon: typeof Building2
+  label: string
+  value: string
+  tone?: string
+}) {
+  return (
+    <div className="glass-card p-4">
+      <Icon className="mb-3 h-5 w-5 text-[#4DA3D9]" strokeWidth={1.5} />
+      <p className="text-sm text-white/50">{label}</p>
+      <p className={`mt-1 text-2xl font-light ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
+function InlineStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[5px] bg-white/5 p-3">
+      <p className="text-xs text-white/40">{label}</p>
+      <p className="mt-1 text-lg font-light text-white">{value}</p>
     </div>
   )
 }

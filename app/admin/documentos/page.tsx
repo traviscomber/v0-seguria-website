@@ -1,229 +1,194 @@
-'use client'
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { Camera, Database, FileText, HardDrive, ImageIcon, ShieldCheck } from 'lucide-react'
+import { getCurrentAuthSession } from '@/lib/auth-store'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
-import { useState } from 'react'
-import { Plus, Search, FileText, Eye, Download, Upload } from 'lucide-react'
-import { getDocuments, getProjects } from '@/lib/store'
-import type { Document, DocumentType, DocumentStatus } from '@/lib/types'
+export const dynamic = 'force-dynamic'
 
-const typeLabels: Record<DocumentType, string> = {
-  diagnostico_inicial: 'Diagnóstico Inicial',
-  requerimientos: 'Requerimientos',
-  propuesta_comercial: 'Propuesta Comercial',
-  propuesta_tecnica: 'Propuesta Técnica',
-  plano_esquema: 'Plano / Esquema',
-  cotizacion: 'Cotización',
-  informe_instalacion: 'Informe de Instalación',
-  informe_mantencion: 'Informe de Mantención',
-  manual: 'Manual',
-  fotografia_evidencia: 'Fotografía / Evidencia',
+type SnapshotRow = {
+  id: string
+  property_id: string
+  device_id: string
+  object_path: string
+  mime_type: string | null
+  size_bytes: number | null
+  captured_at: string
+  created_at: string
 }
 
-const statusColors: Record<DocumentStatus, { bg: string; text: string }> = {
-  borrador: { bg: 'bg-white/10', text: 'text-white/50' },
-  revision: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
-  aprobado: { bg: 'bg-green-500/20', text: 'text-green-400' },
-  archivado: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+type PropertyRow = {
+  id: string
+  name: string
+  address: string | null
 }
 
-const statusLabels: Record<DocumentStatus, string> = {
-  borrador: 'Borrador',
-  revision: 'En Revisión',
-  aprobado: 'Aprobado',
-  archivado: 'Archivado',
+type DeviceRow = {
+  id: string
+  name: string
+  kind: string | null
 }
 
-export default function DocumentsPage() {
-  const documents = getDocuments()
-  const projects = getProjects()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [typeFilter, setTypeFilter] = useState<DocumentType | 'todos'>('todos')
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
 
-  const filteredDocs = documents.filter(doc => {
-    const matchesSearch = doc.titulo.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = typeFilter === 'todos' || doc.tipo === typeFilter
-    return matchesSearch && matchesType
-  })
+function formatSize(value: number | null) {
+  if (!value) return 'Sin peso'
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`
+  return `${(value / 1024 / 1024).toFixed(1)} MB`
+}
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-CL', { 
-      day: '2-digit', 
-      month: 'short',
-      year: 'numeric'
-    }).format(new Date(date))
+function getSafeFileName(objectPath: string) {
+  const name = objectPath.split('/').filter(Boolean).at(-1)
+  return name || 'evidencia-capturada'
+}
+
+export default async function DocumentsPage() {
+  const auth = await getCurrentAuthSession()
+  if (!auth) redirect('/login?next=/admin/documentos')
+  if (auth.user.role === 'client') redirect('/app')
+
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) {
+    return (
+      <div className="glass-card p-8">
+        <h1 className="text-3xl font-light text-white">Documentos y evidencia</h1>
+        <p className="mt-3 text-white/60">Falta configurar la conexion segura de datos para leer evidencia real.</p>
+      </div>
+    )
   }
 
-  const getProjectName = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId)
-    return project?.clienteNombre || 'Sin proyecto'
+  const [snapshotsResult, propertiesResult, devicesResult] = await Promise.all([
+    supabase
+      .from('camera_snapshots')
+      .select('id,property_id,device_id,object_path,mime_type,size_bytes,captured_at,created_at')
+      .order('captured_at', { ascending: false })
+      .limit(200),
+    supabase.from('properties').select('id,name,address'),
+    supabase.from('devices').select('id,name,kind'),
+  ])
+
+  const queryError = snapshotsResult.error || propertiesResult.error || devicesResult.error
+  if (queryError) {
+    return (
+      <div className="glass-card p-8">
+        <h1 className="text-3xl font-light text-white">Documentos y evidencia</h1>
+        <p className="mt-3 text-red-200">No se pudo leer evidencia: {queryError.message}</p>
+      </div>
+    )
   }
+
+  const allowedPropertyIds = new Set(auth.user.propertyIds)
+  const snapshots = ((snapshotsResult.data || []) as SnapshotRow[]).filter((snapshot) =>
+    auth.user.role === 'admin' || allowedPropertyIds.has(snapshot.property_id)
+  )
+  const propertiesById = new Map(((propertiesResult.data || []) as PropertyRow[]).map((property) => [property.id, property]))
+  const devicesById = new Map(((devicesResult.data || []) as DeviceRow[]).map((device) => [device.id, device]))
+  const totalBytes = snapshots.reduce((total, snapshot) => total + (snapshot.size_bytes || 0), 0)
+  const cameraSnapshots = snapshots.filter((snapshot) => devicesById.get(snapshot.device_id)?.kind === 'camera').length
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-light text-white">Documentos</h1>
-          <p className="text-white/60 mt-1">Gestiona la documentación técnica</p>
+          <p className="text-sm text-[#4DA3D9]">Archivo seguro</p>
+          <h1 className="text-3xl font-light text-white">Documentos y evidencia</h1>
+          <p className="mt-1 text-white/60">Capturas y registros operativos guardados en storage privado para auditoria interna.</p>
         </div>
-        <button className="btn-primary px-4 py-2.5 text-[15px] inline-flex items-center gap-2 w-fit">
-          <Upload className="w-4 h-4" strokeWidth={1.5} />
-          Subir Documento
-        </button>
+        <Link href="/admin/dispositivos" className="btn-primary inline-flex w-fit items-center gap-2 px-4 py-2.5 text-[15px]">
+          Ver dispositivos
+          <Camera className="h-4 w-4" strokeWidth={1.5} />
+        </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" strokeWidth={1.5} />
-          <input
-            type="text"
-            placeholder="Buscar por título..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-[5px] bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
-          />
-        </div>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as DocumentType | 'todos')}
-          className="px-4 py-2.5 rounded-[5px] bg-white/10 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9] appearance-none min-w-[180px]"
-        >
-          <option value="todos" className="bg-[#123A5A]">Todos los tipos</option>
-          {Object.entries(typeLabels).map(([value, label]) => (
-            <option key={value} value={value} className="bg-[#123A5A]">{label}</option>
-          ))}
-        </select>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={FileText} label="Evidencias" value={snapshots.length.toString()} />
+        <MetricCard icon={ImageIcon} label="Capturas de camara" value={cameraSnapshots.toString()} />
+        <MetricCard icon={HardDrive} label="Volumen" value={formatSize(totalBytes)} />
+        <MetricCard icon={ShieldCheck} label="Storage" value="Privado" tone="text-emerald-200" />
       </div>
 
-      {/* Documents Table */}
-      <div className="glass-card overflow-hidden">
-        {filteredDocs.length === 0 ? (
+      <section className="glass-card overflow-hidden">
+        <div className="border-b border-white/10 p-5">
+          <h2 className="text-xl font-light text-white">Evidencia reciente</h2>
+          <p className="mt-1 text-sm text-white/50">Se muestran metadatos seguros; la entrega de archivos debe pasar por URLs firmadas del backend.</p>
+        </div>
+
+        {snapshots.length === 0 ? (
           <div className="p-12 text-center">
-            <FileText className="w-12 h-12 text-white/30 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-white/50">No se encontraron documentos</p>
+            <Database className="mx-auto mb-4 h-12 w-12 text-white/30" strokeWidth={1} />
+            <p className="text-white/70">Aun no hay evidencia capturada.</p>
+            <p className="mt-2 text-sm text-white/45">Cuando un gateway envie capturas, quedaran disponibles en este registro.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-white/50 text-sm border-b border-white/10">
-                  <th className="p-4 font-normal">Título</th>
+                <tr className="border-b border-white/10 text-left text-sm text-white/50">
+                  <th className="p-4 font-normal">Archivo</th>
+                  <th className="p-4 font-normal">Sitio</th>
+                  <th className="p-4 font-normal">Equipo</th>
                   <th className="p-4 font-normal">Tipo</th>
-                  <th className="p-4 font-normal">Proyecto</th>
-                  <th className="p-4 font-normal">Versión</th>
-                  <th className="p-4 font-normal">Estado</th>
-                  <th className="p-4 font-normal">Fecha</th>
-                  <th className="p-4 font-normal text-right">Acciones</th>
+                  <th className="p-4 font-normal">Peso</th>
+                  <th className="p-4 font-normal">Captura</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredDocs.map((doc) => (
-                  <tr key={doc.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[5px] bg-[#4DA3D9]/20 flex items-center justify-center">
-                          <FileText className="w-5 h-5 text-[#4DA3D9]" strokeWidth={1.5} />
+                {snapshots.map((snapshot) => {
+                  const property = propertiesById.get(snapshot.property_id)
+                  const device = devicesById.get(snapshot.device_id)
+
+                  return (
+                    <tr key={snapshot.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-[#4DA3D9]/15">
+                            <FileText className="h-5 w-5 text-[#4DA3D9]" strokeWidth={1.5} />
+                          </div>
+                          <div>
+                            <p className="text-[15px] text-white">{getSafeFileName(snapshot.object_path)}</p>
+                            <p className="text-[12px] text-white/35">ID {snapshot.id.slice(0, 8)}</p>
+                          </div>
                         </div>
-                        <p className="text-white text-[15px]">{doc.titulo}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-white/70 text-[14px]">{typeLabels[doc.tipo]}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-white/70 text-[14px]">{getProjectName(doc.proyectoId)}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-white/50 text-[14px]">v{doc.version}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`
-                        inline-block px-2 py-1 rounded-[5px] text-[12px]
-                        ${statusColors[doc.estado].bg} ${statusColors[doc.estado].text}
-                      `}>
-                        {statusLabels[doc.estado]}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-white/50 text-[14px]">{formatDate(doc.fechaCreacion)}</span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => setSelectedDoc(doc)}
-                          className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Ver"
-                        >
-                          <Eye className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                        <button 
-                          className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Descargar"
-                        >
-                          <Download className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="p-4">
+                        <p className="text-sm text-white/70">{property?.name || 'Sitio no encontrado'}</p>
+                        <p className="text-xs text-white/35">{property?.address || 'Direccion pendiente'}</p>
+                      </td>
+                      <td className="p-4 text-sm text-white/60">{device?.name || 'Equipo sin nombre'}</td>
+                      <td className="p-4 text-sm text-white/55">{snapshot.mime_type || 'application/octet-stream'}</td>
+                      <td className="p-4 text-sm text-white/55">{formatSize(snapshot.size_bytes)}</td>
+                      <td className="p-4 text-sm text-white/50">{formatDate(snapshot.captured_at)}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
+    </div>
+  )
+}
 
-      {/* Detail Modal */}
-      {selectedDoc && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedDoc(null)}>
-          <div className="glass-card max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-light text-white">Detalle del Documento</h2>
-              <button 
-                onClick={() => setSelectedDoc(null)}
-                className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-white/50 text-sm mb-1">Título</p>
-                <p className="text-white">{selectedDoc.titulo}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Tipo</p>
-                  <p className="text-white">{typeLabels[selectedDoc.tipo]}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Versión</p>
-                  <p className="text-white">v{selectedDoc.version}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Estado</p>
-                  <span className={`
-                    inline-block px-2 py-1 rounded-[5px] text-[12px]
-                    ${statusColors[selectedDoc.estado].bg} ${statusColors[selectedDoc.estado].text}
-                  `}>
-                    {statusLabels[selectedDoc.estado]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Autor</p>
-                  <p className="text-white">{selectedDoc.autor}</p>
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button className="btn-primary px-4 py-2.5 text-[15px] flex-1 flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" strokeWidth={1.5} />
-                  Descargar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+function MetricCard({ icon: Icon, label, value, tone = 'text-white' }: {
+  icon: typeof FileText
+  label: string
+  value: string
+  tone?: string
+}) {
+  return (
+    <div className="glass-card p-4">
+      <Icon className="mb-3 h-5 w-5 text-[#4DA3D9]" strokeWidth={1.5} />
+      <p className="text-sm text-white/50">{label}</p>
+      <p className={`mt-1 text-2xl font-light ${tone}`}>{value}</p>
     </div>
   )
 }
