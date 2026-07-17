@@ -31,6 +31,8 @@ const clientPortalPagePath = 'app/app/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
 const securityInventoryRoutePath = 'app/api/admin/security-inventory/route.ts'
 const auditPagePath = 'app/admin/auditoria/page.tsx'
+const gatewayConfigRoutePath = 'app/api/gateway/config/route.ts'
+const gatewayRuntimeBridgePath = 'gateway/src/home-assistant.js'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -50,6 +52,8 @@ const clientPortalPage = read(clientPortalPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
 const securityInventoryRoute = read(securityInventoryRoutePath)
 const auditPage = read(auditPagePath)
+const gatewayConfigRoute = read(gatewayConfigRoutePath)
+const gatewayRuntimeBridge = read(gatewayRuntimeBridgePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -233,6 +237,19 @@ assert(
   /'device\.space_assigned': 'Equipo asignado a espacio'/.test(auditPage),
   `${auditPagePath} must show device space assignment audits with a readable label.`
 )
+assert(
+  /provider:\s*getOperationalProvider\(credential\.provider\)/.test(gatewayConfigRoute),
+  `${gatewayConfigRoutePath} must expose only operational provider aliases to gateways.`
+)
+assertNotContains(
+  gatewayConfigRoute,
+  [/internalProvider:\s*credential\.provider/],
+  gatewayConfigRoutePath
+)
+assert(
+  /connection\.provider === 'local_bridge'/.test(gatewayRuntimeBridge),
+  `${gatewayRuntimeBridgePath} must consume the neutral local_bridge alias from config delivery.`
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -250,5 +267,6 @@ console.log(JSON.stringify({
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
+    'gateway config hides internal provider names',
   ],
 }, null, 2))

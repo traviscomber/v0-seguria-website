@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
       return {
         id: credential.id,
         provider: getOperationalProvider(credential.provider),
-        internalProvider: credential.provider,
         label: credential.label,
         accountIdentifier: credential.account_identifier,
         credentialKind: credential.credential_kind,
