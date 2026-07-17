@@ -13,16 +13,17 @@ export default async function AdminDashboard() {
 
   const supabase = createSupabaseAdminClient()
   const empty = { count: 0 }
-  const [organizations, properties, devices, incidents, leadsResult, gatewaysResult] = supabase
+  const [organizations, properties, devices, incidents, overdueNotifications, leadsResult, gatewaysResult] = supabase
     ? await Promise.all([
         supabase.from('organizations').select('id', { count: 'exact', head: true }),
         supabase.from('properties').select('id', { count: 'exact', head: true }),
         supabase.from('devices').select('id', { count: 'exact', head: true }),
-        supabase.from('incidents').select('id', { count: 'exact', head: true }).in('status', ['open', 'acknowledged', 'investigating']),
+        supabase.from('incidents').select('id', { count: 'exact', head: true }).in('status', ['new', 'validating', 'confirmed', 'responding']),
+        supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('status', 'escalated'),
         supabase.from('leads').select('id,name,email,property_type,status,created_at').order('created_at', { ascending: false }).limit(5),
         supabase.from('gateways').select('id,name,status,last_seen_at').order('updated_at', { ascending: false }).limit(6),
       ])
-    : [empty, empty, empty, empty, { data: [] }, { data: [] }]
+    : [empty, empty, empty, empty, empty, { data: [] }, { data: [] }]
 
   const leads = leadsResult.data || []
   const gateways = gatewaysResult.data || []
@@ -30,7 +31,7 @@ export default async function AdminDashboard() {
     { label: 'Empresas', value: organizations.count || 0, note: 'clientes configurados', icon: Building2, href: '/admin/integraciones' },
     { label: 'Sitios', value: properties.count || 0, note: 'espacios protegidos', icon: MapPin, href: '/admin/dispositivos' },
     { label: 'Equipos', value: devices.count || 0, note: 'inventario conectado', icon: Cpu, href: '/admin/dispositivos' },
-    { label: 'Incidentes abiertos', value: incidents.count || 0, note: 'requieren seguimiento', icon: AlertTriangle, href: '/admin' },
+    { label: 'Incidentes abiertos', value: incidents.count || 0, note: overdueNotifications.count ? `${overdueNotifications.count} confirmaciones vencidas` : 'sin confirmaciones vencidas', icon: AlertTriangle, href: '/admin/incidentes' },
   ]
 
   return (

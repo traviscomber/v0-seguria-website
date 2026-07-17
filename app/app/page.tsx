@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
+import { ClientNotificationCenter } from '@/components/client-notification-center'
 
 const sourceCards = [
   {
@@ -285,6 +286,8 @@ export default async function ClientAppPage() {
           </div>
         </div>
       </section>
+
+      <ClientNotificationCenter />
 
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">

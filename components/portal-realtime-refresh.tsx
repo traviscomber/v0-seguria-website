@@ -25,6 +25,11 @@ export function PortalRealtimeRefresh({ organizationIds }: { organizationIds: st
           { event: 'UPDATE', schema: 'public', table: 'entity_states', filter: `organization_id=eq.${organizationId}` },
           refresh
         )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notifications', filter: `organization_id=eq.${organizationId}` },
+          refresh
+        )
         .subscribe()
     )
 

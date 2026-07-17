@@ -608,6 +608,12 @@ Completado en codigo:
 - timeline de eventos reales y refresco Realtime bajo RLS,
 - asignacion administrativa de equipos a espacios,
 - creacion idempotente de incidentes criticos y deteccion de gateways silenciosos.
+- centro operativo de incidentes con asignacion, transiciones, comentarios y auditoria,
+- automatizaciones versionadas con despliegue confirmado por gateway,
+- bandeja persistente de avisos por cliente con confirmacion de recepcion,
+- SLA de 5 minutos para criticidad alta y 30 minutos para atencion,
+- escalamiento automatico de avisos vencidos mediante monitor autenticado,
+- visualizacion de confirmaciones y vencimientos en el centro de incidentes y dashboard administrativo.
 
 Validado localmente:
 
@@ -615,22 +621,24 @@ Validado localmente:
 - higiene de diff sin errores,
 - build de produccion como puerta de salida de cada bloque,
 - rutas de maquina sin credenciales globales compartidas.
+- 10 migraciones aplicadas en la base productiva,
+- aislamiento RLS probado con usuarios de dos organizaciones,
+- generacion, lectura aislada, confirmacion, escalamiento, auditoria y limpieza de avisos probados contra Supabase.
 
 Pendiente de infraestructura:
 
-- vincular el repositorio al proyecto Supabase definitivo de SegurIA,
-- aplicar y verificar la migracion en staging antes de produccion,
-- configurar URL y publishable/secret keys en Vercel,
-- ejecutar pruebas RLS con usuarios de dos organizaciones,
-- provisionar la primera propiedad real y confirmar el primer heartbeat.
+- provisionar la primera propiedad real y confirmar el primer heartbeat,
+- definir proveedores y plantillas para email, SMS o push,
+- acordar retencion de evidencia, eventos y auditoria,
+- separar un ambiente formal de staging antes del piloto ampliado.
 
 Siguiente bloque autonomo:
 
-1. Crear asignacion de equipos a espacios desde el panel interno.
-2. Implementar timeline de eventos y actualizacion Realtime por propiedad.
-3. Marcar gateways degradados por heartbeat vencido.
-4. Crear incidentes basicos desde eventos criticos.
-5. Incorporar snapshots mediante proxy sin exponer URL ni credenciales de origen.
+1. Incorporar entrega multicanal con reintentos y preferencias por usuario.
+2. Asociar evidencia visual y eventos correlacionados a cada incidente.
+3. Crear resumen diario y reporte mensual por organizacion.
+4. Medir tiempos de confirmacion, respuesta y resolucion por severidad.
+5. Ejecutar el piloto operativo con la primera propiedad real.
 
 ## Fuentes tecnicas oficiales
 

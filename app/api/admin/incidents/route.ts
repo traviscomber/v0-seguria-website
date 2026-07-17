@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   const [{ data: incidents, error }, usersResult] = await Promise.all([
-    supabase.from('incidents').select('id,organization_id,property_id,assigned_to,title,description,severity,status,acknowledged_at,resolved_at,created_at,updated_at,properties(name,address),incident_actions(id,actor_user_id,actor_label,action_type,from_status,to_status,comment,created_at)').order('created_at', { ascending: false }).limit(300),
+    supabase.from('incidents').select('id,organization_id,property_id,assigned_to,title,description,severity,status,acknowledged_at,resolved_at,created_at,updated_at,properties(name,address),incident_actions(id,actor_user_id,actor_label,action_type,from_status,to_status,comment,created_at),notifications(id,status,due_at,acknowledged_at,escalated_at,recipient_user_id)').order('created_at', { ascending: false }).limit(300),
     supabase.auth.admin.listUsers({ page: 1, perPage: 500 }),
   ])
   if (error) return NextResponse.json({ success: false, error: 'No fue posible cargar los incidentes.' }, { status: 500 })
