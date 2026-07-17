@@ -212,8 +212,19 @@ assert(
   `${incidentsRoutePath} must use the audited incident management function.`
 )
 assert(
+  /incidentsQuery = incidentsQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(incidentsRoute) &&
+    /canAccessProperty\(auth\.user, incident\.property_id\)/.test(incidentsRoute) &&
+    /getVisibleOperatorIds\(supabase, auth\)/.test(incidentsRoute),
+  `${incidentsRoutePath} must scope incident reads, mutations, and assignees by authenticated properties.`
+)
+assert(
   /note:\s*z\.string\(\)\.trim\(\)\.max\(2000\)\.optional\(\)/.test(incidentsRoute),
   `${incidentsRoutePath} must accept bounded incident notes.`
+)
+assertNotContains(
+  incidentsRoute,
+  [/Cambio invÃ/i, /transiciÃ/i, /asignaciÃ/i, /estÃ/i],
+  incidentsRoutePath
 )
 assert(
   /function recordComment\(\)/.test(incidentCenter) && /updateIncident\(\{\s*note:\s*cleanNote\s*\}\)/.test(incidentCenter),
@@ -361,6 +372,7 @@ console.log(JSON.stringify({
     'legacy in-memory demo store is absent',
     'public signup remains closed and internal-only',
     'incident comments are explicit and audited',
+    'incident operations are scoped by authenticated properties',
     'admin integrations use neutral visible labels',
     'integration dashboards are scoped by authenticated user',
     'client notifications are explicit and audited',
