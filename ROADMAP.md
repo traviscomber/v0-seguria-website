@@ -62,6 +62,8 @@ Completado y validado en produccion:
 - monitor programado para marcar Gateways obsoletos y escalar confirmaciones vencidas,
 - alta interna de cliente desde admin con Supabase Auth, empresa, sitio inicial y espacios base,
 - cierre del signup publico para que las cuentas de clientes sean creadas por el equipo interno,
+- registro interno de credenciales cifradas por propiedad para preparar conexiones reales,
+- migracion de credenciales internas aplicada y validada con insercion cifrada reversible,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
@@ -69,7 +71,7 @@ Siguiente bloque activo:
 - implementar cola offline y reintentos del agente local,
 - agregar proxy de video en vivo con limites de concurrencia,
 - probar recuperacion de desconexion y rollback de automatizaciones,
-- incorporar gestion interna de credenciales por propiedad sin exponerlas al portal,
+- conectar el agente local para consumir credenciales internas sin exponerlas al cliente,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto

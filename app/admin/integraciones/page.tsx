@@ -20,12 +20,14 @@ import {
   getIntegrationEvents,
   getIntegrationSummary,
   getIntegrationActivitySummary,
+  getIntegrationCredentialSummaries,
+  getIntegrationPropertyOptions,
 } from '@/lib/integration-state'
 import { cameraCatalog, cameraCommonCapabilities } from '@/lib/camera-catalog'
 import { deviceCatalogGroups, deviceCatalogHighlights } from '@/lib/device-catalog'
 import { GatewayProvisionForm } from '@/components/gateway-provision-form'
 import { getCurrentAuthSession } from '@/lib/auth-store'
-import { getAccessiblePortalSites } from '@/lib/client-portal'
+import { IntegrationCredentialForm } from '@/components/integration-credential-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -137,12 +139,13 @@ const onboardingSteps = [
 
 export default async function IntegrationsAdminPage() {
   const auth = await getCurrentAuthSession()
-  const [summary, activity, connections, recentEvents, sites] = await Promise.all([
+  const [summary, activity, connections, recentEvents, properties, credentials] = await Promise.all([
     getIntegrationSummary(),
     getIntegrationActivitySummary(12),
     getIntegrationConnections(),
     getIntegrationEvents(12),
-    auth ? getAccessiblePortalSites(auth.user) : Promise.resolve([]),
+    auth ? getIntegrationPropertyOptions(auth.user) : Promise.resolve([]),
+    auth ? getIntegrationCredentialSummaries(auth.user) : Promise.resolve([]),
   ])
 
   return (
@@ -204,8 +207,10 @@ export default async function IntegrationsAdminPage() {
       </div>
 
       <GatewayProvisionForm
-        properties={sites.map((site) => ({ id: site.propertyId, name: site.label, location: site.location }))}
+        properties={properties.map((property) => ({ id: property.id, name: property.name, location: property.location }))}
       />
+
+      <IntegrationCredentialForm properties={properties} initialCredentials={credentials} />
 
       <div className="grid sm:grid-cols-3 gap-6">
         <div className="glass-card p-6">

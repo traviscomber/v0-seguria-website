@@ -10,6 +10,7 @@ SegurIA uses Supabase Auth, PostgreSQL, Row Level Security and a private Storage
 - `devices`, `entities` and `entity_states`: normalized cameras and sensors.
 - `events`, `incidents` and `incident_events`: security activity and response.
 - `camera_snapshots`: private evidence metadata linked to Storage.
+- `integration_credentials`: encrypted internal connection credentials by property.
 - `audit_log`: operational traceability.
 - `leads` and `contact_submissions`: commercial intake, readable only by staff.
 
@@ -39,6 +40,7 @@ Validate each migration in a transaction before applying it. Never reuse the rem
 - RLS must remain enabled on every public table.
 - Browser clients use only the publishable key and authenticated policies.
 - Server routes use the server-only key for provisioning, ingestion and contact submissions.
+- Internal connection credentials should use `SEGURIA_CREDENTIAL_ENCRYPTION_KEY` and are stored only as ciphertext. If the dedicated key is missing, the server-only Supabase secret is used as a fallback so production does not block onboarding.
 - Public forms never receive direct table grants.
 - Gateway secrets are generated per installation and stored only as hashes.
 - Camera evidence uses the private `seguria-evidence` bucket and signed URLs.

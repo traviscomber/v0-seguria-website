@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import type { AuthUser } from '@/lib/auth-store'
 import type { IntegrationConnection, IntegrationEvent, IntegrationProvider } from '@/lib/types'
 
 function getAdminClient() {
@@ -92,4 +93,70 @@ export async function getIntegrationActivitySummary(limit = 10) {
     syncEvents: recentEvents.filter((event) => event.eventType.includes('sync') || event.eventType.includes('heartbeat')).length,
     alertEvents: recentEvents.filter((event) => event.status === 'warning' || event.status === 'error').length,
   }
+}
+
+export async function getIntegrationPropertyOptions(user: AuthUser) {
+  const supabase = getAdminClient()
+  let query = supabase
+    .from('properties')
+    .select('id, organization_id, name, address')
+    .order('created_at', { ascending: false })
+    .limit(250)
+
+  if (user.role === 'technician') {
+    if (user.propertyIds.length === 0) return []
+    query = query.in('id', user.propertyIds)
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(`Integration properties query failed: ${error.message}`)
+
+  const organizationIds = Array.from(new Set((data || []).map((property) => property.organization_id as string)))
+  const { data: organizations, error: organizationsError } = organizationIds.length
+    ? await supabase.from('organizations').select('id, name').in('id', organizationIds)
+    : { data: [], error: null }
+  if (organizationsError) throw new Error(`Integration organizations query failed: ${organizationsError.message}`)
+
+  const organizationNames = new Map((organizations || []).map((organization) => [
+    organization.id as string,
+    organization.name as string,
+  ]))
+
+  return (data || []).map((property) => ({
+    id: property.id as string,
+    name: property.name as string,
+    location: (property.address as string | null) || 'Ubicacion por definir',
+    organizationName: organizationNames.get(property.organization_id as string) || 'Cliente',
+  }))
+}
+
+export async function getIntegrationCredentialSummaries(user: AuthUser) {
+  const supabase = getAdminClient()
+  let query = supabase
+    .from('integration_credentials')
+    .select('id, property_id, provider, label, account_identifier, credential_kind, secret_hint, status, rotation_due_at, last_validated_at, updated_at')
+    .order('updated_at', { ascending: false })
+    .limit(100)
+
+  if (user.role === 'technician') {
+    if (user.propertyIds.length === 0) return []
+    query = query.in('property_id', user.propertyIds)
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(`Integration credentials query failed: ${error.message}`)
+
+  return (data || []).map((credential) => ({
+    id: credential.id as string,
+    propertyId: credential.property_id as string,
+    provider: credential.provider as IntegrationProvider,
+    label: credential.label as string,
+    accountIdentifier: credential.account_identifier as string | null,
+    credentialKind: credential.credential_kind as string,
+    secretHint: credential.secret_hint as string | null,
+    status: credential.status as string,
+    rotationDueAt: credential.rotation_due_at as string | null,
+    lastValidatedAt: credential.last_validated_at as string | null,
+    updatedAt: credential.updated_at as string,
+  }))
 }
