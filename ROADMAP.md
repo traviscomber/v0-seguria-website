@@ -68,6 +68,7 @@ Completado y validado en produccion:
 - agente local capaz de arrancar solo con identidad SegurIA y sincronizar inventario desde configuracion recibida,
 - sesiones efimeras de video solicitadas por cliente y atendidas por Gateway autenticado,
 - migracion de sesiones de video aplicada y validada con prueba reversible contra Supabase,
+- control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
@@ -75,7 +76,7 @@ Siguiente bloque activo:
 - implementar cola offline y reintentos del agente local,
 - agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
 - probar recuperacion de desconexion y rollback de automatizaciones,
-- agregar limites de concurrencia por camara y propiedad,
+- conectar el reproductor del portal al proxy de medios de SegurIA,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto
@@ -633,6 +634,7 @@ Validado localmente:
 - rutas de maquina sin credenciales globales compartidas.
 - 10 migraciones aplicadas en la base productiva,
 - aislamiento RLS probado con usuarios de dos organizaciones,
+- solicitud de vista de camara con reutilizacion de sesion propia y bloqueo por concurrencia,
 - generacion, lectura aislada, confirmacion, escalamiento, auditoria y limpieza de avisos probados contra Supabase.
 
 Pendiente de infraestructura:

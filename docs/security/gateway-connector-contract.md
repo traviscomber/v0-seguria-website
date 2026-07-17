@@ -115,6 +115,15 @@ Las imagenes se guardan en un bucket privado. El portal obtiene una URL firmada 
 
 `POST /api/cameras/:deviceId/stream` permite al usuario autorizado solicitar una sesion efimera para una camara. SegurIA crea una sesion con vencimiento corto y la deja disponible para el gateway de esa propiedad.
 
+La ruta aplica limites de concurrencia antes de crear sesiones:
+
+- 1 vista activa o solicitada por camara.
+- 6 vistas activas o solicitadas por propiedad.
+- sesiones vencidas se marcan como `expired` antes de evaluar disponibilidad.
+- si el mismo usuario ya tiene una sesion vigente para la camara, la API reutiliza esa sesion y no crea otra.
+
+El portal consulta estado con `GET /api/cameras/:deviceId/stream`; la respuesta solo incluye identificador, estado y vencimiento de sesion.
+
 El gateway consulta sesiones pendientes con:
 
 ```text
@@ -137,7 +146,7 @@ POST /api/gateway/cameras/stream-sessions
 }
 ```
 
-El cliente no recibe el token, URL o credencial de origen. Solo ve estado de sesion y medios entregados por SegurIA.
+El cliente no recibe el token, URL o credencial de origen. Solo ve estado de sesion y medios entregados por SegurIA. La referencia `gatewayStreamRef` queda confinada al backend y al gateway.
 
 ## Rotacion y revocacion
 

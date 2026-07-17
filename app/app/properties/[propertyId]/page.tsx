@@ -14,7 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+import { CameraStreamControl } from '@/components/camera-stream-control'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { getPortalActivityFeed, getPortalDeviceBuckets, getPortalSiteForUser } from '@/lib/client-portal'
 
@@ -172,6 +172,7 @@ export default async function PropertyPage({
                         </Badge>
                       </div>
                       <p className="mt-3 text-sm text-white/60">{device.notas || 'Sin notas'}</p>
+                      {bucket.key === 'camera' && <CameraStreamControl deviceId={device.id} />}
                     </div>
                   ))}
                   {bucket.count === 0 && <p className="text-sm text-white/45">Sin equipos cargados.</p>}

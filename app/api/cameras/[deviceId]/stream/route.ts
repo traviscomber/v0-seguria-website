@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { canAccessProperty, getCurrentAuthSession } from '@/lib/auth-store'
 import {
+  CAMERA_STREAM_MAX_ACTIVE_PER_DEVICE,
+  CAMERA_STREAM_MAX_ACTIVE_PER_PROPERTY,
   generateCameraStreamToken,
   getCameraStreamExpiry,
   hashCameraStreamToken,
@@ -55,6 +57,51 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
 
   if (!authorized.device.gateway_id) {
     return NextResponse.json({ success: false, error: 'Camara sin gateway operativo.' }, { status: 409 })
+  }
+
+  const now = new Date().toISOString()
+  await authorized.supabase
+    .from('camera_stream_sessions')
+    .update({ status: 'expired', ended_at: now })
+    .eq('property_id', authorized.device.property_id)
+    .in('status', ['requested', 'active'])
+    .lte('expires_at', now)
+
+  const { data: activeSessions, error: activeError } = await authorized.supabase
+    .from('camera_stream_sessions')
+    .select('id, device_id, requested_by, status, expires_at, created_at')
+    .eq('property_id', authorized.device.property_id)
+    .in('status', ['requested', 'active'])
+    .gt('expires_at', now)
+
+  if (activeError) {
+    return NextResponse.json({ success: false, error: 'No fue posible validar disponibilidad.' }, { status: 500 })
+  }
+
+  const existingOwnSession = (activeSessions || []).find(
+    (session) => session.device_id === authorized.device.id && session.requested_by === authorized.auth.user.id
+  )
+  if (existingOwnSession) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: existingOwnSession.id,
+        status: existingOwnSession.status,
+        expires_at: existingOwnSession.expires_at,
+        created_at: existingOwnSession.created_at,
+        reused: true,
+      },
+      message: 'Vista ya solicitada.',
+    })
+  }
+
+  const activeForDevice = (activeSessions || []).filter((session) => session.device_id === authorized.device.id).length
+  if (activeForDevice >= CAMERA_STREAM_MAX_ACTIVE_PER_DEVICE) {
+    return NextResponse.json({ success: false, error: 'Camara en uso. Intenta nuevamente en unos minutos.' }, { status: 429 })
+  }
+
+  if ((activeSessions || []).length >= CAMERA_STREAM_MAX_ACTIVE_PER_PROPERTY) {
+    return NextResponse.json({ success: false, error: 'Sitio con demasiadas vistas activas.' }, { status: 429 })
   }
 
   const token = generateCameraStreamToken()

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
+import { CameraStreamControl } from '@/components/camera-stream-control'
 import { ClientNotificationCenter } from '@/components/client-notification-center'
 
 const sourceCards = [
@@ -98,7 +99,7 @@ function CameraTile({
   index: number
 }) {
   return (
-    <div className={`relative min-h-[188px] overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-br ${getCameraFrameTint(index)}`}>
+    <div className={`relative min-h-[252px] overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-br ${getCameraFrameTint(index)}`}>
       <CameraSnapshot deviceId={deviceId} alt={title} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_26%,rgba(255,255,255,0.18),transparent_22%),linear-gradient(180deg,transparent,rgba(2,6,23,0.72))]" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:22px_22px] opacity-25" />
@@ -131,6 +132,7 @@ function CameraTile({
           <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">{formatDate(updatedAt)}</span>
           <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">HD 1080p</span>
         </div>
+        <CameraStreamControl deviceId={deviceId} />
       </div>
     </div>
   )

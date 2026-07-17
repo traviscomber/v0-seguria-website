@@ -3,6 +3,8 @@ import 'server-only'
 import crypto from 'node:crypto'
 
 export const CAMERA_STREAM_TTL_SECONDS = 120
+export const CAMERA_STREAM_MAX_ACTIVE_PER_DEVICE = 1
+export const CAMERA_STREAM_MAX_ACTIVE_PER_PROPERTY = 6
 
 export function generateCameraStreamToken() {
   return crypto.randomBytes(32).toString('base64url')
