@@ -99,7 +99,7 @@ export default async function PropertyPage({
               <div className="space-y-3">
                 <h1 className="text-4xl font-light text-white text-balance md:text-5xl">{site.label}</h1>
                 <p className="max-w-3xl text-base leading-7 text-white/65 md:text-lg">
-                  Vista premium para leer el sitio sin esfuerzo: qué hay instalado, qué está activo y qué conviene
+                  Vista premium para leer el sitio sin esfuerzo: que hay instalado, que esta activo y que conviene
                   revisar primero.
                 </p>
               </div>
@@ -185,12 +185,12 @@ export default async function PropertyPage({
         <div className="space-y-6">
           <Card className="border-white/10 bg-white/5 shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg font-normal text-white">Documentos</CardTitle>
-              <CardDescription className="text-white/55">Propuestas, reportes y material del sitio.</CardDescription>
+              <CardTitle className="text-lg font-normal text-white">Evidencia y documentos</CardTitle>
+              <CardDescription className="text-white/55">Capturas, reportes y material seguro del sitio.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {site.documents.length === 0 ? (
-                <p className="py-6 text-sm text-white/55">No hay documentos publicados todavia.</p>
+                <p className="py-6 text-sm text-white/55">No hay evidencia publicada todavia.</p>
               ) : (
                 site.documents.map((document) => (
                   <div key={document.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -199,7 +199,7 @@ export default async function PropertyPage({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-white">{document.titulo}</p>
-                      <p className="mt-1 text-sm text-white/55">{document.autor}</p>
+                      <p className="mt-1 text-sm text-white/55">{document.archivoNombre || document.autor}</p>
                     </div>
                     <p className="whitespace-nowrap text-xs text-white/40">{formatDate(document.fechaActualizacion)}</p>
                   </div>

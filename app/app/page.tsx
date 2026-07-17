@@ -281,7 +281,7 @@ export default async function ClientAppPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Lectura del portal</p>
               <h2 className="mt-2 text-xl font-light text-white">Una sola experiencia para el cliente</h2>
               <p className="mt-2 text-sm leading-6 text-white/60">
-                El cliente ve una vista clara y no necesita entender la complejidad técnica. Si existe una excepción, la
+                El cliente ve una vista clara y no necesita entender la complejidad tecnica. Si existe una excepcion, la
                 resolvemos como tal en el panel interno.
               </p>
             </div>
@@ -330,7 +330,7 @@ export default async function ClientAppPage() {
                     <div>
                       <p className="text-sm text-white">{device.displayName || 'Equipo'}</p>
                       <p className="mt-1 text-sm text-white/60">
-                        {site.label} · {device.ubicacionDescripcion || site.location}
+                        {site.label} - {device.ubicacionDescripcion || site.location}
                       </p>
                     </div>
                     <Badge className={getAlertTone(device.estado)}>{device.estado}</Badge>

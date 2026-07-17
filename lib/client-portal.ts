@@ -47,10 +47,10 @@ export interface PortalDeviceBucket {
 
 function determineStatus(devices: Device[]): { status: PortalSiteStatus; label: string } {
   if (devices.some((device) => device.estado === 'falla')) {
-    return { status: 'atencion', label: 'Requiere atención' }
+    return { status: 'atencion', label: 'Requiere atencion' }
   }
   if (devices.some((device) => device.estado === 'mantencion' || device.estado === 'inactivo')) {
-    return { status: 'revision', label: 'En revisión' }
+    return { status: 'revision', label: 'En revision' }
   }
   return { status: 'operativo', label: 'Operativo' }
 }
@@ -87,7 +87,7 @@ function getPortalGroup(device: Device): PortalDeviceBucket['key'] {
 
 export function getPortalDeviceBuckets(devices: Device[]): PortalDeviceBucket[] {
   const buckets: PortalDeviceBucket[] = [
-    { key: 'camera', label: 'Cámaras', count: 0, devices: [] },
+    { key: 'camera', label: 'Camaras', count: 0, devices: [] },
     { key: 'sensor', label: 'Sensores', count: 0, devices: [] },
     { key: 'alert', label: 'Alertas', count: 0, devices: [] },
     { key: 'access', label: 'Accesos', count: 0, devices: [] },
@@ -130,13 +130,17 @@ function mapDeviceStatus(status: string): Device['estado'] {
   return 'mantencion'
 }
 
+function getSafeEvidenceName(objectPath: string) {
+  return objectPath.split('/').filter(Boolean).at(-1) || 'evidencia-capturada'
+}
+
 export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSiteSummary[]> {
   if (user.propertyIds.length === 0) return []
 
   const supabase = await createSupabaseServerClient()
   if (!supabase) throw new Error('Portal data service is not configured.')
 
-  const [propertiesResult, spacesResult, devicesResult, eventsResult] = await Promise.all([
+  const [propertiesResult, spacesResult, devicesResult, eventsResult, snapshotsResult] = await Promise.all([
     supabase.from('properties').select('id, name, address, updated_at').in('id', user.propertyIds),
     supabase.from('spaces').select('id, property_id, name').in('property_id', user.propertyIds),
     supabase
@@ -149,15 +153,22 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .in('property_id', user.propertyIds)
       .order('occurred_at', { ascending: false })
       .limit(100),
+    supabase
+      .from('camera_snapshots')
+      .select('id, property_id, device_id, object_path, mime_type, size_bytes, captured_at, created_at')
+      .in('property_id', user.propertyIds)
+      .order('captured_at', { ascending: false })
+      .limit(100),
   ])
 
-  const queryError = propertiesResult.error || spacesResult.error || devicesResult.error || eventsResult.error
+  const queryError = propertiesResult.error || spacesResult.error || devicesResult.error || eventsResult.error || snapshotsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
 
   const spaces = new Map((spacesResult.data || []).map((space) => [space.id, space.name]))
   const spacesByProperty = new Map<string, PortalSpace[]>()
   const devicesByProperty = new Map<string, Device[]>()
   const eventsByProperty = new Map<string, PortalEvent[]>()
+  const documentsByProperty = new Map<string, Document[]>()
 
   for (const row of spacesResult.data || []) {
     spacesByProperty.set(row.property_id, [
@@ -208,9 +219,31 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     eventsByProperty.set(row.property_id, [...(eventsByProperty.get(row.property_id) || []), event])
   }
 
+  for (const row of snapshotsResult.data || []) {
+    const evidenceName = getSafeEvidenceName(row.object_path)
+    const document: Document = {
+      id: row.id,
+      proyectoId: row.property_id,
+      tipo: 'fotografia_evidencia',
+      titulo: `Evidencia capturada - ${evidenceName}`,
+      version: '1',
+      estado: 'aprobado',
+      archivoNombre: evidenceName,
+      resumenIA: row.mime_type || 'Evidencia operativa',
+      autor: 'SegurIA',
+      fechaCreacion: new Date(row.created_at),
+      fechaActualizacion: new Date(row.captured_at),
+    }
+    documentsByProperty.set(row.property_id, [
+      ...(documentsByProperty.get(row.property_id) || []),
+      document,
+    ])
+  }
+
   return (propertiesResult.data || []).map((property) => {
     const devices = devicesByProperty.get(property.id) || []
     const events = eventsByProperty.get(property.id) || []
+    const documents = documentsByProperty.get(property.id) || []
     const buckets = getPortalDeviceBuckets(devices)
     const { status, label } = determineStatus(devices)
     const lastDeviceUpdate = devices
@@ -221,18 +254,18 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       propertyId: property.id,
       projectId: property.id,
       label: property.name,
-      location: property.address || 'Ubicación por definir',
+      location: property.address || 'Ubicacion por definir',
       status,
       statusLabel: label,
       deviceCount: devices.length,
       cameraCount: buckets.find((bucket) => bucket.key === 'camera')?.count || 0,
       sensorCount: buckets.find((bucket) => bucket.key === 'sensor')?.count || 0,
       accessCount: buckets.find((bucket) => bucket.key === 'access')?.count || 0,
-      documentCount: 0,
+      documentCount: documents.length,
       alertCount: devices.filter((device) => device.estado === 'falla').length,
       lastUpdatedAt: lastDeviceUpdate || new Date(property.updated_at),
       devices,
-      documents: [],
+      documents,
       events,
       spaces: spacesByProperty.get(property.id) || [],
     }
@@ -252,7 +285,7 @@ export function getPortalDashboardTotals(sites: PortalSiteSummary[]) {
     cameras: buckets.filter((bucket) => bucket.key === 'camera').reduce((total, bucket) => total + bucket.count, 0),
     sensors: buckets.filter((bucket) => bucket.key === 'sensor').reduce((total, bucket) => total + bucket.count, 0),
     alerts: sites.reduce((total, site) => total + site.alertCount, 0),
-    documents: 0,
+    documents: sites.reduce((total, site) => total + site.documentCount, 0),
   }
 }
 
@@ -293,7 +326,18 @@ export function getPortalActivityFeed(sites: PortalSiteSummary[]) {
     }))
   )
 
-  return [...eventActivity, ...deviceActivity]
+  const documentActivity = sites.flatMap((site) =>
+    site.documents.map((document) => ({
+      id: `${site.propertyId}-document-${document.id}`,
+      title: document.titulo,
+      detail: site.label,
+      kind: 'document' as const,
+      status: document.estado,
+      at: document.fechaActualizacion,
+    }))
+  )
+
+  return [...eventActivity, ...deviceActivity, ...documentActivity]
     .sort((left, right) => right.at.getTime() - left.at.getTime())
     .slice(0, 8)
 }
