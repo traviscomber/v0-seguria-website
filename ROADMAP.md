@@ -58,14 +58,18 @@ Completado y validado en produccion:
 - simulacion segura y bloqueo de activacion sin Gateway operativo,
 - entrega versionada al Gateway y confirmacion firmada antes de declarar una regla activa,
 - preservacion de la identidad historica del actor al eliminar una cuenta,
+- notificaciones al cliente con confirmacion, vencimiento y escalamiento por SLA,
+- monitor programado para marcar Gateways obsoletos y escalar confirmaciones vencidas,
+- alta interna de cliente desde admin con Supabase Auth, empresa, sitio inicial y espacios base,
+- cierre del signup publico para que las cuentas de clientes sean creadas por el equipo interno,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
 - implementar cola offline y reintentos del agente local,
-- incorporar notificaciones y escalamiento por SLA,
 - agregar proxy de video en vivo con limites de concurrencia,
 - probar recuperacion de desconexion y rollback de automatizaciones,
+- incorporar gestion interna de credenciales por propiedad sin exponerlas al portal,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto

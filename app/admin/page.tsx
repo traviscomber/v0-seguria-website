@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AlertTriangle, ArrowRight, Building2, Cpu, MapPin, Radio } from 'lucide-react'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { ClientProvisionForm } from '@/components/client-provision-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +53,8 @@ export default async function AdminDashboard() {
           </Link>
         ))}
       </div>
+
+      <ClientProvisionForm />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="glass-card p-6">

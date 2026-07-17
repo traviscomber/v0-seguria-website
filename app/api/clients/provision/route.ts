@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'node:crypto'
 import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -18,6 +19,28 @@ function slugify(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+async function getAvailableOrganizationSlug(supabase: ReturnType<typeof createSupabaseAdminClient>, baseSlug: string) {
+  if (!supabase) return baseSlug
+
+  const normalized = baseSlug || `cliente-${Date.now()}`
+  const { data, error } = await supabase
+    .from('organizations')
+    .select('slug')
+    .or(`slug.eq.${normalized},slug.like.${normalized}-%`)
+
+  if (error) throw error
+
+  const used = new Set((data || []).map((row) => row.slug as string))
+  if (!used.has(normalized)) return normalized
+
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${normalized}-${index}`
+    if (!used.has(candidate)) return candidate
+  }
+
+  return `${normalized}-${crypto.randomUUID().slice(0, 8)}`
 }
 
 export async function POST(request: NextRequest) {
@@ -40,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Datos invalidos.' }, { status: 400 })
     }
 
-    const organizationSlug = slugify(parsed.data.company_name)
+    const organizationSlug = await getAvailableOrganizationSlug(supabase, slugify(parsed.data.company_name))
     const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email: parsed.data.client_email,
       password: parsed.data.password,

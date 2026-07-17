@@ -91,7 +91,7 @@ export function LoginForm({ nextPath, registered = false }: { nextPath: string; 
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-4">
-          <Link href="/signup" className="text-sm text-[#4DA3D9] hover:underline">Crear cuenta</Link>
+          <Link href="/contacto" className="text-sm text-[#4DA3D9] hover:underline">Solicitar acceso</Link>
           <Link href="/" className="text-xs text-white/45 hover:text-white">Volver al sitio</Link>
         </div>
       </div>
