@@ -10,6 +10,7 @@ SegurIA uses Supabase Auth, PostgreSQL, Row Level Security and a private Storage
 - `devices`, `entities` and `entity_states`: normalized cameras and sensors.
 - `events`, `incidents` and `incident_events`: security activity and response.
 - `camera_snapshots`: private evidence metadata linked to Storage.
+- `camera_stream_sessions`: short-lived camera session requests handled by the authenticated gateway.
 - `integration_credentials`: encrypted internal connection credentials by property.
 - `audit_log`: operational traceability.
 - `leads` and `contact_submissions`: commercial intake, readable only by staff.

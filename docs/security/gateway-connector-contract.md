@@ -111,6 +111,34 @@ Debe incluir `x-seguria-gateway-id` y `x-seguria-gateway-secret`. La API verific
 
 Las imagenes se guardan en un bucket privado. El portal obtiene una URL firmada por 60 segundos mediante `GET /api/cameras/:deviceId/snapshot`; nunca recibe la URL, token o credencial de la camara de origen.
 
+## Sesiones de video
+
+`POST /api/cameras/:deviceId/stream` permite al usuario autorizado solicitar una sesion efimera para una camara. SegurIA crea una sesion con vencimiento corto y la deja disponible para el gateway de esa propiedad.
+
+El gateway consulta sesiones pendientes con:
+
+```text
+GET /api/gateway/cameras/stream-sessions
+x-seguria-gateway-id: <gateway_id>
+x-seguria-gateway-secret: <secret>
+```
+
+Luego reporta estado con:
+
+```text
+POST /api/gateway/cameras/stream-sessions
+```
+
+```json
+{
+  "sessionId": "session_uuid",
+  "status": "active",
+  "gatewayStreamRef": "local-session-reference"
+}
+```
+
+El cliente no recibe el token, URL o credencial de origen. Solo ve estado de sesion y medios entregados por SegurIA.
+
 ## Rotacion y revocacion
 
 - Crear una credencial nueva antes de retirar la anterior.

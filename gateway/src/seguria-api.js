@@ -90,3 +90,46 @@ export async function sendInventory(config, devices) {
 
   return response.json()
 }
+
+export async function fetchCameraStreamSessions(config) {
+  const response = await fetch(`${config.apiBaseUrl}/api/gateway/cameras/stream-sessions`, {
+    headers: {
+      'x-seguria-gateway-id': config.gatewayId,
+      'x-seguria-gateway-secret': config.gatewaySecret,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Camera stream session fetch failed: ${response.status}`)
+  }
+
+  const payload = await response.json()
+  if (!payload.success) {
+    throw new Error(payload.error || 'Camera stream session fetch failed')
+  }
+
+  return payload.data
+}
+
+export async function reportCameraStreamSession(config, sessionId, status, options = {}) {
+  const response = await fetch(`${config.apiBaseUrl}/api/gateway/cameras/stream-sessions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-seguria-gateway-id': config.gatewayId,
+      'x-seguria-gateway-secret': config.gatewaySecret,
+    },
+    body: JSON.stringify({
+      sessionId,
+      status,
+      gatewayStreamRef: options.gatewayStreamRef,
+      error: options.error,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Camera stream session report failed: ${response.status}`)
+  }
+
+  return response.json()
+}

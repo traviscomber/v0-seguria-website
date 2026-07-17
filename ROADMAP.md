@@ -45,7 +45,7 @@ Completado y validado en produccion:
 - alta transaccional de usuario, empresa y propiedad,
 - referencias tecnicas retiradas del portal del cliente.
 - proyecto Supabase dedicado vinculado desde Vercel,
-- nueve migraciones aplicadas con historial,
+- 10 migraciones aplicadas con historial,
 - 20 tablas multiempresa con RLS y permisos de minimo privilegio,
 - prueba RLS real con dos organizaciones y cero lecturas cruzadas,
 - identidad y secreto hasheado individual por Gateway,
@@ -66,14 +66,16 @@ Completado y validado en produccion:
 - migracion de credenciales internas aplicada y validada con insercion cifrada reversible,
 - entrega autenticada de configuracion operativa al Gateway local,
 - agente local capaz de arrancar solo con identidad SegurIA y sincronizar inventario desde configuracion recibida,
+- sesiones efimeras de video solicitadas por cliente y atendidas por Gateway autenticado,
+- migracion de sesiones de video aplicada y validada con prueba reversible contra Supabase,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
 - implementar cola offline y reintentos del agente local,
-- agregar proxy de video en vivo con limites de concurrencia,
+- agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
 - probar recuperacion de desconexion y rollback de automatizaciones,
-- convertir snapshots y video en un canal operativo controlado por Gateway,
+- agregar limites de concurrencia por camara y propiedad,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto
