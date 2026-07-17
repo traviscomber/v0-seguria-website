@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { getAccessiblePortalSites } from '@/lib/client-portal'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
@@ -29,6 +30,9 @@ const assignmentSchema = z.object({
 })
 
 export async function PATCH(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'security_inventory.assign_space' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { decryptCredentialSecret } from '@/lib/credential-vault'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -16,6 +17,9 @@ function getOperationalProvider(provider: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const guard = getOperationalGuardResponse({ operation: 'gateway.config_delivery' })
+    if (guard) return guard
+
     const parsed = configSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
 

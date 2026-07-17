@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -35,6 +36,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'gateway.automation_acknowledge' })
+  if (guard) return guard
+
   const auth = await authorize(request)
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = acknowledgementSchema.safeParse(await request.json())

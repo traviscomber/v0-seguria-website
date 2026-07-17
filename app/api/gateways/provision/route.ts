@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { generateGatewayCredential, hashGatewaySecret } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -10,6 +11,9 @@ const schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'gateway.provision' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 

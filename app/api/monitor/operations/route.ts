@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { secretsMatch } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'monitor.operations', requireProductionDeployment: true })
+  if (guard) return guard
+
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   const authorized = secretsMatch(token, process.env.CRON_SECRET) || secretsMatch(token, process.env.SEGURIA_MONITOR_SECRET)
   if (!authorized) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })

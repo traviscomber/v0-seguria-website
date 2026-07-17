@@ -74,12 +74,13 @@ Completado y validado en produccion:
 - reproductor HLS del portal compatible con navegadores sin soporte nativo y fallback a frame seguro,
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - rollback manual y automatico de automatizaciones sin confirmacion del sitio,
+- guardrails de ambiente para impedir mutaciones de datos productivos desde preview o desarrollo,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
 - agregar WebRTC para baja latencia sobre las sesiones de video ya modeladas,
-- y formalizar staging separado de produccion.
+- y ejecutar el piloto operativo con una propiedad real.
 
 ## Principio de producto
 

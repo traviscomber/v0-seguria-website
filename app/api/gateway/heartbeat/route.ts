@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { ingestSecurityEvent } from '@/lib/security-repository'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 
@@ -12,6 +13,9 @@ const heartbeatSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const guard = getOperationalGuardResponse({ operation: 'gateway.heartbeat' })
+    if (guard) return guard
+
     const parsed = heartbeatSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ success: false, error: 'Payload invalido.' }, { status: 400 })
 

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { encryptCredentialSecret, getSecretHint, hasCredentialVaultKey } from '@/lib/credential-vault'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 
 const credentialSchema = z.object({
   propertyId: z.string().uuid(),
@@ -66,6 +67,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'integration_credential.store' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 

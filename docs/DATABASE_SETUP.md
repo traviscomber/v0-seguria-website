@@ -30,6 +30,14 @@ vercel env pull .env.local --yes
 
 Never expose or commit server keys, database URLs, gateway secrets or monitor secrets.
 
+Set `SEGURIA_ENVIRONMENT` and `SEGURIA_DATA_SCOPE` in every Vercel environment:
+
+- Production: `SEGURIA_ENVIRONMENT=production`, `SEGURIA_DATA_SCOPE=production`.
+- Preview/staging: `SEGURIA_ENVIRONMENT=staging`, `SEGURIA_DATA_SCOPE=staging`.
+- Local development: `SEGURIA_ENVIRONMENT=development`, `SEGURIA_DATA_SCOPE=development`.
+
+Operational write routes refuse to mutate production-scoped data from non-production deployments unless `SEGURIA_ALLOW_NON_PRODUCTION_OPERATIONS=true` is intentionally set for a temporary break-glass action.
+
 ## Migrations
 
 Create forward-only files using the timestamp convention:

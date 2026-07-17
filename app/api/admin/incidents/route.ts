@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const updateSchema = z.object({
@@ -27,6 +28,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'incident.manage' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = updateSchema.safeParse(await request.json())

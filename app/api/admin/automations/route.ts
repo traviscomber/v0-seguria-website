@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { securityAutomationLibrary } from '@/lib/automation-templates'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const commandSchema = z.discriminatedUnion('action', [
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'automation.mutate' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = commandSchema.safeParse(await request.json())

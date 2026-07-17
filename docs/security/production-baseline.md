@@ -9,6 +9,15 @@
 - Never reuse a client password as an integration secret.
 - Never commit `.env.local` or production credentials.
 
+## Environment separation
+
+- Set `SEGURIA_ENVIRONMENT=production` only on the production deployment.
+- Set `SEGURIA_DATA_SCOPE=production` only when the deployment points to production Supabase data.
+- Preview or development deployments must use `SEGURIA_DATA_SCOPE=staging`, `development` or `test`.
+- If a preview or development deployment is accidentally pointed at production data, operational mutations are blocked by default.
+- `SEGURIA_ALLOW_NON_PRODUCTION_OPERATIONS=true` is a break-glass override only and must not be left enabled.
+- Scheduled monitors run only in production unless the break-glass override is intentionally enabled.
+
 ## Database activation
 
 1. Link the repository to the dedicated SegurIA project.
@@ -41,5 +50,6 @@ Production is blocked until all checks below pass:
 - no anonymous ingestion path,
 - no cross-organization reads or writes,
 - no provider names in the client portal,
+- preview and development deployments cannot mutate production-scoped data,
 - successful backup and restore exercise,
 - successful build and end-to-end login test.

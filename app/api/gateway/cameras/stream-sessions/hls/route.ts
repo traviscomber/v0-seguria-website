@@ -5,6 +5,7 @@ import {
   getCameraStreamHlsObjectPath,
   isSafeHlsFileName,
 } from '@/lib/camera-stream'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -50,6 +51,9 @@ function normalizeFileName(kind: 'manifest' | 'segment', name: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'gateway.camera_hls_upload' })
+  if (guard) return guard
+
   const authorized = await authorizeGateway(request)
   if ('error' in authorized) return NextResponse.json({ success: false, error: authorized.error }, { status: authorized.status })
 

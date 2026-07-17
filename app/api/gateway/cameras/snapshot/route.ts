@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -11,6 +12,9 @@ const MIME_EXTENSIONS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    const guard = getOperationalGuardResponse({ operation: 'gateway.camera_snapshot' })
+    if (guard) return guard
+
     const gatewayPublicId = request.headers.get('x-seguria-gateway-id')
     if (!(await verifyGatewayCredential(gatewayPublicId, request.headers.get('x-seguria-gateway-secret')))) {
       return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })

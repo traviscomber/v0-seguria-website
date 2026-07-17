@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const provisionSchema = z.object({
@@ -158,6 +159,9 @@ async function ensureDefaultPortalInventory(
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'client.provision' })
+  if (guard) return guard
+
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) {
     return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })

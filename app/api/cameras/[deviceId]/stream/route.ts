@@ -7,6 +7,7 @@ import {
   getCameraStreamExpiry,
   hashCameraStreamToken,
 } from '@/lib/camera-stream'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +69,9 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
 }
 
 export async function POST(_request: NextRequest, context: { params: Promise<{ deviceId: string }> }) {
+  const guard = getOperationalGuardResponse({ operation: 'camera_stream.request' })
+  if (guard) return guard
+
   const { deviceId } = await context.params
   const authorized = await getAuthorizedCamera(deviceId)
   if ('error' in authorized) return NextResponse.json({ success: false, error: authorized.error }, { status: authorized.status })

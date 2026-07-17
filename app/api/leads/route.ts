@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createHmac } from 'node:crypto'
 import { getAuthorizedRequest } from '@/lib/api-auth'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const leadSchema = z.object({
@@ -58,6 +59,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const guard = getOperationalGuardResponse({ operation: 'lead.create' })
+    if (guard) return guard
+
     const payload = await request.json()
     const parsed = leadSchema.safeParse(payload)
 

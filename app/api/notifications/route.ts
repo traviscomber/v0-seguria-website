@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentAuthSession } from '@/lib/auth-store'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const acknowledgeSchema = z.object({ notificationId: z.string().uuid() })
@@ -20,6 +21,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'notification.acknowledge' })
+  if (guard) return guard
+
   const auth = await getCurrentAuthSession()
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = acknowledgeSchema.safeParse(await request.json())

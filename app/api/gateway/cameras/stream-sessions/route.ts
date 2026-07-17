@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 
@@ -79,6 +80,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = getOperationalGuardResponse({ operation: 'gateway.camera_stream_session_update' })
+  if (guard) return guard
+
   const authorized = await getAuthorizedGateway(request)
   if ('error' in authorized) return NextResponse.json({ success: false, error: authorized.error }, { status: authorized.status })
 

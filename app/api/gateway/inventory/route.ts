@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import {
   inferSecurityDeviceKind,
   inferSecuritySeverity,
@@ -33,6 +34,9 @@ const inventorySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const guard = getOperationalGuardResponse({ operation: 'gateway.inventory_sync' })
+    if (guard) return guard
+
     const parsed = inventorySchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ success: false, error: 'Inventario invalido.' }, { status: 400 })
 
