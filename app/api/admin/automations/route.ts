@@ -9,6 +9,7 @@ const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('seed'), organizationId: z.string().uuid() }),
   z.object({ action: z.literal('create'), propertyId: z.string().uuid(), templateId: z.string().uuid(), name: z.string().trim().min(3).max(120), config: z.record(z.unknown()).default({}) }),
   z.object({ action: z.literal('deploy'), automationId: z.string().uuid(), desiredStatus: z.enum(['active', 'paused']) }),
+  z.object({ action: z.literal('rollback'), automationId: z.string().uuid(), reason: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal('simulate'), automationId: z.string().uuid() }),
 ])
 
@@ -65,6 +66,20 @@ export async function POST(request: NextRequest) {
     await supabase.from('property_automations').update({ last_run_at: now }).eq('id', automation.id)
     await supabase.from('audit_log').insert({ organization_id: automation.organization_id, property_id: automation.property_id, actor_user_id: auth.user.id, action: 'automation.simulated', target_type: 'property_automation', target_id: automation.id, payload: { run_id: data.id } })
     return NextResponse.json({ success: true, data, message: 'Simulación segura completada.' })
+  }
+
+  if (parsed.data.action === 'rollback') {
+    const now = new Date().toISOString()
+    const reason = parsed.data.reason || 'Rollback manual: despliegue cancelado antes de confirmacion del sitio.'
+    const { data, error } = await supabase.from('property_automations').update({ status: 'error', desired_status: null, deployment_token: null, deployment_requested_at: null, last_error: reason }).eq('id', automation.id).select().single()
+    if (error) return NextResponse.json({ success: false, error: 'No fue posible revertir la regla.' }, { status: 500 })
+    const { data: run } = await supabase.from('automation_runs').insert({ organization_id: automation.organization_id, property_id: automation.property_id, automation_id: automation.id, result: 'failed', details: { rollback: true, source: 'admin', reason }, completed_at: now }).select('id').single()
+    await supabase.from('audit_log').insert({ organization_id: automation.organization_id, property_id: automation.property_id, actor_user_id: auth.user.id, action: 'automation.rollback_manual', target_type: 'property_automation', target_id: automation.id, payload: { run_id: run?.id, reason } })
+    return NextResponse.json({ success: true, data, message: 'Rollback registrado. La regla quedo bloqueada hasta nueva revision.' })
+  }
+
+  if (automation.status === 'ready' && automation.deployment_token) {
+    return NextResponse.json({ success: false, error: 'Ya existe un despliegue pendiente. Confirma, espera vencimiento o ejecuta rollback.' }, { status: 409 })
   }
 
   const { count } = await supabase.from('gateways').select('id', { count: 'exact', head: true }).eq('property_id', automation.property_id).in('status', ['online', 'degraded'])

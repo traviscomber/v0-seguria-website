@@ -71,12 +71,12 @@ Completado y validado en produccion:
 - control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
 - proxy inicial de frames seguros desde evidencia privada hacia el portal sin URL firmada visible,
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
+- rollback manual y automatico de automatizaciones sin confirmacion del sitio,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
 
 - agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
-- probar recuperacion de desconexion y rollback de automatizaciones,
 - evolucionar el reproductor del portal desde frames seguros hacia video WebRTC/HLS,
 - y formalizar staging separado de produccion.
 

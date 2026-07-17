@@ -103,6 +103,10 @@ Limites: 500 dispositivos por solicitud y 80 entidades por dispositivo. La opera
 
 El gateway mantiene una cola local persistente para operaciones criticas. Si SegurIA Cloud no responde, debe encolar heartbeat, inventario y eventos ya capturados, continuar ejecutando el ciclo local y reintentar con backoff exponencial en la siguiente sincronizacion. La cola local no guarda secretos del cliente ni URLs de origen; solo payloads normalizados hacia SegurIA.
 
+## Recuperacion de automatizaciones
+
+Los cambios de automatizacion pasan por estado `ready` y solo se declaran activos cuando el gateway confirma el token de despliegue. Si el sitio reporta falla, el cambio queda en `error`, se limpia el token y se registra auditoria. Si el sitio no confirma dentro de 10 minutos, el monitor ejecuta rollback automatico con el mismo comportamiento. El equipo interno tambien puede ejecutar rollback manual desde el panel admin.
+
 ## Snapshots de camara
 
 `POST /api/gateway/cameras/snapshot` recibe `multipart/form-data` con:
