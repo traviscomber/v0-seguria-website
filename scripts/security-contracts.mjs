@@ -37,6 +37,7 @@ const gatewayRuntimeBridgePath = 'gateway/src/home-assistant.js'
 const gatewayAutomationsRoutePath = 'app/api/gateway/automations/route.ts'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
+const authStorePath = 'lib/auth-store.ts'
 const snapshotRoute = read(snapshotRoutePath)
 const snapshotComponent = read(snapshotComponentPath)
 const streamFrameRoute = read(streamFrameRoutePath)
@@ -60,6 +61,7 @@ const gatewayRuntimeBridge = read(gatewayRuntimeBridgePath)
 const gatewayAutomationsRoute = read(gatewayAutomationsRoutePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
+const authStore = read(authStorePath)
 
 assertNotContains(
   snapshotRoute,
@@ -128,6 +130,19 @@ assert(
 assert(
   /auth\.user\.role === 'admin' \? <ClientProvisionForm \/>/.test(adminClients),
   `${adminClientsPath} must hide client provisioning from non-admin users.`
+)
+assert(
+  /if \(user\.role === 'admin'\) return true\s*\n\s*return user\.propertyIds\.includes\(propertyId\)/.test(authStore),
+  `${authStorePath} must scope property access for technicians and clients.`
+)
+assert(
+  /if \(user\.role === 'admin'\) return true\s*\n\s*return user\.clientIds\.includes\(clientId\)/.test(authStore),
+  `${authStorePath} must scope client access for technicians and clients.`
+)
+assert(
+  /scopedOrganizationIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.clientIds\)/.test(adminClients) &&
+    /scopedPropertyIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.propertyIds\)/.test(adminClients),
+  `${adminClientsPath} must filter non-admin client visibility by authenticated scope.`
 )
 assert(
   /export async function PATCH\(request: NextRequest\)/.test(leadsRoute),
@@ -292,5 +307,6 @@ console.log(JSON.stringify({
     'device inventory assignments are audited',
     'gateway config hides internal provider names',
     'gateway automation delivery uses sanitized parameters',
+    'technician access is scoped to assigned clients and properties',
   ],
 }, null, 2))

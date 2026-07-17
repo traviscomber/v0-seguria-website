@@ -91,11 +91,11 @@ export async function getCurrentAuthSession() {
 }
 
 export function canAccessProperty(user: AuthUser, propertyId: string) {
-  if (user.role === 'admin' || user.role === 'technician') return true
+  if (user.role === 'admin') return true
   return user.propertyIds.includes(propertyId)
 }
 
 export function canAccessClient(user: AuthUser, clientId: string) {
-  if (user.role === 'admin' || user.role === 'technician') return true
+  if (user.role === 'admin') return true
   return user.clientIds.includes(clientId)
 }

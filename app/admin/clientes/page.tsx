@@ -159,13 +159,24 @@ export default async function ClientsPage() {
     )
   }
 
-  const organizations = (organizationsResult.data || []) as OrganizationRow[]
-  const properties = (propertiesResult.data || []) as PropertyRow[]
-  const memberships = (membershipsResult.data || []) as MembershipRow[]
-  const devices = (devicesResult.data || []) as DeviceRow[]
-  const gateways = (gatewaysResult.data || []) as GatewayRow[]
-  const incidents = (incidentsResult.data || []) as IncidentRow[]
-  const credentials = (credentialsResult.data || []) as CredentialRow[]
+  const scopedOrganizationIds = auth.user.role === 'admin' ? null : new Set(auth.user.clientIds)
+  const scopedPropertyIds = auth.user.role === 'admin' ? null : new Set(auth.user.propertyIds)
+  const organizations = ((organizationsResult.data || []) as OrganizationRow[])
+    .filter((organization) => !scopedOrganizationIds || scopedOrganizationIds.has(organization.id))
+  const properties = ((propertiesResult.data || []) as PropertyRow[])
+    .filter((property) => !scopedPropertyIds || scopedPropertyIds.has(property.id))
+  const visibleOrganizationIds = new Set(organizations.map((organization) => organization.id))
+  const visiblePropertyIds = new Set(properties.map((property) => property.id))
+  const memberships = ((membershipsResult.data || []) as MembershipRow[])
+    .filter((membership) => visibleOrganizationIds.has(membership.organization_id))
+  const devices = ((devicesResult.data || []) as DeviceRow[])
+    .filter((device) => visibleOrganizationIds.has(device.organization_id) && visiblePropertyIds.has(device.property_id))
+  const gateways = ((gatewaysResult.data || []) as GatewayRow[])
+    .filter((gateway) => visibleOrganizationIds.has(gateway.organization_id) && visiblePropertyIds.has(gateway.property_id))
+  const incidents = ((incidentsResult.data || []) as IncidentRow[])
+    .filter((incident) => visibleOrganizationIds.has(incident.organization_id) && visiblePropertyIds.has(incident.property_id))
+  const credentials = ((credentialsResult.data || []) as CredentialRow[])
+    .filter((credential) => visibleOrganizationIds.has(credential.organization_id) && visiblePropertyIds.has(credential.property_id))
   const userById = new Map((usersResult.data.users || []).map((user) => [user.id, user]))
 
   const totalOpenIncidents = incidents.filter((incident) => isOpenIncident(incident.status)).length
