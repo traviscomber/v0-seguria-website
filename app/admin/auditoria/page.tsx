@@ -48,6 +48,7 @@ type GatewayRow = {
   id: string
   name: string
   public_id: string
+  property_id: string
 }
 
 const actionLabels: Record<string, string> = {
@@ -58,6 +59,7 @@ const actionLabels: Record<string, string> = {
   'automation.rollback_manual': 'Rollback manual',
   'automation.rollback_timeout': 'Rollback automatico',
   'automation.simulated': 'Simulacion ejecutada',
+  'camera_snapshot.received': 'Snapshot de camara recibido',
   'camera_stream.hls_manifest_uploaded': 'Manifest de video recibido',
   'camera_stream.hls_segment_uploaded': 'Segmento de video recibido',
   'camera_stream.requested': 'Stream solicitado',
@@ -164,16 +166,29 @@ export default async function AuditPage() {
     .order('created_at', { ascending: false })
     .limit(200)
 
-  if (auth.user.role === 'technician') {
-    if (auth.user.propertyIds.length === 0) auditQuery = auditQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
-    else auditQuery = auditQuery.in('property_id', auth.user.propertyIds)
+  let organizationsQuery = supabase.from('organizations').select('id,name')
+  let propertiesQuery = supabase.from('properties').select('id,organization_id,name,address')
+  let gatewaysQuery = supabase.from('gateways').select('id,name,public_id,property_id')
+
+  if (auth.user.role !== 'admin') {
+    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+      auditQuery = auditQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      organizationsQuery = organizationsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      gatewaysQuery = gatewaysQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+    } else {
+      auditQuery = auditQuery.in('property_id', auth.user.propertyIds)
+      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
+      gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
+    }
   }
 
   const [auditResult, organizationsResult, propertiesResult, gatewaysResult] = await Promise.all([
     auditQuery,
-    supabase.from('organizations').select('id,name'),
-    supabase.from('properties').select('id,organization_id,name,address'),
-    supabase.from('gateways').select('id,name,public_id'),
+    organizationsQuery,
+    propertiesQuery,
+    gatewaysQuery,
   ])
 
   const queryError = auditResult.error || organizationsResult.error || propertiesResult.error || gatewaysResult.error
@@ -193,7 +208,7 @@ export default async function AuditPage() {
   const failures = auditRows.filter((row) => row.action.includes('failed') || row.action.includes('rollback') || row.action.includes('escalated'))
   const connectorActions = auditRows.filter((row) => row.action.startsWith('gateway') || row.action.startsWith('integration_credential'))
   const automationActions = auditRows.filter((row) => row.action.startsWith('automation'))
-  const cameraActions = auditRows.filter((row) => row.action.startsWith('camera_stream'))
+  const cameraActions = auditRows.filter((row) => row.action.startsWith('camera_stream') || row.action.startsWith('camera_snapshot'))
 
   return (
     <div className="space-y-8">

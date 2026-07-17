@@ -138,14 +138,42 @@ export default async function ClientsPage() {
     )
   }
 
+  let organizationsQuery = supabase.from('organizations').select('id,name,slug,status,created_at,updated_at').order('created_at', { ascending: false }).limit(250)
+  let propertiesQuery = supabase.from('properties').select('id,organization_id,name,address,status')
+  let membershipsQuery = supabase.from('memberships').select('organization_id,user_id,role')
+  let devicesQuery = supabase.from('devices').select('id,organization_id,property_id,kind,status,last_seen_at')
+  let gatewaysQuery = supabase.from('gateways').select('id,organization_id,property_id,status,last_seen_at')
+  let incidentsQuery = supabase.from('incidents').select('id,organization_id,property_id,status,severity')
+  let credentialsQuery = supabase.from('integration_credentials').select('id,organization_id,property_id,status,last_validated_at')
+
+  if (auth.user.role !== 'admin') {
+    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+      organizationsQuery = organizationsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      membershipsQuery = membershipsQuery.eq('organization_id', '00000000-0000-0000-0000-000000000000')
+      devicesQuery = devicesQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      gatewaysQuery = gatewaysQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      incidentsQuery = incidentsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+      credentialsQuery = credentialsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
+    } else {
+      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
+      membershipsQuery = membershipsQuery.in('organization_id', auth.user.clientIds)
+      devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
+      gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
+      incidentsQuery = incidentsQuery.in('property_id', auth.user.propertyIds)
+      credentialsQuery = credentialsQuery.in('property_id', auth.user.propertyIds)
+    }
+  }
+
   const [organizationsResult, propertiesResult, membershipsResult, devicesResult, gatewaysResult, incidentsResult, credentialsResult, usersResult] = await Promise.all([
-    supabase.from('organizations').select('id,name,slug,status,created_at,updated_at').order('created_at', { ascending: false }).limit(250),
-    supabase.from('properties').select('id,organization_id,name,address,status'),
-    supabase.from('memberships').select('organization_id,user_id,role'),
-    supabase.from('devices').select('id,organization_id,property_id,kind,status,last_seen_at'),
-    supabase.from('gateways').select('id,organization_id,property_id,status,last_seen_at'),
-    supabase.from('incidents').select('id,organization_id,property_id,status,severity'),
-    supabase.from('integration_credentials').select('id,organization_id,property_id,status,last_validated_at'),
+    organizationsQuery,
+    propertiesQuery,
+    membershipsQuery,
+    devicesQuery,
+    gatewaysQuery,
+    incidentsQuery,
+    credentialsQuery,
     supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
   ])
 
@@ -159,12 +187,8 @@ export default async function ClientsPage() {
     )
   }
 
-  const scopedOrganizationIds = auth.user.role === 'admin' ? null : new Set(auth.user.clientIds)
-  const scopedPropertyIds = auth.user.role === 'admin' ? null : new Set(auth.user.propertyIds)
-  const organizations = ((organizationsResult.data || []) as OrganizationRow[])
-    .filter((organization) => !scopedOrganizationIds || scopedOrganizationIds.has(organization.id))
-  const properties = ((propertiesResult.data || []) as PropertyRow[])
-    .filter((property) => !scopedPropertyIds || scopedPropertyIds.has(property.id))
+  const organizations = (organizationsResult.data || []) as OrganizationRow[]
+  const properties = (propertiesResult.data || []) as PropertyRow[]
   const visibleOrganizationIds = new Set(organizations.map((organization) => organization.id))
   const visiblePropertyIds = new Set(properties.map((property) => property.id))
   const memberships = ((membershipsResult.data || []) as MembershipRow[])

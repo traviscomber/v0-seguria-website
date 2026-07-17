@@ -164,9 +164,12 @@ assert(
   `${authStorePath} must scope client access for technicians and clients.`
 )
 assert(
-  /scopedOrganizationIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.clientIds\)/.test(adminClients) &&
-    /scopedPropertyIds = auth\.user\.role === 'admin' \? null : new Set\(auth\.user\.propertyIds\)/.test(adminClients),
-  `${adminClientsPath} must filter non-admin client visibility by authenticated scope.`
+  /organizationsQuery = organizationsQuery\.in\('id', auth\.user\.clientIds\)/.test(adminClients) &&
+    /propertiesQuery = propertiesQuery\.in\('id', auth\.user\.propertyIds\)/.test(adminClients) &&
+    /devicesQuery = devicesQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(adminClients) &&
+    !/scopedOrganizationIds/.test(adminClients) &&
+    !/scopedPropertyIds/.test(adminClients),
+  `${adminClientsPath} must query non-admin client visibility by authenticated scope.`
 )
 assert(
   /propertiesQuery = propertiesQuery\.in\('id', auth\.user\.propertyIds\)/.test(adminProjects) &&
@@ -333,6 +336,13 @@ assert(
   `${auditPagePath} must show device space assignment audits with a readable label.`
 )
 assert(
+  /'camera_snapshot\.received': 'Snapshot de camara recibido'/.test(auditPage) &&
+    /organizationsQuery = organizationsQuery\.in\('id', auth\.user\.clientIds\)/.test(auditPage) &&
+    /propertiesQuery = propertiesQuery\.in\('id', auth\.user\.propertyIds\)/.test(auditPage) &&
+    /gatewaysQuery = gatewaysQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(auditPage),
+  `${auditPagePath} must scope audit lookup metadata and label camera snapshot evidence.`
+)
+assert(
   /provider:\s*getOperationalProvider\(credential\.provider\)/.test(gatewayConfigRoute),
   `${gatewayConfigRoutePath} must expose only operational provider aliases to gateways.`
 )
@@ -393,6 +403,7 @@ console.log(JSON.stringify({
     'camera stream frame route proxies private image bytes',
     'client provisioning is admin-only and audited',
     'admin dashboard counts are scoped by authenticated clients and properties',
+    'admin clients page queries through authenticated scope',
     'admin project and evidence pages query through authenticated scope',
     'lead CRM updates are persisted in Supabase',
     'contact form qualifies leads before CRM follow-up',
@@ -405,6 +416,7 @@ console.log(JSON.stringify({
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
+    'audit page lookup metadata is scoped',
     'gateway camera evidence uploads are audited',
     'gateway config hides internal provider names',
     'gateway automation delivery uses sanitized parameters',
