@@ -75,13 +75,14 @@ const readinessCards = [
 
 export default async function IntegrationsAdminPage() {
   const auth = await getCurrentAuthSession()
+  const user = auth?.user
   const [summary, activity, connections, recentEvents, properties, credentials] = await Promise.all([
-    getIntegrationSummary(),
-    getIntegrationActivitySummary(12),
-    getIntegrationConnections(),
-    getIntegrationEvents(12),
-    auth ? getIntegrationPropertyOptions(auth.user) : Promise.resolve([]),
-    auth ? getIntegrationCredentialSummaries(auth.user) : Promise.resolve([]),
+    getIntegrationSummary(user),
+    getIntegrationActivitySummary(12, user),
+    getIntegrationConnections(user),
+    getIntegrationEvents(12, user),
+    user ? getIntegrationPropertyOptions(user) : Promise.resolve([]),
+    user ? getIntegrationCredentialSummaries(user) : Promise.resolve([]),
   ])
 
   const totalDevices = connections.reduce((total, connection) => total + connection.totalDevices, 0)

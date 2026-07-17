@@ -30,6 +30,8 @@ const notificationsRoutePath = 'app/api/notifications/route.ts'
 const clientNotificationsPath = 'components/client-notification-center.tsx'
 const clientPortalPagePath = 'app/app/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
+const integrationStatusRoutePath = 'app/api/integrations/status/route.ts'
+const integrationStatePath = 'lib/integration-state.ts'
 const securityInventoryRoutePath = 'app/api/admin/security-inventory/route.ts'
 const auditPagePath = 'app/admin/auditoria/page.tsx'
 const gatewayConfigRoutePath = 'app/api/gateway/config/route.ts'
@@ -55,6 +57,8 @@ const notificationsRoute = read(notificationsRoutePath)
 const clientNotifications = read(clientNotificationsPath)
 const clientPortalPage = read(clientPortalPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
+const integrationStatusRoute = read(integrationStatusRoutePath)
+const integrationState = read(integrationStatePath)
 const securityInventoryRoute = read(securityInventoryRoutePath)
 const auditPage = read(auditPagePath)
 const gatewayConfigRoute = read(gatewayConfigRoutePath)
@@ -222,6 +226,24 @@ assert(
   `${adminIntegrationsPath} must use neutral operational labels.`
 )
 assert(
+  /getIntegrationSummary\(user\)/.test(adminIntegrations) &&
+    /getIntegrationConnections\(user\)/.test(adminIntegrations) &&
+    /getIntegrationEvents\(12, user\)/.test(adminIntegrations),
+  `${adminIntegrationsPath} must load integration metrics through the authenticated user scope.`
+)
+assert(
+  /getIntegrationSummary\(auth\.user\)/.test(integrationStatusRoute) &&
+    /getIntegrationConnections\(auth\.user\)/.test(integrationStatusRoute) &&
+    /getIntegrationEvents\(10, auth\.user\)/.test(integrationStatusRoute),
+  `${integrationStatusRoutePath} must load integration status through the authenticated user scope.`
+)
+assert(
+  /function hasScopedProperties\(user\?: AuthUser\)/.test(integrationState) &&
+    /integrationsQuery = integrationsQuery\.in\('property_id', user\.propertyIds\)/.test(integrationState) &&
+    /query = query\.in\('property_id', user\.propertyIds\)/.test(integrationState),
+  `${integrationStatePath} must scope integration connections and events by assigned properties.`
+)
+assert(
   /supabase\.rpc\('acknowledge_notification'/.test(notificationsRoute),
   `${notificationsRoutePath} must acknowledge notifications through the audited RPC.`
 )
@@ -327,6 +349,7 @@ console.log(JSON.stringify({
     'public signup remains closed and internal-only',
     'incident comments are explicit and audited',
     'admin integrations use neutral visible labels',
+    'integration dashboards are scoped by authenticated user',
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',

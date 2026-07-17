@@ -10,13 +10,27 @@ function getAdminClient() {
   return supabase
 }
 
-export async function getIntegrationConnections(): Promise<IntegrationConnection[]> {
+function hasScopedProperties(user?: AuthUser) {
+  return !user || user.role === 'admin' || user.propertyIds.length > 0
+}
+
+export async function getIntegrationConnections(user?: AuthUser): Promise<IntegrationConnection[]> {
+  if (!hasScopedProperties(user)) return []
   const supabase = getAdminClient()
+  let integrationsQuery = supabase
+    .from('integrations')
+    .select('id, provider, display_name, status, endpoint, external_account_ref, last_sync_at, metadata, property_id')
+
+  let devicesQuery = supabase.from('devices').select('integration_id, property_id')
+
+  if (user?.role !== 'admin' && user?.propertyIds.length) {
+    integrationsQuery = integrationsQuery.in('property_id', user.propertyIds)
+    devicesQuery = devicesQuery.in('property_id', user.propertyIds)
+  }
+
   const [integrationsResult, devicesResult] = await Promise.all([
-    supabase
-      .from('integrations')
-      .select('id, provider, display_name, status, endpoint, external_account_ref, last_sync_at, metadata'),
-    supabase.from('devices').select('integration_id'),
+    integrationsQuery,
+    devicesQuery,
   ])
 
   const queryError = integrationsResult.error || devicesResult.error
@@ -44,17 +58,24 @@ export async function getIntegrationConnections(): Promise<IntegrationConnection
   }))
 }
 
-export async function getIntegrationConnectionByProvider(provider: IntegrationProvider) {
-  return (await getIntegrationConnections()).find((connection) => connection.provider === provider)
+export async function getIntegrationConnectionByProvider(provider: IntegrationProvider, user?: AuthUser) {
+  return (await getIntegrationConnections(user)).find((connection) => connection.provider === provider)
 }
 
-export async function getIntegrationEvents(limit = 25): Promise<IntegrationEvent[]> {
+export async function getIntegrationEvents(limit = 25, user?: AuthUser): Promise<IntegrationEvent[]> {
+  if (!hasScopedProperties(user)) return []
   const supabase = getAdminClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from('events')
     .select('id, source, event_type, severity, state, entity_id, device_id, property_id, payload, received_at')
     .order('received_at', { ascending: false })
     .limit(limit)
+
+  if (user?.role !== 'admin' && user?.propertyIds.length) {
+    query = query.in('property_id', user.propertyIds)
+  }
+
+  const { data, error } = await query
 
   if (error) throw new Error(`Integration events query failed: ${error.message}`)
 
@@ -72,10 +93,10 @@ export async function getIntegrationEvents(limit = 25): Promise<IntegrationEvent
   }))
 }
 
-export async function getIntegrationSummary() {
+export async function getIntegrationSummary(user?: AuthUser) {
   const [connections, recentEvents] = await Promise.all([
-    getIntegrationConnections(),
-    getIntegrationEvents(10),
+    getIntegrationConnections(user),
+    getIntegrationEvents(10, user),
   ])
   return {
     totalConnections: connections.length,
@@ -85,8 +106,8 @@ export async function getIntegrationSummary() {
   }
 }
 
-export async function getIntegrationActivitySummary(limit = 10) {
-  const recentEvents = await getIntegrationEvents(limit)
+export async function getIntegrationActivitySummary(limit = 10, user?: AuthUser) {
+  const recentEvents = await getIntegrationEvents(limit, user)
   return {
     recentEvents,
     connectedEvents: recentEvents.filter((event) => event.eventType === 'account.connected').length,

@@ -14,10 +14,10 @@ export async function GET(request: NextRequest) {
   }
 
   const [summary, activity, connections, recentEvents] = await Promise.all([
-    getIntegrationSummary(),
-    getIntegrationActivitySummary(10),
-    getIntegrationConnections(),
-    getIntegrationEvents(10),
+    getIntegrationSummary(auth.user),
+    getIntegrationActivitySummary(10, auth.user),
+    getIntegrationConnections(auth.user),
+    getIntegrationEvents(10, auth.user),
   ])
 
   return NextResponse.json({
