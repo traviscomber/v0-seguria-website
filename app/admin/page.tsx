@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
   const leads = leadsResult.data || []
   const gateways = gatewaysResult.data || []
   const stats = [
-    { label: 'Empresas', value: organizations.count || 0, note: 'clientes configurados', icon: Building2, href: '/admin/integraciones' },
+    { label: 'Empresas', value: organizations.count || 0, note: 'clientes configurados', icon: Building2, href: '/admin/clientes' },
     { label: 'Sitios', value: properties.count || 0, note: 'espacios protegidos', icon: MapPin, href: '/admin/dispositivos' },
     { label: 'Equipos', value: devices.count || 0, note: 'inventario conectado', icon: Cpu, href: '/admin/dispositivos' },
     { label: 'Incidentes abiertos', value: incidents.count || 0, note: overdueNotifications.count ? `${overdueNotifications.count} confirmaciones vencidas` : 'sin confirmaciones vencidas', icon: AlertTriangle, href: '/admin/incidentes' },

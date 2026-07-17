@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { 
   LayoutDashboard, 
+  Building2,
   Users, 
   FolderKanban, 
   FileText, 
@@ -20,6 +21,7 @@ import { useEffect, useState } from 'react'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/clientes', label: 'Clientes', icon: Building2 },
   { href: '/admin/leads', label: 'Leads', icon: Users },
   { href: '/admin/proyectos', label: 'Proyectos', icon: FolderKanban },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText },
