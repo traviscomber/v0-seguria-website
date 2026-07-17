@@ -78,6 +78,22 @@ export async function POST(request: NextRequest) {
       throw recordError
     }
 
+    await supabase.from('audit_log').insert({
+      organization_id: gateway.organization_id,
+      property_id: gateway.property_id,
+      actor_gateway_id: gateway.id,
+      action: 'camera_snapshot.received',
+      target_type: 'camera_snapshot',
+      target_id: snapshot.id,
+      payload: {
+        deviceId: device.id,
+        externalDeviceId,
+        mimeType: file.type,
+        size: file.size,
+        capturedAt: snapshot.captured_at,
+      },
+    })
+
     return NextResponse.json({ success: true, data: snapshot, message: 'Snapshot recibido.' })
   } catch (error) {
     console.error('Camera snapshot ingestion failed', error)

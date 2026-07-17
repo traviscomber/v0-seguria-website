@@ -37,6 +37,7 @@ const auditPagePath = 'app/admin/auditoria/page.tsx'
 const gatewayConfigRoutePath = 'app/api/gateway/config/route.ts'
 const gatewayRuntimeBridgePath = 'gateway/src/home-assistant.js'
 const gatewayAutomationsRoutePath = 'app/api/gateway/automations/route.ts'
+const gatewayCameraSnapshotRoutePath = 'app/api/gateway/cameras/snapshot/route.ts'
 const adminAutomationsRoutePath = 'app/api/admin/automations/route.ts'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
@@ -66,6 +67,7 @@ const auditPage = read(auditPagePath)
 const gatewayConfigRoute = read(gatewayConfigRoutePath)
 const gatewayRuntimeBridge = read(gatewayRuntimeBridgePath)
 const gatewayAutomationsRoute = read(gatewayAutomationsRoutePath)
+const gatewayCameraSnapshotRoute = read(gatewayCameraSnapshotRoutePath)
 const adminAutomationsRoute = read(adminAutomationsRoutePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
@@ -347,6 +349,12 @@ assert(
   /function sanitizeAutomationParameters\(config: unknown\)/.test(gatewayAutomationsRoute) && /parameters:\s*sanitizeAutomationParameters\(automation\.config\)/.test(gatewayAutomationsRoute),
   `${gatewayAutomationsRoutePath} must expose sanitized automation parameters instead of raw config.`
 )
+assert(
+  /action:\s*'camera_snapshot\.received'/.test(gatewayCameraSnapshotRoute) &&
+    /actor_gateway_id:\s*gateway\.id/.test(gatewayCameraSnapshotRoute) &&
+    /target_type:\s*'camera_snapshot'/.test(gatewayCameraSnapshotRoute),
+  `${gatewayCameraSnapshotRoutePath} must audit private camera evidence uploads.`
+)
 assertNotContains(
   gatewayAutomationsRoute,
   [/return NextResponse\.json\(\{\s*success:\s*true,\s*data:\s*data \|\| \[\]\s*\}/, /config:\s*automation\.config/, /configuracionÃ/i, /ConfirmaciÃ/i, /instalaciÃ/i],
@@ -397,6 +405,7 @@ console.log(JSON.stringify({
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
+    'gateway camera evidence uploads are audited',
     'gateway config hides internal provider names',
     'gateway automation delivery uses sanitized parameters',
     'technician access is scoped to assigned clients and properties',
