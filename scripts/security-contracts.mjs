@@ -29,6 +29,8 @@ const notificationsRoutePath = 'app/api/notifications/route.ts'
 const clientNotificationsPath = 'components/client-notification-center.tsx'
 const clientPortalPagePath = 'app/app/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
+const securityInventoryRoutePath = 'app/api/admin/security-inventory/route.ts'
+const auditPagePath = 'app/admin/auditoria/page.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
@@ -46,6 +48,8 @@ const notificationsRoute = read(notificationsRoutePath)
 const clientNotifications = read(clientNotificationsPath)
 const clientPortalPage = read(clientPortalPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
+const securityInventoryRoute = read(securityInventoryRoutePath)
+const auditPage = read(auditPagePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -217,6 +221,18 @@ assertNotContains(
   [/tuya/i, /home assistant/i, /github/i, /Ã/, /Â/, /â€¢/],
   clientPortalPagePath
 )
+assert(
+  /action:\s*'device\.space_assigned'/.test(securityInventoryRoute) && /from\('audit_log'\)\.insert/.test(securityInventoryRoute),
+  `${securityInventoryRoutePath} must audit device space assignments.`
+)
+assert(
+  /createSupabaseAdminClient\(\)/.test(securityInventoryRoute) && /previousSpaceId/.test(securityInventoryRoute) && /nextSpaceId/.test(securityInventoryRoute),
+  `${securityInventoryRoutePath} must use service-role audit logging with before/after space ids.`
+)
+assert(
+  /'device\.space_assigned': 'Equipo asignado a espacio'/.test(auditPage),
+  `${auditPagePath} must show device space assignment audits with a readable label.`
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -233,5 +249,6 @@ console.log(JSON.stringify({
     'admin integrations use neutral visible labels',
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
+    'device inventory assignments are audited',
   ],
 }, null, 2))

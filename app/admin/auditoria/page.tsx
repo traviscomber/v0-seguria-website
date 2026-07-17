@@ -63,6 +63,7 @@ const actionLabels: Record<string, string> = {
   'camera_stream.requested': 'Stream solicitado',
   'camera_stream.started': 'Stream iniciado',
   'camera_stream.stopped': 'Stream detenido',
+  'device.space_assigned': 'Equipo asignado a espacio',
   'gateway.config.delivered': 'Configuracion entregada',
   'gateway.provisioned': 'Conector creado',
   'integration_credential.stored': 'Cuenta operativa guardada',

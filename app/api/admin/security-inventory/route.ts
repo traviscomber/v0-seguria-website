@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { getAccessiblePortalSites } from '@/lib/client-portal'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
@@ -42,6 +43,18 @@ export async function PATCH(request: NextRequest) {
   const supabase = await createSupabaseServerClient()
   if (!supabase) return NextResponse.json({ error: 'Servicio no configurado.' }, { status: 503 })
 
+  const { data: currentDevice, error: currentError } = await supabase
+    .from('devices')
+    .select('id, organization_id, property_id, space_id, name, kind, status')
+    .eq('id', parsed.data.deviceId)
+    .maybeSingle()
+
+  if (currentError) {
+    console.error('Device lookup before space assignment failed', currentError)
+    return NextResponse.json({ error: 'No fue posible leer el equipo.' }, { status: 400 })
+  }
+  if (!currentDevice) return NextResponse.json({ error: 'Equipo no encontrado.' }, { status: 404 })
+
   const { data, error } = await supabase
     .from('devices')
     .update({ space_id: parsed.data.spaceId })
@@ -54,6 +67,31 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'No fue posible asignar el espacio.' }, { status: 400 })
   }
   if (!data) return NextResponse.json({ error: 'Equipo no encontrado.' }, { status: 404 })
+
+  const auditClient = createSupabaseAdminClient()
+  if (auditClient) {
+    const { error: auditError } = await auditClient.from('audit_log').insert({
+      organization_id: currentDevice.organization_id,
+      property_id: currentDevice.property_id,
+      actor_user_id: auth.user.id,
+      actor_label: auth.user.email || 'staff',
+      action: 'device.space_assigned',
+      target_type: 'device',
+      target_id: currentDevice.id,
+      payload: {
+        deviceName: currentDevice.name,
+        deviceKind: currentDevice.kind,
+        deviceStatus: currentDevice.status,
+        previousSpaceId: currentDevice.space_id,
+        nextSpaceId: parsed.data.spaceId,
+      },
+    })
+
+    if (auditError) {
+      console.error('Device space assignment audit failed', auditError)
+      return NextResponse.json({ error: 'Espacio asignado, pero no fue posible registrar auditoria.' }, { status: 500 })
+    }
+  }
 
   return NextResponse.json({ data })
 }
