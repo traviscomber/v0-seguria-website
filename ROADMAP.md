@@ -69,6 +69,7 @@ Completado y validado en produccion:
 - sesiones efimeras de video solicitadas por cliente y atendidas por Gateway autenticado,
 - migracion de sesiones de video aplicada y validada con prueba reversible contra Supabase,
 - control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
+- proxy inicial de frames seguros desde evidencia privada hacia el portal sin URL firmada visible,
 - y dashboard administrativo conectado exclusivamente a datos reales.
 
 Siguiente bloque activo:
@@ -76,7 +77,7 @@ Siguiente bloque activo:
 - implementar cola offline y reintentos del agente local,
 - agregar proxy WebRTC/HLS sobre las sesiones de video ya modeladas,
 - probar recuperacion de desconexion y rollback de automatizaciones,
-- conectar el reproductor del portal al proxy de medios de SegurIA,
+- evolucionar el reproductor del portal desde frames seguros hacia video WebRTC/HLS,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto

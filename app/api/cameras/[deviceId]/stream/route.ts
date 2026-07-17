@@ -11,6 +11,10 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+function getStreamMediaUrl(deviceId: string, sessionId: string) {
+  return `/api/cameras/${encodeURIComponent(deviceId)}/stream/frame?sessionId=${encodeURIComponent(sessionId)}`
+}
+
 async function getAuthorizedCamera(deviceId: string) {
   const auth = await getCurrentAuthSession()
   if (!auth) return { status: 401 as const, error: 'No autorizado.' }
@@ -47,7 +51,15 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
     .maybeSingle()
 
   if (error) return NextResponse.json({ success: false, error: 'No fue posible cargar la sesion.' }, { status: 500 })
-  return NextResponse.json({ success: true, data: session || null }, { headers: { 'Cache-Control': 'private, no-store' } })
+  return NextResponse.json({
+    success: true,
+    data: session
+      ? {
+          ...session,
+          mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
+        }
+      : null,
+  }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 
 export async function POST(_request: NextRequest, context: { params: Promise<{ deviceId: string }> }) {
@@ -89,6 +101,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
         status: existingOwnSession.status,
         expires_at: existingOwnSession.expires_at,
         created_at: existingOwnSession.created_at,
+        mediaUrl: getStreamMediaUrl(authorized.device.id, existingOwnSession.id),
         reused: true,
       },
       message: 'Vista ya solicitada.',
@@ -146,8 +159,8 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ d
     success: true,
     data: {
       ...session,
-      token,
       expiresAt,
+      mediaUrl: getStreamMediaUrl(authorized.device.id, session.id),
     },
     message: 'Sesion solicitada.',
   })

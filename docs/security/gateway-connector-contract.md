@@ -122,7 +122,15 @@ La ruta aplica limites de concurrencia antes de crear sesiones:
 - sesiones vencidas se marcan como `expired` antes de evaluar disponibilidad.
 - si el mismo usuario ya tiene una sesion vigente para la camara, la API reutiliza esa sesion y no crea otra.
 
-El portal consulta estado con `GET /api/cameras/:deviceId/stream`; la respuesta solo incluye identificador, estado y vencimiento de sesion.
+El portal consulta estado con `GET /api/cameras/:deviceId/stream`; la respuesta solo incluye identificador, estado, vencimiento de sesion y una URL interna SegurIA para consumir el medio protegido.
+
+El primer proxy de medio disponible es:
+
+```text
+GET /api/cameras/:deviceId/stream/frame?sessionId=<session_uuid>
+```
+
+Esta ruta valida sesion, usuario, propiedad, camara y vencimiento antes de entregar bytes de imagen desde el bucket privado. El navegador nunca recibe una URL firmada de storage ni una referencia local del gateway.
 
 El gateway consulta sesiones pendientes con:
 
@@ -146,7 +154,7 @@ POST /api/gateway/cameras/stream-sessions
 }
 ```
 
-El cliente no recibe el token, URL o credencial de origen. Solo ve estado de sesion y medios entregados por SegurIA. La referencia `gatewayStreamRef` queda confinada al backend y al gateway.
+El cliente no recibe token, URL firmada, URL local o credencial de origen. Solo ve estado de sesion y medios entregados por SegurIA. La referencia `gatewayStreamRef` queda confinada al backend y al gateway.
 
 ## Rotacion y revocacion
 
