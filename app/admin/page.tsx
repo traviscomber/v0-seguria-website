@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { AlertTriangle, ArrowRight, Building2, Cpu, MapPin, Radio } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Building2, Cpu, MapPin, Radio, ShieldCheck } from 'lucide-react'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { ClientProvisionForm } from '@/components/client-provision-form'
@@ -54,7 +54,7 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <ClientProvisionForm />
+      {auth.user.role === 'admin' ? <ClientProvisionForm /> : <AdminOnlyNotice />}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="glass-card p-6">
@@ -87,4 +87,26 @@ export default async function AdminDashboard() {
 
 function EmptyState({ text }: { text: string }) {
   return <p className="py-10 text-center text-sm text-white/45">{text}</p>
+}
+
+function AdminOnlyNotice() {
+  return (
+    <div className="glass-card flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-start gap-3">
+        <div className="rounded-2xl bg-[#4DA3D9]/15 p-3 text-[#9DD2F2]">
+          <ShieldCheck className="h-5 w-5" strokeWidth={1.5} />
+        </div>
+        <div>
+          <h2 className="text-lg font-light text-white">Alta de clientes protegida</h2>
+          <p className="mt-1 max-w-2xl text-sm text-white/50">
+            Los tecnicos pueden revisar sitios, equipos e incidentes. La creacion de empresas y usuarios queda reservada para administradores.
+          </p>
+        </div>
+      </div>
+      <Link href="/admin/clientes" className="inline-flex items-center gap-2 text-sm text-[#9DD2F2]">
+        Ver clientes
+        <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+      </Link>
+    </div>
+  )
 }

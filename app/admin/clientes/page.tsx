@@ -196,7 +196,7 @@ export default async function ClientsPage() {
         <MetricCard icon={AlertTriangle} label="Alertas abiertas" value={totalOpenIncidents.toString()} tone={totalOpenIncidents > 0 ? 'text-amber-200' : 'text-white'} />
       </div>
 
-      <ClientProvisionForm />
+      {auth.user.role === 'admin' ? <ClientProvisionForm /> : <AdminOnlyProvisionNotice />}
 
       <section className="glass-card overflow-hidden">
         <div className="border-b border-white/10 p-5">
@@ -355,5 +355,21 @@ function StatusPill({ icon: Icon, label }: { icon: typeof RadioTower; label: str
       <Icon className="h-3.5 w-3.5 text-[#9DD2F2]" strokeWidth={1.5} />
       {label}
     </span>
+  )
+}
+
+function AdminOnlyProvisionNotice() {
+  return (
+    <div className="glass-card flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 className="text-lg font-light text-white">Alta de cliente solo para administradores</h2>
+        <p className="mt-1 max-w-3xl text-sm text-white/50">
+          Este perfil puede revisar empresas, sitios, conectividad e incidentes. Para crear una empresa o usuario nuevo, solicita la accion a un administrador.
+        </p>
+      </div>
+      <span className="w-fit rounded-full bg-[#4DA3D9]/12 px-3 py-1 text-xs text-[#9DD2F2]">
+        Permisos controlados
+      </span>
+    </div>
   )
 }

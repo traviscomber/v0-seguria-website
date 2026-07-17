@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
   const guard = getOperationalGuardResponse({ operation: 'client.provision' })
   if (guard) return guard
 
-  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  const auth = await getAuthorizedRequest(request, ['admin'])
   if (!auth) {
     return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   }
@@ -223,6 +223,27 @@ export async function POST(request: NextRequest) {
     const portalInventory = organizationId && propertyId
       ? await ensureDefaultPortalInventory(supabase, organizationId, propertyId)
       : { spaceCount: provisioned?.space_count || 0, deviceCount: provisioned?.device_count || 0 }
+
+    if (organizationId && propertyId) {
+      const { error: auditError } = await supabase.from('audit_log').insert({
+        organization_id: organizationId,
+        property_id: propertyId,
+        actor_user_id: auth.user.id,
+        action: 'client.provisioned',
+        target_type: 'organization',
+        target_id: organizationId,
+        payload: {
+          companyName: parsed.data.company_name,
+          clientEmail: parsed.data.client_email,
+          siteName: parsed.data.site_name,
+          placeholderDevices: portalInventory.deviceCount,
+        },
+      })
+
+      if (auditError) {
+        console.error('Client provision audit failed:', auditError.message)
+      }
+    }
 
     return NextResponse.json({
       success: true,
