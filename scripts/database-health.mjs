@@ -95,7 +95,7 @@ const checks = [
   {
     name: 'incident_actions',
     table: 'incident_actions',
-    columns: 'id,organization_id,property_id,incident_id,actor_user_id,action_type,from_status,to_status,comment,metadata,created_at',
+    columns: 'id,organization_id,property_id,incident_id,actor_user_id,actor_label,action_type,from_status,to_status,comment,metadata,created_at',
   },
   {
     name: 'notifications',
@@ -140,7 +140,7 @@ const checks = [
   {
     name: 'audit_log',
     table: 'audit_log',
-    columns: 'id,organization_id,property_id,actor_user_id,action,target_type,target_id,payload,created_at',
+    columns: 'id,organization_id,property_id,actor_user_id,actor_gateway_id,actor_label,action,target_type,target_id,payload,created_at',
   },
 ]
 
