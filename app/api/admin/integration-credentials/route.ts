@@ -37,7 +37,7 @@ function toCredentialResponse(row: Record<string, unknown>) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  const auth = await getAuthorizedRequest(request, ['admin'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
   const supabase = createSupabaseAdminClient()
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   const guard = getOperationalGuardResponse({ operation: 'integration_credential.store' })
   if (guard) return guard
 
-  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  const auth = await getAuthorizedRequest(request, ['admin'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
   if (!hasCredentialVaultKey()) {

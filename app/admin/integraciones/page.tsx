@@ -82,7 +82,7 @@ export default async function IntegrationsAdminPage() {
     getIntegrationConnections(user),
     getIntegrationEvents(12, user),
     user ? getIntegrationPropertyOptions(user) : Promise.resolve([]),
-    user ? getIntegrationCredentialSummaries(user) : Promise.resolve([]),
+    user?.role === 'admin' ? getIntegrationCredentialSummaries(user) : Promise.resolve([]),
   ])
 
   const totalDevices = connections.reduce((total, connection) => total + connection.totalDevices, 0)
@@ -120,7 +120,18 @@ export default async function IntegrationsAdminPage() {
         properties={properties.map((property) => ({ id: property.id, name: property.name, location: property.location }))}
       />
 
-      <IntegrationCredentialForm properties={properties} initialCredentials={credentials} />
+      {user?.role === 'admin' ? (
+        <IntegrationCredentialForm properties={properties} initialCredentials={credentials} />
+      ) : (
+        <section className="glass-card border border-white/10 p-6">
+          <p className="text-sm text-[#9DD2F2]">Acceso operativo protegido</p>
+          <h2 className="mt-2 text-2xl font-light text-white">Credenciales reservadas para administradores</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+            Los tecnicos pueden validar el gateway, inventario y eventos de sus propiedades asignadas. Las cuentas y
+            secretos de cliente se registran solo desde administracion.
+          </p>
+        </section>
+      )}
 
       <section className="glass-card border border-[#4DA3D9]/20 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

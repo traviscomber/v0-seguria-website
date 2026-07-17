@@ -13,7 +13,7 @@ type PropertyOption = {
 type CredentialSummary = {
   id: string
   propertyId: string
-  provider: 'home_assistant' | 'tuya' | 'github'
+  provider: 'home_assistant' | 'tuya'
   label: string
   accountIdentifier: string | null
   credentialKind: string

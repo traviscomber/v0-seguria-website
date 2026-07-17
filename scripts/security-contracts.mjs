@@ -32,6 +32,8 @@ const notificationsRoutePath = 'app/api/notifications/route.ts'
 const clientNotificationsPath = 'components/client-notification-center.tsx'
 const clientPortalPagePath = 'app/app/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
+const integrationCredentialsRoutePath = 'app/api/admin/integration-credentials/route.ts'
+const integrationCredentialFormPath = 'components/integration-credential-form.tsx'
 const integrationStatusRoutePath = 'app/api/integrations/status/route.ts'
 const integrationStatePath = 'lib/integration-state.ts'
 const securityInventoryRoutePath = 'app/api/admin/security-inventory/route.ts'
@@ -64,6 +66,8 @@ const notificationsRoute = read(notificationsRoutePath)
 const clientNotifications = read(clientNotificationsPath)
 const clientPortalPage = read(clientPortalPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
+const integrationCredentialsRoute = read(integrationCredentialsRoutePath)
+const integrationCredentialForm = read(integrationCredentialFormPath)
 const integrationStatusRoute = read(integrationStatusRoutePath)
 const integrationState = read(integrationStatePath)
 const securityInventoryRoute = read(securityInventoryRoutePath)
@@ -293,6 +297,23 @@ assert(
   `${adminIntegrationsPath} must load integration metrics through the authenticated user scope.`
 )
 assert(
+  /user\?\.role === 'admin' \? getIntegrationCredentialSummaries\(user\)/.test(adminIntegrations) &&
+    /user\?\.role === 'admin' \? \(/.test(adminIntegrations) &&
+    /Credenciales reservadas para administradores/.test(adminIntegrations),
+  `${adminIntegrationsPath} must reserve credential listing and forms for administrators.`
+)
+assert(
+  /getAuthorizedRequest\(request,\s*\['admin'\]\)/.test(integrationCredentialsRoute) &&
+    !/getAuthorizedRequest\(request,\s*\['admin',\s*'technician'\]\)/.test(integrationCredentialsRoute) &&
+    /secret_ciphertext/.test(integrationCredentialsRoute),
+  `${integrationCredentialsRoutePath} must keep credential vault reads and writes admin-only.`
+)
+assertNotContains(
+  integrationCredentialForm,
+  [/github/i],
+  integrationCredentialFormPath
+)
+assert(
   /getIntegrationSummary\(auth\.user\)/.test(integrationStatusRoute) &&
     /getIntegrationConnections\(auth\.user\)/.test(integrationStatusRoute) &&
     /getIntegrationEvents\(10, auth\.user\)/.test(integrationStatusRoute),
@@ -435,6 +456,7 @@ console.log(JSON.stringify({
     'incident operations are scoped by authenticated properties',
     'admin integrations use neutral visible labels',
     'integration dashboards are scoped by authenticated user',
+    'integration credential vault is admin-only',
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
