@@ -10,6 +10,8 @@ import {
   Cpu, 
   FileCheck,
   Workflow,
+  ShieldAlert,
+  Zap,
   Menu,
   X,
   LogOut
@@ -22,6 +24,8 @@ const navItems = [
   { href: '/admin/proyectos', label: 'Proyectos', icon: FolderKanban },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText },
   { href: '/admin/dispositivos', label: 'Dispositivos', icon: Cpu },
+  { href: '/admin/incidentes', label: 'Incidentes', icon: ShieldAlert },
+  { href: '/admin/automatizaciones', label: 'Automatizaciones', icon: Zap },
   { href: '/admin/integraciones', label: 'Integraciones', icon: Workflow },
   { href: '/admin/propuestas', label: 'Propuestas', icon: FileCheck },
 ]

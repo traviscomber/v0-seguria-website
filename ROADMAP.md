@@ -31,7 +31,7 @@ En 90 dias, dejar una version Pro lista para operar el primer grupo de clientes 
 
 Objetivo autonomo activo desde el 17 de julio de 2026.
 
-Completado en la base P0:
+Completado y validado en produccion:
 
 - arquitectura y roadmap de 90 dias,
 - migracion inicial multiempresa con organizaciones, propiedades, gateways, dispositivos, eventos e incidentes,
@@ -44,15 +44,29 @@ Completado en la base P0:
 - secretos maquina-a-maquina movidos a encabezados,
 - alta transaccional de usuario, empresa y propiedad,
 - referencias tecnicas retiradas del portal del cliente.
+- proyecto Supabase dedicado vinculado desde Vercel,
+- nueve migraciones aplicadas con historial,
+- 20 tablas multiempresa con RLS y permisos de minimo privilegio,
+- prueba RLS real con dos organizaciones y cero lecturas cruzadas,
+- identidad y secreto hasheado individual por Gateway,
+- inventario, estados, eventos, incidentes y snapshots persistidos,
+- formulario comercial y onboarding de cuenta persistidos,
+- login, registro, redireccion de rutas y aislamiento validados,
+- centro interno para asignar, comentar, cambiar estado y cerrar incidentes,
+- bitacora inmutable y auditoria para cada accion sobre incidentes,
+- plantillas versionadas de automatizacion por empresa y propiedad,
+- simulacion segura y bloqueo de activacion sin Gateway operativo,
+- entrega versionada al Gateway y confirmacion firmada antes de declarar una regla activa,
+- preservacion de la identidad historica del actor al eliminar una cuenta,
+- y dashboard administrativo conectado exclusivamente a datos reales.
 
-Pendiente para cerrar P0:
+Siguiente bloque activo:
 
-- vincular un proyecto Supabase dedicado a SegurIA,
-- aplicar y validar la migracion,
-- ejecutar pruebas RLS con dos organizaciones,
-- reemplazar el almacenamiento JSON y en memoria de dispositivos y eventos,
-- reemplazar el secreto global por una identidad rotatoria para cada Gateway,
-- validar login y aislamiento de extremo a extremo en staging.
+- implementar cola offline y reintentos del agente local,
+- incorporar notificaciones y escalamiento por SLA,
+- agregar proxy de video en vivo con limites de concurrencia,
+- probar recuperacion de desconexion y rollback de automatizaciones,
+- y formalizar staging separado de produccion.
 
 ## Principio de producto
 
