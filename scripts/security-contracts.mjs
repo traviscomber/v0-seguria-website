@@ -35,6 +35,7 @@ const auditPagePath = 'app/admin/auditoria/page.tsx'
 const gatewayConfigRoutePath = 'app/api/gateway/config/route.ts'
 const gatewayRuntimeBridgePath = 'gateway/src/home-assistant.js'
 const gatewayAutomationsRoutePath = 'app/api/gateway/automations/route.ts'
+const adminAutomationsRoutePath = 'app/api/admin/automations/route.ts'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const authStorePath = 'lib/auth-store.ts'
@@ -59,6 +60,7 @@ const auditPage = read(auditPagePath)
 const gatewayConfigRoute = read(gatewayConfigRoutePath)
 const gatewayRuntimeBridge = read(gatewayRuntimeBridgePath)
 const gatewayAutomationsRoute = read(gatewayAutomationsRoutePath)
+const adminAutomationsRoute = read(adminAutomationsRoutePath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 const authStore = read(authStorePath)
@@ -288,6 +290,29 @@ assertNotContains(
   gatewayAutomationsRoutePath
 )
 
+assert(
+  /function canManageOrganization\(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, organizationId: string\)/.test(adminAutomationsRoute) &&
+    /function canManageProperty\(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, propertyId: string\)/.test(adminAutomationsRoute),
+  `${adminAutomationsRoutePath} must define explicit organization and property scope guards.`
+)
+assert(
+  /auth\.user\.role !== 'admin'/.test(adminAutomationsRoute) &&
+    /organizationsQuery = organizationsQuery\.in\('id', auth\.user\.clientIds\)/.test(adminAutomationsRoute) &&
+    /automationsQuery = automationsQuery\.in\('property_id', auth\.user\.propertyIds\)/.test(adminAutomationsRoute),
+  `${adminAutomationsRoutePath} must filter automation reads for non-admin users.`
+)
+assert(
+  /!canManageOrganization\(auth, organizationId\)/.test(adminAutomationsRoute) &&
+    /!canManageProperty\(auth, property\.id\)/.test(adminAutomationsRoute) &&
+    /!canManageProperty\(auth, automation\.property_id\)/.test(adminAutomationsRoute),
+  `${adminAutomationsRoutePath} must enforce scope on automation mutations.`
+)
+assertNotContains(
+  adminAutomationsRoute,
+  [/Comando invÃ/i, /enviÃ/i, /SimulaciÃ/i, /QuedarÃ/i],
+  adminAutomationsRoutePath
+)
+
 console.log(JSON.stringify({
   ok: true,
   checkedAt: new Date().toISOString(),
@@ -308,5 +333,6 @@ console.log(JSON.stringify({
     'gateway config hides internal provider names',
     'gateway automation delivery uses sanitized parameters',
     'technician access is scoped to assigned clients and properties',
+    'automation admin access is scoped by client and property',
   ],
 }, null, 2))

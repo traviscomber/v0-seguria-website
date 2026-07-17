@@ -14,17 +14,47 @@ const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('simulate'), automationId: z.string().uuid() }),
 ])
 
+function canManageOrganization(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, organizationId: string) {
+  if (!auth) return false
+  if (auth.user.role === 'admin') return true
+  return auth.user.clientIds.includes(organizationId)
+}
+
+function canManageProperty(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, propertyId: string) {
+  if (!auth) return false
+  if (auth.user.role === 'admin') return true
+  return auth.user.propertyIds.includes(propertyId)
+}
+
 export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
+
+  let organizationsQuery = supabase.from('organizations').select('id,name').eq('status', 'active').order('name')
+  let propertiesQuery = supabase.from('properties').select('id,organization_id,name,address,status').order('name')
+  let templatesQuery = supabase.from('automation_templates').select('*').order('name')
+  let automationsQuery = supabase.from('property_automations').select('*,automation_templates(name,description,trigger_kind,version),properties(name),automation_runs(id,result,started_at,completed_at)').order('updated_at', { ascending: false })
+  let runsQuery = supabase.from('automation_runs').select('id,automation_id,property_id,result,details,started_at,completed_at').order('started_at', { ascending: false }).limit(50)
+
+  if (auth.user.role !== 'admin') {
+    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+      return NextResponse.json({ success: true, data: { organizations: [], properties: [], templates: [], automations: [], runs: [] } })
+    }
+    organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+    propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
+    templatesQuery = templatesQuery.in('organization_id', auth.user.clientIds)
+    automationsQuery = automationsQuery.in('property_id', auth.user.propertyIds)
+    runsQuery = runsQuery.in('property_id', auth.user.propertyIds)
+  }
+
   const [organizations, properties, templates, automations, runs] = await Promise.all([
-    supabase.from('organizations').select('id,name').eq('status', 'active').order('name'),
-    supabase.from('properties').select('id,organization_id,name,address,status').order('name'),
-    supabase.from('automation_templates').select('*').order('name'),
-    supabase.from('property_automations').select('*,automation_templates(name,description,trigger_kind,version),properties(name),automation_runs(id,result,started_at,completed_at)').order('updated_at', { ascending: false }),
-    supabase.from('automation_runs').select('id,automation_id,result,details,started_at,completed_at').order('started_at', { ascending: false }).limit(50),
+    organizationsQuery,
+    propertiesQuery,
+    templatesQuery,
+    automationsQuery,
+    runsQuery,
   ])
   const error = organizations.error || properties.error || templates.error || automations.error || runs.error
   if (error) return NextResponse.json({ success: false, error: 'No fue posible cargar las automatizaciones.' }, { status: 500 })
@@ -38,12 +68,13 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
   const parsed = commandSchema.safeParse(await request.json())
-  if (!parsed.success) return NextResponse.json({ success: false, error: 'Comando inválido.' }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ success: false, error: 'Comando invalido.' }, { status: 400 })
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   if (parsed.data.action === 'seed') {
     const organizationId = parsed.data.organizationId
+    if (!canManageOrganization(auth, organizationId)) return NextResponse.json({ success: false, error: 'No autorizado para esta empresa.' }, { status: 403 })
     const rows = securityAutomationLibrary.map((template) => ({ ...template, organization_id: organizationId, created_by: auth.user.id }))
     const { error } = await supabase.from('automation_templates').upsert(rows, { onConflict: 'organization_id,template_key,version', ignoreDuplicates: true })
     if (error) return NextResponse.json({ success: false, error: 'No fue posible preparar las plantillas.' }, { status: 500 })
@@ -54,6 +85,7 @@ export async function POST(request: NextRequest) {
     const { data: property } = await supabase.from('properties').select('id,organization_id').eq('id', parsed.data.propertyId).single()
     const { data: template } = await supabase.from('automation_templates').select('id,organization_id,default_config').eq('id', parsed.data.templateId).single()
     if (!property || !template || property.organization_id !== template.organization_id) return NextResponse.json({ success: false, error: 'La plantilla no pertenece a este sitio.' }, { status: 409 })
+    if (property && !canManageProperty(auth, property.id)) return NextResponse.json({ success: false, error: 'No autorizado para este sitio.' }, { status: 403 })
     const { data, error } = await supabase.from('property_automations').insert({ organization_id: property.organization_id, property_id: property.id, template_id: template.id, name: parsed.data.name, config: { ...(template.default_config || {}), ...parsed.data.config }, created_by: auth.user.id }).select().single()
     if (error) return NextResponse.json({ success: false, error: error.code === '23505' ? 'La regla ya existe para este sitio.' : 'No fue posible crear la regla.' }, { status: error.code === '23505' ? 409 : 500 })
     await supabase.from('audit_log').insert({ organization_id: property.organization_id, property_id: property.id, actor_user_id: auth.user.id, action: 'automation.created', target_type: 'property_automation', target_id: data.id, payload: { template_id: template.id } })
@@ -62,14 +94,15 @@ export async function POST(request: NextRequest) {
 
   const { data: automation } = await supabase.from('property_automations').select('*,automation_templates(version,name)').eq('id', parsed.data.automationId).single()
   if (!automation) return NextResponse.json({ success: false, error: 'Regla no encontrada.' }, { status: 404 })
+  if (!canManageProperty(auth, automation.property_id)) return NextResponse.json({ success: false, error: 'No autorizado para este sitio.' }, { status: 403 })
 
   if (parsed.data.action === 'simulate') {
     const now = new Date().toISOString()
-    const { data, error } = await supabase.from('automation_runs').insert({ organization_id: automation.organization_id, property_id: automation.property_id, automation_id: automation.id, result: 'simulated', details: { safe: true, config: automation.config, predictedAction: 'Crear alerta y registrar respuesta local; no se envió ningún comando.' }, completed_at: now }).select().single()
+    const { data, error } = await supabase.from('automation_runs').insert({ organization_id: automation.organization_id, property_id: automation.property_id, automation_id: automation.id, result: 'simulated', details: { safe: true, config: automation.config, predictedAction: 'Crear alerta y registrar respuesta local; no se envio ningun comando.' }, completed_at: now }).select().single()
     if (error) return NextResponse.json({ success: false, error: 'No fue posible simular la regla.' }, { status: 500 })
     await supabase.from('property_automations').update({ last_run_at: now }).eq('id', automation.id)
     await supabase.from('audit_log').insert({ organization_id: automation.organization_id, property_id: automation.property_id, actor_user_id: auth.user.id, action: 'automation.simulated', target_type: 'property_automation', target_id: automation.id, payload: { run_id: data.id } })
-    return NextResponse.json({ success: true, data, message: 'Simulación segura completada.' })
+    return NextResponse.json({ success: true, data, message: 'Simulacion segura completada.' })
   }
 
   if (parsed.data.action === 'rollback') {
@@ -92,5 +125,5 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase.from('property_automations').update({ status: 'ready', desired_status: parsed.data.desiredStatus, deployment_token: deploymentToken, deployment_requested_at: new Date().toISOString(), last_error: null }).eq('id', automation.id).select().single()
   if (error) return NextResponse.json({ success: false, error: 'No fue posible preparar el despliegue.' }, { status: 500 })
   await supabase.from('audit_log').insert({ organization_id: automation.organization_id, property_id: automation.property_id, actor_user_id: auth.user.id, action: 'automation.deployment_requested', target_type: 'property_automation', target_id: automation.id, payload: { desired_status: parsed.data.desiredStatus } })
-  return NextResponse.json({ success: true, data, message: 'Cambio enviado. Quedará confirmado cuando el sitio responda.' })
+  return NextResponse.json({ success: true, data, message: 'Cambio enviado. Quedara confirmado cuando el sitio responda.' })
 }
