@@ -169,7 +169,7 @@ Para baja latencia, la misma sesion puede solicitar `preferredTransport: "webrtc
 }
 ```
 
-La respuesta WebRTC queda asociada a la sesion efimera. El portal la consulta mediante `GET /api/cameras/:deviceId/stream` y nunca recibe credenciales, URL local, token de storage ni referencias internas del gateway. Si la negociacion de baja latencia falla, el gateway reporta `status: "failed"` o el portal mantiene HLS/frames seguros como fallback.
+La respuesta WebRTC queda asociada a la sesion efimera. El portal la consulta mediante `GET /api/cameras/:deviceId/stream` y nunca recibe credenciales, URL local, token de storage ni referencias internas del gateway. El navegador intenta baja latencia cuando soporta WebRTC; si la negociacion falla, vence o el gateway reporta `status: "failed"`, el portal mantiene HLS/frames seguros como fallback.
 
 El gateway consulta sesiones pendientes con:
 

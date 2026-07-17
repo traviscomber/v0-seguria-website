@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ImageIcon, Loader2, Play, ShieldCheck } from 'lucide-react'
 import { SecureHlsPlayer } from '@/components/secure-hls-player'
+import { SecureWebRtcPlayer } from '@/components/secure-webrtc-player'
 
 type StreamStatus = 'requested' | 'active' | 'ended' | 'expired' | 'failed'
 
@@ -51,6 +52,9 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
   const [frameReady, setFrameReady] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
   const [videoUnavailable, setVideoUnavailable] = useState(false)
+  const [lowLatencyRequestKey, setLowLatencyRequestKey] = useState(0)
+  const [lowLatencyUnavailable, setLowLatencyUnavailable] = useState(false)
+  const [lowLatencyReady, setLowLatencyReady] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -87,9 +91,9 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
     return () => window.clearInterval(timer)
   }, [session?.mediaUrl, session?.status])
 
-  async function requestStream() {
+  async function requestHlsStream(fallbackError = '') {
     setState('loading')
-    setError('')
+    setError(fallbackError)
 
     try {
       const response = await fetch(`/api/cameras/${encodeURIComponent(deviceId)}/stream`, {
@@ -109,11 +113,29 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
       setFrameReady(false)
       setVideoReady(false)
       setVideoUnavailable(false)
+      setLowLatencyReady(false)
       setState('ready')
     } catch {
       setError('No fue posible preparar la vista.')
       setState('error')
     }
+  }
+
+  async function requestStream() {
+    setState('loading')
+    setError('')
+    setFrameReady(false)
+    setVideoReady(false)
+    setVideoUnavailable(false)
+    setLowLatencyUnavailable(false)
+    setLowLatencyReady(false)
+
+    if (typeof window !== 'undefined' && 'RTCPeerConnection' in window) {
+      setLowLatencyRequestKey((current) => current + 1)
+      return
+    }
+
+    await requestHlsStream('Este navegador usara la vista segura compatible.')
   }
 
   const label = getStatusLabel(session, state)
@@ -123,7 +145,8 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
     ? `${session.mediaUrl}${session.mediaUrl.includes('?') ? '&' : '?'}t=${frameRevision}`
     : ''
   const showVideo = Boolean(session?.hlsManifestUrl && active)
-  const showFrameFallback = Boolean(session?.mediaUrl && active && (!showVideo || videoUnavailable))
+  const showLowLatency = lowLatencyRequestKey > 0 && !lowLatencyUnavailable
+  const showFrameFallback = Boolean(session?.mediaUrl && active && (!showVideo || videoUnavailable) && !lowLatencyReady)
 
   return (
     <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3 backdrop-blur">
@@ -142,7 +165,25 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
           {active ? 'Activa' : 'Abrir'}
         </button>
       </div>
-      {showVideo && !videoUnavailable && (
+      {showLowLatency && (
+        <SecureWebRtcPlayer
+          deviceId={deviceId}
+          requestKey={lowLatencyRequestKey}
+          onSession={(nextSession) => {
+            setSession(nextSession)
+            setState('ready')
+          }}
+          onReadyChange={(ready) => {
+            setVideoReady(ready)
+            setLowLatencyReady(ready)
+          }}
+          onUnavailable={(message) => {
+            setLowLatencyUnavailable(true)
+            void requestHlsStream(message)
+          }}
+        />
+      )}
+      {showVideo && !videoUnavailable && !lowLatencyReady && !showLowLatency && (
         <SecureHlsPlayer
           src={session?.hlsManifestUrl || ''}
           onReadyChange={setVideoReady}

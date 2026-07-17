@@ -73,6 +73,7 @@ Completado y validado en produccion:
 - proxy HLS privado con ingesta autenticada del Gateway, manifest reescrito y segmentos protegidos,
 - reproductor HLS del portal compatible con navegadores sin soporte nativo y fallback a frame seguro,
 - contrato de senalizacion WebRTC sobre sesiones efimeras de camara para preparar baja latencia,
+- reproductor WebRTC del portal con negociacion segura y fallback automatico a HLS/frames,
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - rollback manual y automatico de automatizaciones sin confirmacion del sitio,
 - guardrails de ambiente para impedir mutaciones de datos productivos desde preview o desarrollo,
@@ -80,7 +81,7 @@ Completado y validado en produccion:
 
 Siguiente bloque activo:
 
-- agregar reproductor WebRTC del navegador y prueba con conector local real,
+- probar WebRTC extremo a extremo con conector local real,
 - y ejecutar el piloto operativo con una propiedad real.
 
 ## Principio de producto
