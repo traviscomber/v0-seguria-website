@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Search, Eye, Edit, X, Phone, Mail } from 'lucide-react'
+import { CheckCircle2, Eye, Loader2, Mail, Phone, Search, X } from 'lucide-react'
 import type { Lead, LeadStatus } from '@/lib/types'
+
+type ApiLeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal_sent' | 'won' | 'lost'
 
 type StoredLead = {
   id: string
@@ -17,7 +19,7 @@ type StoredLead = {
   updated_at: string
 }
 
-const storedStatus: Record<string, LeadStatus> = {
+const apiToUiStatus: Record<ApiLeadStatus, LeadStatus> = {
   new: 'nuevo',
   contacted: 'contactado',
   qualified: 'diagnostico',
@@ -26,13 +28,46 @@ const storedStatus: Record<string, LeadStatus> = {
   lost: 'perdido',
 }
 
-function mapStoredLead(row: StoredLead): Lead {
-  let details: Record<string, string> = {}
+const uiToApiStatus: Record<LeadStatus, ApiLeadStatus> = {
+  nuevo: 'new',
+  contactado: 'contacted',
+  diagnostico: 'qualified',
+  propuesta: 'proposal_sent',
+  ganado: 'won',
+  perdido: 'lost',
+}
+
+const statusLabels: Record<LeadStatus, string> = {
+  nuevo: 'Nuevo',
+  contactado: 'Contactado',
+  diagnostico: 'Diagnostico',
+  propuesta: 'Propuesta',
+  ganado: 'Ganado',
+  perdido: 'Perdido',
+}
+
+const statusStyles: Record<LeadStatus, string> = {
+  nuevo: 'bg-[#4DA3D9]/18 text-[#9DD2F2] border-[#4DA3D9]/25',
+  contactado: 'bg-amber-500/15 text-amber-200 border-amber-400/25',
+  diagnostico: 'bg-cyan-500/15 text-cyan-200 border-cyan-400/25',
+  propuesta: 'bg-blue-500/15 text-blue-200 border-blue-400/25',
+  ganado: 'bg-emerald-500/15 text-emerald-200 border-emerald-400/25',
+  perdido: 'bg-red-500/15 text-red-200 border-red-400/25',
+}
+
+const orderedStatuses: LeadStatus[] = ['nuevo', 'contactado', 'diagnostico', 'propuesta', 'ganado', 'perdido']
+
+function parseDetails(message: string | null) {
   try {
-    details = row.message ? JSON.parse(row.message) : {}
+    return message ? JSON.parse(message) as Record<string, string> : {}
   } catch {
-    details = { mensaje: row.message || '' }
+    return { mensaje: message || '' }
   }
+}
+
+function mapStoredLead(row: StoredLead): Lead {
+  const details = parseDetails(row.message)
+  const apiStatus = (row.status || 'new') as ApiLeadStatus
 
   return {
     id: row.id,
@@ -47,29 +82,27 @@ function mapStoredLead(row: StoredLead): Lead {
     tieneInternet: details.tieneInternet,
     tipoServicio: details.tipoServicio,
     mensaje: details.mensaje,
-    estado: storedStatus[row.status || 'new'] || 'nuevo',
-    origen: 'web',
+    notas: details.crmNotes || '',
+    estado: apiToUiStatus[apiStatus] || 'nuevo',
+    origen: row.source === 'contact_page' ? 'web' : 'otro',
     fechaCreacion: new Date(row.created_at),
     fechaActualizacion: new Date(row.updated_at),
   }
 }
 
-const statusColors: Record<LeadStatus, { bg: string; text: string }> = {
-  nuevo: { bg: 'bg-[#4DA3D9]/20', text: 'text-[#4DA3D9]' },
-  contactado: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
-  diagnostico: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
-  propuesta: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
-  ganado: { bg: 'bg-green-500/20', text: 'text-green-400' },
-  perdido: { bg: 'bg-red-500/20', text: 'text-red-400' },
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(value)
 }
 
-const statusLabels: Record<LeadStatus, string> = {
-  nuevo: 'Nuevo',
-  contactado: 'Contactado',
-  diagnostico: 'Diagnóstico',
-  propuesta: 'Propuesta',
-  ganado: 'Ganado',
-  perdido: 'Perdido',
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat('es-CL', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value)
 }
 
 export default function LeadsPage() {
@@ -79,6 +112,10 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'todos'>('todos')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('nuevo')
+  const [crmNotes, setCrmNotes] = useState('')
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -90,168 +127,179 @@ export default function LeadsPage() {
       })
       .catch((error) => active && setLoadError(error instanceof Error ? error.message : 'No fue posible cargar los contactos.'))
       .finally(() => active && setIsLoading(false))
-    return () => { active = false }
+
+    return () => {
+      active = false
+    }
   }, [])
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLeads = leads.filter((lead) => {
+    const query = searchTerm.toLowerCase().trim()
+    const matchesSearch = !query ||
+      lead.nombre.toLowerCase().includes(query) ||
+      lead.email.toLowerCase().includes(query) ||
+      lead.telefono.toLowerCase().includes(query) ||
+      lead.ubicacion.toLowerCase().includes(query)
     const matchesStatus = statusFilter === 'todos' || lead.estado === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-CL', { 
-      day: '2-digit', 
-      month: 'short',
-      year: 'numeric'
-    }).format(new Date(date))
+  const openLead = (lead: Lead) => {
+    setSelectedLead(lead)
+    setSelectedStatus(lead.estado)
+    setCrmNotes(lead.notas || '')
+    setSaveState('idle')
+    setSaveError(null)
   }
 
+  const updateSelectedLead = async () => {
+    if (!selectedLead) return
+
+    setSaveState('saving')
+    setSaveError(null)
+
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedLead.id,
+          status: uiToApiStatus[selectedStatus],
+          crmNotes,
+        }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.success) throw new Error(result?.error || 'No fue posible actualizar el lead.')
+
+      const updated = mapStoredLead(result.data as StoredLead)
+      setLeads((current) => current.map((lead) => lead.id === updated.id ? updated : lead))
+      setSelectedLead(updated)
+      setSelectedStatus(updated.estado)
+      setCrmNotes(updated.notas || '')
+      setSaveState('saved')
+      window.setTimeout(() => setSaveState('idle'), 1800)
+    } catch (error) {
+      setSaveState('idle')
+      setSaveError(error instanceof Error ? error.message : 'No fue posible actualizar el lead.')
+    }
+  }
+
+  const pipelineStats = orderedStatuses.map((status) => ({
+    status,
+    label: statusLabels[status],
+    count: leads.filter((lead) => lead.estado === status).length,
+  }))
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-7">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <h1 className="text-3xl font-light text-white">Leads</h1>
-          <p className="text-white/60 mt-1">Gestiona tus contactos y oportunidades</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">CRM interno</p>
+          <h1 className="mt-2 text-3xl font-light text-white">Leads comerciales</h1>
+          <p className="mt-2 max-w-3xl text-white/55">
+            Contactos capturados desde el sitio, con seguimiento real en base de datos y estados para convertirlos en proyecto.
+          </p>
         </div>
-        <button className="btn-primary px-4 py-2.5 text-[15px] inline-flex items-center gap-2 w-fit">
-          <Plus className="w-4 h-4" strokeWidth={1.5} />
-          Nuevo Lead
-        </button>
+        <div className="rounded-[5px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+          {leads.length} contactos en cartera
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        {pipelineStats.map(({ status, label, count }) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(statusFilter === status ? 'todos' : status)}
+            className={`rounded-[5px] border p-4 text-left transition-colors ${
+              statusFilter === status ? statusStyles[status] : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/8'
+            }`}
+          >
+            <p className="text-2xl font-light">{count}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.16em] opacity-75">{label}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" strokeWidth={1.5} />
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" strokeWidth={1.5} />
           <input
             type="text"
-            placeholder="Buscar por nombre o email..."
+            placeholder="Buscar por nombre, email, telefono o ubicacion..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-[5px] bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="w-full rounded-[5px] bg-white/10 py-3 pl-11 pr-4 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as LeadStatus | 'todos')}
-          className="px-4 py-2.5 rounded-[5px] bg-white/10 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9] appearance-none min-w-[150px]"
+          onChange={(event) => setStatusFilter(event.target.value as LeadStatus | 'todos')}
+          className="rounded-[5px] bg-white/10 px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
         >
           <option value="todos" className="bg-[#123A5A]">Todos los estados</option>
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <option key={value} value={value} className="bg-[#123A5A]">{label}</option>
+          {orderedStatuses.map((status) => (
+            <option key={status} value={status} className="bg-[#123A5A]">{statusLabels[status]}</option>
           ))}
         </select>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {Object.entries(statusLabels).map(([status, label]) => {
-          const count = leads.filter(l => l.estado === status).length
-          const colors = statusColors[status as LeadStatus]
-          return (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status as LeadStatus)}
-              className={`p-3 rounded-[5px] text-center transition-all ${
-                statusFilter === status ? colors.bg : 'bg-white/5 hover:bg-white/10'
-              }`}
-            >
-              <p className={`text-xl font-light ${statusFilter === status ? colors.text : 'text-white'}`}>
-                {count}
-              </p>
-              <p className={`text-[12px] ${statusFilter === status ? colors.text : 'text-white/50'}`}>
-                {label}
-              </p>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Table */}
       <div className="glass-card overflow-hidden">
         {loadError && <p className="border-b border-red-300/20 bg-red-500/10 p-4 text-sm text-red-100">{loadError}</p>}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="text-left text-white/50 text-sm border-b border-white/10">
-                <th className="p-4 font-normal">Nombre</th>
+              <tr className="border-b border-white/10 text-left text-sm text-white/50">
                 <th className="p-4 font-normal">Contacto</th>
-                <th className="p-4 font-normal">Tipo</th>
-                <th className="p-4 font-normal">Ubicación</th>
+                <th className="p-4 font-normal">Proyecto</th>
+                <th className="p-4 font-normal">Necesidad</th>
                 <th className="p-4 font-normal">Estado</th>
-                <th className="p-4 font-normal">Fecha</th>
-                <th className="p-4 font-normal text-right">Acciones</th>
+                <th className="p-4 font-normal">Actualizado</th>
+                <th className="p-4 text-right font-normal">Accion</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="p-8 text-center text-white/50">Cargando contactos...</td></tr>
+                <tr><td colSpan={6} className="p-10 text-center text-white/50">Cargando contactos...</td></tr>
               ) : filteredLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-white/50">
-                    No se encontraron leads
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="p-10 text-center text-white/50">No hay leads para este filtro.</td></tr>
               ) : (
                 filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <tr key={lead.id} className="border-b border-white/5 transition-colors hover:bg-white/5">
                     <td className="p-4">
-                      <p className="text-white text-[15px]">{lead.nombre}</p>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <a 
-                          href={`mailto:${lead.email}`} 
-                          className="text-white/50 hover:text-[#4DA3D9] transition-colors"
-                          title={lead.email}
-                        >
-                          <Mail className="w-4 h-4" strokeWidth={1.5} />
+                      <p className="text-[15px] text-white">{lead.nombre}</p>
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-white/45">
+                        <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-1 hover:text-[#9DD2F2]">
+                          <Mail className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          {lead.email}
                         </a>
-                        <a 
-                          href={`tel:${lead.telefono}`} 
-                          className="text-white/50 hover:text-[#4DA3D9] transition-colors"
-                          title={lead.telefono}
-                        >
-                          <Phone className="w-4 h-4" strokeWidth={1.5} />
+                        <a href={`tel:${lead.telefono}`} className="inline-flex items-center gap-1 hover:text-[#9DD2F2]">
+                          <Phone className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          {lead.telefono || 'Sin telefono'}
                         </a>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className="text-white/70 text-[15px]">
-                        {lead.tipoProyecto === 'campo' ? 'Campo' : 'Propiedad'}
-                      </span>
+                    <td className="p-4 text-sm text-white/70">
+                      <p>{lead.tipoProyecto === 'campo' ? 'Campo inteligente' : 'Propiedad inteligente'}</p>
+                      <p className="mt-1 text-xs text-white/40">{lead.ubicacion || 'Ubicacion pendiente'}</p>
+                    </td>
+                    <td className="p-4 text-sm text-white/65">
+                      <p>{lead.necesidadPrincipal || lead.tipoServicio || 'Por definir'}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-white/35">{lead.mensaje || 'Sin mensaje adicional'}</p>
                     </td>
                     <td className="p-4">
-                      <span className="text-white/70 text-[15px]">{lead.ubicacion}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`
-                        inline-block px-2 py-1 rounded-[5px] text-[12px]
-                        ${statusColors[lead.estado].bg} ${statusColors[lead.estado].text}
-                      `}>
+                      <span className={`inline-flex rounded-[5px] border px-2.5 py-1 text-xs ${statusStyles[lead.estado]}`}>
                         {statusLabels[lead.estado]}
                       </span>
                     </td>
+                    <td className="p-4 text-sm text-white/45">{formatDate(lead.fechaActualizacion)}</td>
                     <td className="p-4">
-                      <span className="text-white/50 text-[14px]">{formatDate(lead.fechaCreacion)}</span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => setSelectedLead(lead)}
-                          className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Ver detalles"
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => openLead(lead)}
+                          className="inline-flex items-center gap-2 rounded-[5px] bg-white/8 px-3 py-2 text-sm text-white/65 transition-colors hover:bg-white/12 hover:text-white"
                         >
-                          <Eye className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                        <button 
-                          className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" strokeWidth={1.5} />
+                          <Eye className="h-4 w-4" strokeWidth={1.5} />
+                          Gestionar
                         </button>
                       </div>
                     </td>
@@ -263,77 +311,85 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Detail Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedLead(null)}>
-          <div className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-light text-white">Detalle del Lead</h2>
-              <button 
-                onClick={() => setSelectedLead(null)}
-                className="p-2 rounded-[5px] text-white/50 hover:text-white hover:bg-white/10"
-              >
-                <X className="w-5 h-5" strokeWidth={1.5} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedLead(null)}>
+          <div className="glass-card max-h-[92vh] w-full max-w-3xl overflow-y-auto" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 p-6">
+              <div>
+                <p className="text-sm uppercase tracking-[0.18em] text-[#9DD2F2]">Seguimiento comercial</p>
+                <h2 className="mt-2 text-2xl font-light text-white">{selectedLead.nombre}</h2>
+                <p className="mt-1 text-sm text-white/45">Actualizado {formatDateTime(selectedLead.fechaActualizacion)}</p>
+              </div>
+              <button onClick={() => setSelectedLead(null)} className="rounded-[5px] p-2 text-white/50 hover:bg-white/10 hover:text-white">
+                <X className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid sm:grid-cols-2 gap-6">
+
+            <div className="grid gap-6 p-6 lg:grid-cols-[1fr_0.9fr]">
+              <div className="space-y-5">
+                <InfoBlock label="Email" value={selectedLead.email} />
+                <InfoBlock label="Telefono" value={selectedLead.telefono || 'Sin telefono'} />
+                <InfoBlock label="Tipo de proyecto" value={selectedLead.tipoProyecto === 'campo' ? 'Campo inteligente' : 'Propiedad inteligente'} />
+                <InfoBlock label="Ubicacion" value={selectedLead.ubicacion || 'Pendiente'} />
+                <InfoBlock label="Tamano aproximado" value={selectedLead.tamanoAproximado || 'Pendiente'} />
+                <InfoBlock label="Necesidad" value={selectedLead.necesidadPrincipal || selectedLead.tipoServicio || 'Por definir'} />
                 <div>
-                  <p className="text-white/50 text-sm mb-1">Nombre</p>
-                  <p className="text-white">{selectedLead.nombre}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Estado</p>
-                  <span className={`
-                    inline-block px-2 py-1 rounded-[5px] text-[12px]
-                    ${statusColors[selectedLead.estado].bg} ${statusColors[selectedLead.estado].text}
-                  `}>
-                    {statusLabels[selectedLead.estado]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Email</p>
-                  <p className="text-white">{selectedLead.email}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Teléfono</p>
-                  <p className="text-white">{selectedLead.telefono}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Tipo de Proyecto</p>
-                  <p className="text-white">{selectedLead.tipoProyecto === 'campo' ? 'Campo Inteligente' : 'Propiedad Inteligente'}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Ubicación</p>
-                  <p className="text-white">{selectedLead.ubicacion}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Tamaño Aproximado</p>
-                  <p className="text-white">{selectedLead.tamanoAproximado || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Necesidad Principal</p>
-                  <p className="text-white">{selectedLead.necesidadPrincipal || '-'}</p>
+                  <p className="text-sm text-white/45">Mensaje</p>
+                  <p className="mt-2 rounded-[5px] bg-white/5 p-4 text-sm leading-7 text-white/70">
+                    {selectedLead.mensaje || 'Sin mensaje adicional.'}
+                  </p>
                 </div>
               </div>
-              {selectedLead.mensaje && (
-                <div>
-                  <p className="text-white/50 text-sm mb-1">Mensaje</p>
-                  <p className="text-white/80 bg-white/5 p-4 rounded-[5px]">{selectedLead.mensaje}</p>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button className="btn-primary px-4 py-2.5 text-[15px] flex-1">
-                  Convertir a Proyecto
-                </button>
-                <button className="btn-secondary px-4 py-2.5 text-[15px] flex-1">
-                  Editar Lead
+
+              <div className="rounded-[5px] border border-white/10 bg-white/5 p-5">
+                <label className="space-y-2">
+                  <span className="block text-sm text-white/55">Estado</span>
+                  <select
+                    value={selectedStatus}
+                    onChange={(event) => setSelectedStatus(event.target.value as LeadStatus)}
+                    className="w-full rounded-[5px] border border-white/10 bg-[#0B1D30] px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+                  >
+                    {orderedStatuses.map((status) => (
+                      <option key={status} value={status}>{statusLabels[status]}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="mt-5 block space-y-2">
+                  <span className="block text-sm text-white/55">Nota interna</span>
+                  <textarea
+                    value={crmNotes}
+                    onChange={(event) => setCrmNotes(event.target.value)}
+                    rows={7}
+                    placeholder="Proximo paso, contexto del cliente o acuerdo comercial..."
+                    className="w-full resize-none rounded-[5px] border border-white/10 bg-[#0B1D30] px-4 py-3 text-sm leading-7 text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-[#4DA3D9]"
+                  />
+                </label>
+
+                {saveError && <p className="mt-4 rounded-[5px] border border-red-300/30 bg-red-500/10 p-3 text-sm text-red-100">{saveError}</p>}
+
+                <button
+                  onClick={updateSelectedLead}
+                  disabled={saveState === 'saving'}
+                  className="btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-[15px] disabled:opacity-60"
+                >
+                  {saveState === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+                  {saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando...' : 'Guardar seguimiento'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-sm text-white/45">{label}</p>
+      <p className="mt-1 text-white">{value}</p>
     </div>
   )
 }

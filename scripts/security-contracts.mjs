@@ -17,11 +17,15 @@ function assertNotContains(source, patterns, label) {
 const snapshotRoutePath = 'app/api/cameras/[deviceId]/snapshot/route.ts'
 const snapshotComponentPath = 'components/camera-snapshot.tsx'
 const clientProvisionRoutePath = 'app/api/clients/provision/route.ts'
+const leadsRoutePath = 'app/api/leads/route.ts'
+const adminLeadsPath = 'app/admin/leads/page.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
 const snapshotRoute = read(snapshotRoutePath)
 const snapshotComponent = read(snapshotComponentPath)
 const clientProvisionRoute = read(clientProvisionRoutePath)
+const leadsRoute = read(leadsRoutePath)
+const adminLeads = read(adminLeadsPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
 
@@ -84,6 +88,22 @@ assert(
   /auth\.user\.role === 'admin' \? <ClientProvisionForm \/>/.test(adminClients),
   `${adminClientsPath} must hide client provisioning from non-admin users.`
 )
+assert(
+  /export async function PATCH\(request: NextRequest\)/.test(leadsRoute),
+  `${leadsRoutePath} must support authenticated lead status updates.`
+)
+assert(
+  /getAuthorizedRequest\(request,\s*\['admin',\s*'technician'\]\)/.test(leadsRoute) && /\.from\('leads'\)\s*\n\s*\.update\(/.test(leadsRoute),
+  `${leadsRoutePath} must update leads in Supabase for staff users.`
+)
+assert(
+  /method:\s*'PATCH'/.test(adminLeads) && /Guardar seguimiento/.test(adminLeads),
+  `${adminLeadsPath} must persist CRM follow-up changes instead of showing read-only leads.`
+)
+assert(
+  !fs.existsSync('lib/store.ts'),
+  'lib/store.ts must not reintroduce the legacy in-memory demo store.'
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -92,5 +112,7 @@ console.log(JSON.stringify({
     'camera snapshot route proxies private image bytes',
     'camera snapshot component does not receive signed storage URLs',
     'client provisioning is admin-only and audited',
+    'lead CRM updates are persisted in Supabase',
+    'legacy in-memory demo store is absent',
   ],
 }, null, 2))

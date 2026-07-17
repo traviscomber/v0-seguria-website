@@ -21,6 +21,12 @@ const leadSchema = z.object({
   consent: z.literal(true),
 })
 
+const leadUpdateSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(['new', 'contacted', 'qualified', 'proposal_sent', 'won', 'lost']),
+  crmNotes: z.string().trim().max(1200).optional().default(''),
+})
+
 const RATE_LIMIT_MAX_REQUESTS = 8
 
 function getClientIp(request: NextRequest) {
@@ -55,6 +61,67 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, data })
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const guard = getOperationalGuardResponse({ operation: 'lead.update' })
+    if (guard) return guard
+
+    const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+    if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
+    const parsed = leadUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'Datos invalidos.' }, { status: 400 })
+    }
+
+    const supabase = createSupabaseAdminClient()
+    if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
+
+    const { data: current, error: currentError } = await supabase
+      .from('leads')
+      .select('id,message,status')
+      .eq('id', parsed.data.id)
+      .maybeSingle()
+
+    if (currentError) throw currentError
+    if (!current) return NextResponse.json({ success: false, error: 'Lead no encontrado.' }, { status: 404 })
+
+    let details: Record<string, unknown> = {}
+    try {
+      details = current.message ? JSON.parse(String(current.message)) : {}
+    } catch {
+      details = { mensaje: current.message || '' }
+    }
+
+    const crmNotes = parsed.data.crmNotes.trim()
+    const nextMessage = {
+      ...details,
+      crmNotes,
+      crmUpdatedAt: new Date().toISOString(),
+      crmUpdatedBy: auth.user.email || auth.user.id,
+      previousStatus: current.status || null,
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update({
+        status: parsed.data.status,
+        message: JSON.stringify(nextMessage),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', parsed.data.id)
+      .select('id,name,email,phone,property_type,message,source,status,created_at,updated_at')
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true, data, message: 'Lead actualizado.' })
+  } catch (error) {
+    console.error('Error updating lead:', error)
+    return NextResponse.json({ success: false, error: 'Error interno del servidor.' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
