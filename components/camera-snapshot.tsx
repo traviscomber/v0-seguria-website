@@ -1,24 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export function CameraSnapshot({ deviceId, alt }: { deviceId: string; alt: string }) {
-  const [url, setUrl] = useState('')
+  const [failed, setFailed] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    fetch(`/api/cameras/${encodeURIComponent(deviceId)}/snapshot`, { cache: 'no-store' })
-      .then(async (response) => response.ok ? response.json() : null)
-      .then((payload) => {
-        if (active && payload?.data?.url) setUrl(payload.data.url)
-      })
-      .catch(() => undefined)
+  if (failed) return null
 
-    return () => {
-      active = false
-    }
-  }, [deviceId])
-
-  if (!url) return null
-  return <img src={url} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+  return (
+    <img
+      src={`/api/cameras/${encodeURIComponent(deviceId)}/snapshot`}
+      alt={alt}
+      className="absolute inset-0 h-full w-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  )
 }

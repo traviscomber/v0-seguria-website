@@ -117,7 +117,7 @@ Los cambios de automatizacion pasan por estado `ready` y solo se declaran activo
 
 Debe incluir `x-seguria-gateway-id` y `x-seguria-gateway-secret`. La API verifica que la camara pertenezca al gateway antes de aceptar el archivo.
 
-Las imagenes se guardan en un bucket privado. El portal obtiene una URL firmada por 60 segundos mediante `GET /api/cameras/:deviceId/snapshot`; nunca recibe la URL, token o credencial de la camara de origen.
+Las imagenes se guardan en un bucket privado. El portal solicita `GET /api/cameras/:deviceId/snapshot`; SegurIA valida acceso, descarga el objeto en el servidor y responde los bytes de imagen. El navegador nunca recibe URL firmada, token de storage o credencial de la camara de origen.
 
 ## Sesiones de video
 
@@ -138,7 +138,7 @@ El primer proxy de medio disponible es:
 GET /api/cameras/:deviceId/stream/frame?sessionId=<session_uuid>
 ```
 
-Esta ruta valida sesion, usuario, propiedad, camara y vencimiento antes de entregar bytes de imagen desde el bucket privado. El navegador nunca recibe una URL firmada de storage ni una referencia local del gateway.
+Esta ruta valida sesion, usuario, propiedad, camara y vencimiento antes de entregar bytes de imagen desde el bucket privado. El navegador nunca recibe una URL firmada de storage ni una referencia local del gateway. La ruta `GET /api/cameras/:deviceId/snapshot` sigue el mismo patron: descarga desde storage privado en el servidor y responde la imagen como proxy seguro.
 
 Para video HLS, el gateway sube playlist y segmentos al storage privado con:
 

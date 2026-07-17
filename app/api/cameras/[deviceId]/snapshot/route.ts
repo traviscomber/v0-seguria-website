@@ -24,20 +24,23 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ de
 
   const { data: snapshot } = await supabase
     .from('camera_snapshots')
-    .select('object_path, captured_at')
+    .select('object_path, captured_at, mime_type')
     .eq('device_id', device.id)
     .order('captured_at', { ascending: false })
     .limit(1)
     .maybeSingle()
   if (!snapshot) return NextResponse.json({ error: 'Sin imagen disponible.' }, { status: 404 })
 
-  const { data: signed, error } = await admin.storage
+  const { data: image, error } = await admin.storage
     .from('seguria-evidence')
-    .createSignedUrl(snapshot.object_path, 60)
-  if (error) return NextResponse.json({ error: 'Imagen no disponible.' }, { status: 503 })
+    .download(snapshot.object_path)
+  if (error || !image) return NextResponse.json({ error: 'Imagen no disponible.' }, { status: 503 })
 
-  return NextResponse.json(
-    { data: { url: signed.signedUrl, capturedAt: snapshot.captured_at } },
-    { headers: { 'Cache-Control': 'private, no-store, max-age=0' } }
-  )
+  return new NextResponse(image, {
+    headers: {
+      'Cache-Control': 'private, no-store, max-age=0',
+      'Content-Type': snapshot.mime_type || image.type || 'image/jpeg',
+      'X-Seguria-Captured-At': snapshot.captured_at,
+    },
+  })
 }
