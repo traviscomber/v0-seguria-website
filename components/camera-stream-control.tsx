@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ImageIcon, Loader2, Play, ShieldCheck } from 'lucide-react'
+import { SecureHlsPlayer } from '@/components/secure-hls-player'
 
 type StreamStatus = 'requested' | 'active' | 'ended' | 'expired' | 'failed'
 
@@ -45,6 +46,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
   const [frameRevision, setFrameRevision] = useState(0)
   const [frameReady, setFrameReady] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
+  const [videoUnavailable, setVideoUnavailable] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -101,6 +103,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
       setSession(payload.data)
       setFrameReady(false)
       setVideoReady(false)
+      setVideoUnavailable(false)
       setState('ready')
     } catch {
       setError('No fue posible preparar la vista.')
@@ -115,6 +118,7 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
     ? `${session.mediaUrl}${session.mediaUrl.includes('?') ? '&' : '?'}t=${frameRevision}`
     : ''
   const showVideo = Boolean(session?.hlsManifestUrl && active)
+  const showFrameFallback = Boolean(session?.mediaUrl && active && (!showVideo || videoUnavailable))
 
   return (
     <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3 backdrop-blur">
@@ -133,23 +137,14 @@ export function CameraStreamControl({ deviceId }: { deviceId: string }) {
           {active ? 'Activa' : 'Abrir'}
         </button>
       </div>
-      {showVideo && (
-        <div className={`relative mt-3 overflow-hidden rounded-xl border border-white/10 bg-[#071524] ${videoReady ? 'block' : 'hidden'}`}>
-          <video
-            src={session?.hlsManifestUrl}
-            className="h-full min-h-[160px] w-full object-cover"
-            controls
-            muted
-            playsInline
-            onLoadedData={() => setVideoReady(true)}
-            onError={() => setVideoReady(false)}
-          />
-          <div className="pointer-events-none absolute left-2 top-2 rounded-full border border-white/10 bg-slate-950/75 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100">
-            Video SegurIA
-          </div>
-        </div>
+      {showVideo && !videoUnavailable && (
+        <SecureHlsPlayer
+          src={session?.hlsManifestUrl || ''}
+          onReadyChange={setVideoReady}
+          onUnavailableChange={setVideoUnavailable}
+        />
       )}
-      {session?.mediaUrl && active && (
+      {showFrameFallback && (
         <div className={`relative mt-3 min-h-[120px] overflow-hidden rounded-xl border border-white/10 bg-[#071524] ${videoReady ? 'hidden' : 'block'}`}>
           {!frameReady && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-[11px] text-white/45">

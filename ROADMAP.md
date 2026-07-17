@@ -71,6 +71,7 @@ Completado y validado en produccion:
 - control de vista de camara en portal cliente con limite de concurrencia por camara y propiedad,
 - proxy inicial de frames seguros desde evidencia privada hacia el portal sin URL firmada visible,
 - proxy HLS privado con ingesta autenticada del Gateway, manifest reescrito y segmentos protegidos,
+- reproductor HLS del portal compatible con navegadores sin soporte nativo y fallback a frame seguro,
 - cola offline persistente del agente local con reintentos para heartbeat, inventario y eventos,
 - rollback manual y automatico de automatizaciones sin confirmacion del sitio,
 - y dashboard administrativo conectado exclusivamente a datos reales.
@@ -78,7 +79,6 @@ Completado y validado en produccion:
 Siguiente bloque activo:
 
 - agregar WebRTC para baja latencia sobre las sesiones de video ya modeladas,
-- endurecer reproduccion HLS en todos los navegadores con player dedicado,
 - y formalizar staging separado de produccion.
 
 ## Principio de producto

@@ -155,6 +155,8 @@ GET /api/cameras/:deviceId/stream/hls/:segment?sessionId=<session_uuid>
 
 El manifest se reescribe para que los segmentos apunten solo a rutas SegurIA. No se aceptan URLs externas ni subdirectorios en los segmentos.
 
+El portal reproduce HLS con soporte nativo cuando el navegador lo permite y usa un player compatible cuando no existe soporte directo. Si la playlist no esta lista o el navegador no puede reproducirla, la interfaz vuelve a frames seguros proxificados sin exponer URLs de origen.
+
 El gateway consulta sesiones pendientes con:
 
 ```text
