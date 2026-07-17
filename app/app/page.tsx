@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowRight, Camera, CircleAlert, LayoutGrid, ShieldAlert } from 'lucide-react'
+import { ArrowRight, CheckCircle2, CircleAlert, FileText, LayoutGrid, ShieldAlert, Wifi } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getCurrentAuthSession } from '@/lib/auth-store'
-import { getAccessiblePortalSites, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
+import { getAccessiblePortalSites, getPortalActivityFeed, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
 import { CameraStreamControl } from '@/components/camera-stream-control'
 import { ClientNotificationCenter } from '@/components/client-notification-center'
@@ -147,6 +147,7 @@ export default async function ClientAppPage() {
   const sites = await getAccessiblePortalSites(session.user)
   const totals = getPortalDashboardTotals(sites)
   const alerts = getPortalAlertDevices(sites)
+  const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
   const primaryCamera = sites
     .flatMap((site) => site.devices.map((device) => ({ site, device })))
@@ -166,6 +167,11 @@ export default async function ClientAppPage() {
     alerts.length > 0
       ? 'Hay alertas activas en zonas puntuales.'
       : 'El sitio esta estable y listo para seguimiento.'
+  const nextAction = alerts.length > 0
+    ? 'Revisar los avisos activos y confirmar recepcion si corresponde.'
+    : activity.length > 0
+      ? 'Mantener monitoreo normal y revisar la ultima actividad.'
+      : 'Esperar la primera sincronizacion del sitio.'
   const updatedLabel = `Actualizado ${formatDate(primarySite?.lastUpdatedAt)}`
 
   return (
@@ -291,7 +297,48 @@ export default async function ClientAppPage() {
 
       <ClientNotificationCenter />
 
-      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Wifi className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Ultimos eventos, equipos y evidencias sincronizadas.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {activity.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/55">
+                Todavia no hay actividad publicada para esta cuenta.
+              </p>
+            ) : (
+              activity.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
+                    {item.kind === 'event' ? (
+                      <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
+                    ) : item.kind === 'document' ? (
+                      <FileText className="h-4 w-4" strokeWidth={1.8} />
+                    ) : (
+                      <Wifi className="h-4 w-4" strokeWidth={1.8} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm text-white">{item.title}</p>
+                      <Badge variant="outline" className="border-white/10 bg-white/5 text-white/55">
+                        {item.kind === 'event' ? 'Evento' : item.kind === 'document' ? 'Evidencia' : 'Equipo'}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-white/55">{item.detail}</p>
+                  </div>
+                  <p className="whitespace-nowrap text-xs text-white/35">{formatDate(item.at)}</p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -308,10 +355,25 @@ export default async function ClientAppPage() {
             <InfoLine label="Sitio principal" value={primarySite?.label || 'Sin sitio asignado'} />
             <InfoLine label="Ubicacion" value={primarySite?.location || 'Ubicacion por definir'} />
             <InfoLine label="Ultima lectura" value={formatDate(primarySite?.lastUpdatedAt)} />
-            <InfoLine label="Proxima accion" value={alerts.length > 0 ? 'Revisar alertas activas.' : 'Seguir monitoreo normal.'} />
+            <InfoLine label="Proxima accion" value={nextAction} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                alerts.length > 0 ? 'Confirmar avisos pendientes.' : 'No hay avisos criticos.',
+                primarySite ? 'Abrir el sitio para ver equipos.' : 'Asignar un sitio a la cuenta.',
+                totals.documents > 0 ? 'Hay evidencia disponible.' : 'Aun no hay evidencia publicada.',
+                totals.devices > 0 ? 'Inventario operativo visible.' : 'Inventario pendiente de carga.',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
+      </section>
 
+      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -342,7 +404,7 @@ export default async function ClientAppPage() {
         </Card>
       </section>
 
-      <section className="space-y-4">
+      <section id="sitios" className="space-y-4 scroll-mt-24">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-white/40">Sitios</p>

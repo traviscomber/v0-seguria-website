@@ -27,6 +27,7 @@ const incidentsRoutePath = 'app/api/admin/incidents/route.ts'
 const incidentCenterPath = 'components/incident-center.tsx'
 const notificationsRoutePath = 'app/api/notifications/route.ts'
 const clientNotificationsPath = 'components/client-notification-center.tsx'
+const clientPortalPagePath = 'app/app/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
 const adminDashboardPath = 'app/admin/page.tsx'
 const adminClientsPath = 'app/admin/clientes/page.tsx'
@@ -43,6 +44,7 @@ const incidentsRoute = read(incidentsRoutePath)
 const incidentCenter = read(incidentCenterPath)
 const notificationsRoute = read(notificationsRoutePath)
 const clientNotifications = read(clientNotificationsPath)
+const clientPortalPage = read(clientPortalPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
 const adminDashboard = read(adminDashboardPath)
 const adminClients = read(adminClientsPath)
@@ -198,6 +200,23 @@ assertNotContains(
   [/ConfirmaciÃ/, /recepciÃ/, /CrÃ/, /AtenciÃ/, /Todo estÃ/, /tuya/i, /home assistant/i, /github/i],
   clientNotificationsPath
 )
+assert(
+  /getPortalActivityFeed\(sites\)/.test(clientPortalPage) && /Actividad reciente/.test(clientPortalPage),
+  `${clientPortalPagePath} must render the client-facing activity feed.`
+)
+assert(
+  /const nextAction =/.test(clientPortalPage) && /Proxima accion/.test(clientPortalPage),
+  `${clientPortalPagePath} must translate site state into a simple next action.`
+)
+assert(
+  /<section id="sitios"/.test(clientPortalPage),
+  `${clientPortalPagePath} must keep the client sites anchor used by portal navigation.`
+)
+assertNotContains(
+  clientPortalPage,
+  [/tuya/i, /home assistant/i, /github/i, /Ã/, /Â/, /â€¢/],
+  clientPortalPagePath
+)
 
 console.log(JSON.stringify({
   ok: true,
@@ -213,5 +232,6 @@ console.log(JSON.stringify({
     'incident comments are explicit and audited',
     'admin integrations use neutral visible labels',
     'client notifications are explicit and audited',
+    'client portal renders activity and next actions',
   ],
 }, null, 2))
