@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthorizedRequest } from '@/lib/api-auth'
+import { canAccessProperty } from '@/lib/auth-store'
 import { getAccessiblePortalSites } from '@/lib/client-portal'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -54,6 +55,24 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'No fue posible leer el equipo.' }, { status: 400 })
   }
   if (!currentDevice) return NextResponse.json({ error: 'Equipo no encontrado.' }, { status: 404 })
+  if (!canAccessProperty(auth.user, currentDevice.property_id)) {
+    return NextResponse.json({ error: 'No autorizado para este sitio.' }, { status: 403 })
+  }
+
+  if (parsed.data.spaceId) {
+    const { data: targetSpace, error: spaceError } = await supabase
+      .from('spaces')
+      .select('id')
+      .eq('id', parsed.data.spaceId)
+      .eq('property_id', currentDevice.property_id)
+      .maybeSingle()
+
+    if (spaceError) {
+      console.error('Target space lookup before assignment failed', spaceError)
+      return NextResponse.json({ error: 'No fue posible validar el espacio.' }, { status: 400 })
+    }
+    if (!targetSpace) return NextResponse.json({ error: 'El espacio no pertenece a este sitio.' }, { status: 409 })
+  }
 
   const { data, error } = await supabase
     .from('devices')

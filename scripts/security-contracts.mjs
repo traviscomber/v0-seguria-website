@@ -328,6 +328,12 @@ assert(
   `${securityInventoryRoutePath} must audit device space assignments.`
 )
 assert(
+  /canAccessProperty\(auth\.user, currentDevice\.property_id\)/.test(securityInventoryRoute) &&
+    /\.from\('spaces'\)/.test(securityInventoryRoute) &&
+    /\.eq\('property_id', currentDevice\.property_id\)/.test(securityInventoryRoute),
+  `${securityInventoryRoutePath} must validate device and target space are in the authenticated property scope.`
+)
+assert(
   /createSupabaseAdminClient\(\)/.test(securityInventoryRoute) && /previousSpaceId/.test(securityInventoryRoute) && /nextSpaceId/.test(securityInventoryRoute),
   `${securityInventoryRoutePath} must use service-role audit logging with before/after space ids.`
 )
@@ -416,6 +422,7 @@ console.log(JSON.stringify({
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
     'device inventory assignments are audited',
+    'device space assignments validate property scope',
     'audit page lookup metadata is scoped',
     'gateway camera evidence uploads are audited',
     'gateway config hides internal provider names',
