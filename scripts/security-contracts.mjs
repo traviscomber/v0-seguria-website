@@ -21,6 +21,8 @@ const clientProvisionRoutePath = 'app/api/clients/provision/route.ts'
 const contactPagePath = 'app/contacto/page.tsx'
 const leadsRoutePath = 'app/api/leads/route.ts'
 const adminLeadsPath = 'app/admin/leads/page.tsx'
+const adminProposalsPath = 'app/admin/propuestas/page.tsx'
+const adminLayoutPath = 'app/admin/layout.tsx'
 const signupRoutePath = 'app/api/auth/signup/route.ts'
 const signupPagePath = 'app/signup/page.tsx'
 const loginFormPath = 'components/login-form.tsx'
@@ -51,6 +53,8 @@ const clientProvisionRoute = read(clientProvisionRoutePath)
 const contactPage = read(contactPagePath)
 const leadsRoute = read(leadsRoutePath)
 const adminLeads = read(adminLeadsPath)
+const adminProposals = read(adminProposalsPath)
+const adminLayout = read(adminLayoutPath)
 const signupRoute = read(signupRoutePath)
 const signupPage = read(signupPagePath)
 const loginForm = read(loginFormPath)
@@ -190,12 +194,23 @@ assert(
   `${leadsRoutePath} must support authenticated lead status updates.`
 )
 assert(
-  /getAuthorizedRequest\(request,\s*\['admin',\s*'technician'\]\)/.test(leadsRoute) && /\.from\('leads'\)\s*\n\s*\.update\(/.test(leadsRoute),
-  `${leadsRoutePath} must update leads in Supabase for staff users.`
+  /getAuthorizedRequest\(request,\s*\['admin'\]\)/.test(leadsRoute) &&
+    !/getAuthorizedRequest\(request,\s*\['admin',\s*'technician'\]\)/.test(leadsRoute) &&
+    /\.from\('leads'\)\s*\n\s*\.update\(/.test(leadsRoute),
+  `${leadsRoutePath} must keep commercial lead reads and updates admin-only.`
 )
 assert(
   /method:\s*'PATCH'/.test(adminLeads) && /Guardar seguimiento/.test(adminLeads),
   `${adminLeadsPath} must persist CRM follow-up changes instead of showing read-only leads.`
+)
+assert(
+  /auth\.user\.role !== 'admin'\) redirect\('\/admin'\)/.test(adminProposals),
+  `${adminProposalsPath} must prevent non-admin users from reading commercial pipeline data with service-role access.`
+)
+assert(
+  /roles:\s*\['admin'\]/.test(adminLayout) &&
+    /item\.roles\.includes\(userRole\)/.test(adminLayout),
+  `${adminLayoutPath} must hide admin-only commercial navigation from technician users.`
 )
 assert(
   /fetch\('\/api\/leads'/.test(contactPage) && /cantidadSitios/.test(contactPage) && /urgencia/.test(contactPage),
@@ -411,7 +426,8 @@ console.log(JSON.stringify({
     'admin dashboard counts are scoped by authenticated clients and properties',
     'admin clients page queries through authenticated scope',
     'admin project and evidence pages query through authenticated scope',
-    'lead CRM updates are persisted in Supabase',
+    'lead CRM reads and updates are admin-only and persisted in Supabase',
+    'commercial pipeline pages are hidden from technician users',
     'contact form qualifies leads before CRM follow-up',
     'legacy in-memory demo store is absent',
     'public signup remains closed and internal-only',

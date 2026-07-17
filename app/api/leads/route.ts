@@ -45,7 +45,7 @@ function hashClientIp(ip: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+  const auth = await getAuthorizedRequest(request, ['admin'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
   const supabase = createSupabaseAdminClient()
@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
     const guard = getOperationalGuardResponse({ operation: 'lead.update' })
     if (guard) return guard
 
-    const auth = await getAuthorizedRequest(request, ['admin', 'technician'])
+    const auth = await getAuthorizedRequest(request, ['admin'])
     if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
     const parsed = leadUpdateSchema.safeParse(await request.json())

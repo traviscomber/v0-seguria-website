@@ -62,6 +62,7 @@ export default async function ProposalsPage() {
   const auth = await getCurrentAuthSession()
   if (!auth) redirect('/login?next=/admin/propuestas')
   if (auth.user.role === 'client') redirect('/app')
+  if (auth.user.role !== 'admin') redirect('/admin')
 
   const supabase = createSupabaseAdminClient()
   if (!supabase) {

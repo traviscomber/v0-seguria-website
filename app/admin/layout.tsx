@@ -18,12 +18,22 @@ import {
   X,
   LogOut
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const navItems = [
+type AdminRole = 'admin' | 'technician'
+
+type NavItem = {
+  href: string
+  label: string
+  icon: LucideIcon
+  roles?: AdminRole[]
+}
+
+const navItems: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/clientes', label: 'Clientes', icon: Building2 },
-  { href: '/admin/leads', label: 'Leads', icon: Users },
+  { href: '/admin/leads', label: 'Leads', icon: Users, roles: ['admin'] },
   { href: '/admin/proyectos', label: 'Proyectos', icon: FolderKanban },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText },
   { href: '/admin/dispositivos', label: 'Dispositivos', icon: Cpu },
@@ -31,7 +41,7 @@ const navItems = [
   { href: '/admin/automatizaciones', label: 'Automatizaciones', icon: Zap },
   { href: '/admin/auditoria', label: 'Auditoria', icon: ScrollText },
   { href: '/admin/integraciones', label: 'Integraciones', icon: Workflow },
-  { href: '/admin/propuestas', label: 'Propuestas', icon: FileCheck },
+  { href: '/admin/propuestas', label: 'Propuestas', icon: FileCheck, roles: ['admin'] },
 ]
 
 export default function AdminLayout({
@@ -43,6 +53,7 @@ export default function AdminLayout({
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [authState, setAuthState] = useState<'loading' | 'authorized' | 'unauthorized'>('loading')
+  const [userRole, setUserRole] = useState<AdminRole | null>(null)
 
   useEffect(() => {
     let active = true
@@ -54,6 +65,7 @@ export default function AdminLayout({
         const data = await response.json().catch(() => null)
         const role = data?.data?.user?.role
         if (response.ok && role !== 'client') {
+          setUserRole(role === 'admin' ? 'admin' : 'technician')
           setAuthState('authorized')
         } else if (response.ok && role === 'client') {
           setAuthState('unauthorized')
@@ -132,7 +144,7 @@ export default function AdminLayout({
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">
-          {navItems.map((item) => {
+          {navItems.filter((item) => !item.roles || (userRole && item.roles.includes(userRole))).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
             return (
               <Link
