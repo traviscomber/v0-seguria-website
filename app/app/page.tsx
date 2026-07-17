@@ -154,14 +154,24 @@ export default async function ClientAppPage() {
     .filter(({ device }) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
     .slice(0, 2)
 
-  const spaces = sites.slice(0, 4).map((site) => ({
-    label: site.label,
-    location: site.location,
-    status: site.statusLabel,
-    cameraCount: site.cameraCount,
-    sensorCount: site.sensorCount,
-    alertCount: site.alertCount,
-  }))
+  const spaces = sites
+    .flatMap((site) =>
+      site.spaces.map((space) => ({
+        label: space.name,
+        location: site.label,
+        status: space.alertCount > 0 ? 'Revision' : 'Operativo',
+        cameraCount: space.cameraCount,
+        sensorCount: space.sensorCount,
+        alertCount: space.alertCount,
+        updatedAt: space.lastUpdatedAt || site.lastUpdatedAt,
+      }))
+    )
+    .sort((left, right) => {
+      const leftAt = left.updatedAt?.getTime() || 0
+      const rightAt = right.updatedAt?.getTime() || 0
+      return rightAt - leftAt
+    })
+    .slice(0, 4)
 
   const headline =
     alerts.length > 0

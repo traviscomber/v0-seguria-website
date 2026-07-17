@@ -36,14 +36,12 @@ const statusStyles = {
 const providerLabels: Record<string, string> = {
   tuya: 'Cuenta operativa',
   home_assistant: 'Puente local',
-  github: 'Repositorio tecnico',
 }
 
 function scrubVisibleText(value: string) {
   return value
     .replace(/tuya/gi, 'cuenta operativa')
     .replace(/home[_ -]?assistant/gi, 'puente local')
-    .replace(/github/gi, 'repositorio tecnico')
 }
 
 function scrubVisiblePayload(value: unknown): unknown {

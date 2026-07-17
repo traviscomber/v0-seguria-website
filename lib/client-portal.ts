@@ -27,6 +27,10 @@ export interface PortalSiteSummary {
 export interface PortalSpace {
   id: string
   name: string
+  cameraCount: number
+  sensorCount: number
+  alertCount: number
+  lastUpdatedAt?: Date
 }
 
 export interface PortalEvent {
@@ -173,7 +177,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   for (const row of spacesResult.data || []) {
     spacesByProperty.set(row.property_id, [
       ...(spacesByProperty.get(row.property_id) || []),
-      { id: row.id, name: row.name },
+      { id: row.id, name: row.name, cameraCount: 0, sensorCount: 0, alertCount: 0 },
     ])
   }
 
@@ -183,7 +187,6 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       id: row.id,
       proyectoId: row.property_id,
       tipo: mapDeviceKind(row.kind, metadata),
-      integrationSource: 'home_assistant',
       externalId: row.external_id,
       displayName: row.name,
       marca: 'Equipo conectado',
@@ -245,6 +248,20 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     const events = eventsByProperty.get(property.id) || []
     const documents = documentsByProperty.get(property.id) || []
     const buckets = getPortalDeviceBuckets(devices)
+    const siteSpaces = (spacesByProperty.get(property.id) || []).map((space) => {
+      const spaceDevices = devices.filter((device) => device.metadata?.spaceId === space.id)
+      const lastUpdatedAt = spaceDevices
+        .map((device) => device.lastSeenAt || device.fechaActualizacion)
+        .sort((left, right) => right.getTime() - left.getTime())[0]
+
+      return {
+        ...space,
+        cameraCount: spaceDevices.filter(isCamera).length,
+        sensorCount: spaceDevices.filter(isSensor).length,
+        alertCount: spaceDevices.filter((device) => device.estado === 'falla' || device.estado === 'mantencion').length,
+        lastUpdatedAt,
+      }
+    })
     const { status, label } = determineStatus(devices)
     const lastDeviceUpdate = devices
       .map((device) => device.lastSeenAt || device.fechaActualizacion)
@@ -267,7 +284,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       devices,
       documents,
       events,
-      spaces: spacesByProperty.get(property.id) || [],
+      spaces: siteSpaces,
     }
   })
 }

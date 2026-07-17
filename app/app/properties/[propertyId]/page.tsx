@@ -60,7 +60,7 @@ export default async function PropertyPage({
   const { propertyId } = await params
   const session = await getCurrentAuthSession()
   if (!session || session.user.role !== 'client') {
-    redirect('/admin')
+    redirect(`/login?next=/app/properties/${propertyId}`)
   }
 
   const site = await getPortalSiteForUser(session.user, propertyId)

@@ -31,6 +31,8 @@ const incidentCenterPath = 'components/incident-center.tsx'
 const notificationsRoutePath = 'app/api/notifications/route.ts'
 const clientNotificationsPath = 'components/client-notification-center.tsx'
 const clientPortalPagePath = 'app/app/page.tsx'
+const clientPortalDataPath = 'lib/client-portal.ts'
+const clientPropertyPagePath = 'app/app/properties/[propertyId]/page.tsx'
 const adminIntegrationsPath = 'app/admin/integraciones/page.tsx'
 const integrationCredentialsRoutePath = 'app/api/admin/integration-credentials/route.ts'
 const integrationCredentialFormPath = 'components/integration-credential-form.tsx'
@@ -65,6 +67,8 @@ const incidentCenter = read(incidentCenterPath)
 const notificationsRoute = read(notificationsRoutePath)
 const clientNotifications = read(clientNotificationsPath)
 const clientPortalPage = read(clientPortalPagePath)
+const clientPortalData = read(clientPortalDataPath)
+const clientPropertyPage = read(clientPropertyPagePath)
 const adminIntegrations = read(adminIntegrationsPath)
 const integrationCredentialsRoute = read(integrationCredentialsRoutePath)
 const integrationCredentialForm = read(integrationCredentialFormPath)
@@ -279,7 +283,7 @@ assertNotContains(
 )
 assertNotContains(
   adminIntegrations,
-  [/GitHub/, /Listo para puente HA/, /Ã/, /Â/, /â€¢/],
+  [/github/i, /Listo para puente HA/, /Ã/, /Â/, /â€¢/],
   adminIntegrationsPath
 )
 assert(
@@ -354,10 +358,32 @@ assert(
   /<section id="sitios"/.test(clientPortalPage),
   `${clientPortalPagePath} must keep the client sites anchor used by portal navigation.`
 )
+assert(
+  /site\.spaces\.map\(\(space\)/.test(clientPortalPage) &&
+    /cameraCount:\s*space\.cameraCount/.test(clientPortalPage) &&
+    /sensorCount:\s*space\.sensorCount/.test(clientPortalPage) &&
+    /alertCount:\s*space\.alertCount/.test(clientPortalPage),
+  `${clientPortalPagePath} must render real spaces inside each site, not site cards disguised as spaces.`
+)
 assertNotContains(
   clientPortalPage,
   [/tuya/i, /home assistant/i, /github/i, /Ã/, /Â/, /â€¢/],
   clientPortalPagePath
+)
+assert(
+  /cameraCount:\s*spaceDevices\.filter\(isCamera\)\.length/.test(clientPortalData) &&
+    /sensorCount:\s*spaceDevices\.filter\(isSensor\)\.length/.test(clientPortalData) &&
+    /alertCount:\s*spaceDevices\.filter\(\(device\) => device\.estado === 'falla' \|\| device\.estado === 'mantencion'\)\.length/.test(clientPortalData),
+  `${clientPortalDataPath} must calculate real per-space portal metrics from persisted devices.`
+)
+assertNotContains(
+  clientPortalData,
+  [/integrationSource:\s*'home_assistant'/, /integrationSource:\s*'tuya'/],
+  clientPortalDataPath
+)
+assert(
+  /redirect\(`\/login\?next=\/app\/properties\/\$\{propertyId\}`\)/.test(clientPropertyPage),
+  `${clientPropertyPagePath} must send unauthorized client portal access to login, not admin.`
 )
 assert(
   /action:\s*'device\.space_assigned'/.test(securityInventoryRoute) && /from\('audit_log'\)\.insert/.test(securityInventoryRoute),
@@ -459,6 +485,7 @@ console.log(JSON.stringify({
     'integration credential vault is admin-only',
     'client notifications are explicit and audited',
     'client portal renders activity and next actions',
+    'client portal spaces use persisted per-space metrics',
     'device inventory assignments are audited',
     'device space assignments validate property scope',
     'audit page lookup metadata is scoped',
