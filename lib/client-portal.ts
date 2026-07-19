@@ -6,6 +6,8 @@ type PortalSiteStatus = 'operativo' | 'atencion' | 'revision'
 type PortalIncidentStatus = 'new' | 'validating' | 'confirmed' | 'responding' | 'resolved' | 'false_alarm'
 
 export interface PortalSiteSummary {
+  organizationId: string
+  organizationName: string
   propertyId: string
   projectId: string
   label: string
@@ -269,6 +271,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
 
   const [
     propertiesResult,
+    organizationsResult,
     spacesResult,
     devicesResult,
     eventsResult,
@@ -277,7 +280,8 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     incidentsResult,
     notificationsResult,
   ] = await Promise.all([
-    supabase.from('properties').select('id, name, address, updated_at').in('id', user.propertyIds),
+    supabase.from('properties').select('id, organization_id, name, address, updated_at').in('id', user.propertyIds),
+    supabase.from('organizations').select('id, name').in('id', user.clientIds),
     supabase.from('spaces').select('id, property_id, name').in('property_id', user.propertyIds),
     supabase
       .from('devices')
@@ -315,6 +319,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
 
   const queryError =
     propertiesResult.error ||
+    organizationsResult.error ||
     spacesResult.error ||
     devicesResult.error ||
     eventsResult.error ||
@@ -324,6 +329,10 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     notificationsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
 
+  const organizationNames = new Map((organizationsResult.data || []).map((organization) => [
+    organization.id,
+    organization.name,
+  ]))
   const spaces = new Map((spacesResult.data || []).map((space) => [space.id, space.name]))
   const spacesByProperty = new Map<string, PortalSpace[]>()
   const devicesByProperty = new Map<string, Device[]>()
@@ -479,6 +488,8 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .sort((left, right) => right.getTime() - left.getTime())[0]
 
     return {
+      organizationId: property.organization_id,
+      organizationName: organizationNames.get(property.organization_id) || property.name,
       propertyId: property.id,
       projectId: property.id,
       label: property.name,
@@ -511,6 +522,7 @@ export async function getPortalSiteForUser(user: AuthUser, propertyId: string) {
 export function getPortalDashboardTotals(sites: PortalSiteSummary[]) {
   const buckets = sites.flatMap((site) => getPortalDeviceBuckets(site.devices))
   return {
+    organizations: new Set(sites.map((site) => site.organizationId)).size,
     sites: sites.length,
     devices: sites.reduce((total, site) => total + site.deviceCount, 0),
     cameras: buckets.filter((bucket) => bucket.key === 'camera').reduce((total, bucket) => total + bucket.count, 0),

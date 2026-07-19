@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowRight, CheckCircle2, CircleAlert, FileText, LayoutGrid, Radar, ShieldAlert, Siren, Wifi } from 'lucide-react'
+import { ArrowRight, Building2, CheckCircle2, CircleAlert, FileText, LayoutGrid, Radar, ShieldAlert, Siren, Wifi } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -114,6 +114,57 @@ function ReportMetric({
       <p className="text-xs uppercase tracking-[0.16em] text-white/35">{label}</p>
       <p className={`mt-2 text-xl font-light ${tone === 'critical' ? 'text-rose-100' : 'text-white'}`}>{value}</p>
     </div>
+  )
+}
+
+function OperationCard({
+  site,
+}: {
+  site: Awaited<ReturnType<typeof getAccessiblePortalSites>>[number]
+}) {
+  const openIncidents = site.incidents.filter(isOpenPortalIncident)
+  const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+
+  return (
+    <Link
+      href={`/app/properties/${site.propertyId}`}
+      className="group block rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] p-5 transition hover:-translate-y-0.5 hover:border-[#4DA3D9]/30 hover:bg-white/[0.065]"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
+            <Building2 className="h-5 w-5" strokeWidth={1.7} />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/38">Empresa</p>
+            <h3 className="mt-1 text-xl font-light text-white">{site.organizationName}</h3>
+            <p className="mt-2 text-sm leading-6 text-white/55">{site.location}</p>
+          </div>
+        </div>
+        <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Metric label="Camaras" value={site.cameraCount} />
+        <Metric label="Sensores" value={site.sensorCount} />
+        <Metric label="Alertas" value={site.alertCount} />
+        <Metric label="Eventos hoy" value={site.report.eventsToday} />
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3">
+        <p className="text-sm text-white/60">
+          {openIncidents.length > 0
+            ? `${openIncidents.length} incidente${openIncidents.length === 1 ? '' : 's'} en seguimiento`
+            : gatewayRisk > 0
+              ? 'Conexion con atencion operativa'
+              : 'Operacion visible y conectada'}
+        </p>
+        <span className="inline-flex items-center gap-2 text-sm text-[#9DD2F2]">
+          Abrir operacion
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </span>
+      </div>
+    </Link>
   )
 }
 
@@ -246,7 +297,7 @@ export default async function ClientAppPage() {
                 Portal de cliente
               </Badge>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
-                {primarySite?.label || 'Cliente'}
+                {primarySite ? `${totals.organizations} empresas` : 'Cliente'}
               </span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
                 {updatedLabel}
@@ -275,7 +326,7 @@ export default async function ClientAppPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <Metric label="Sitios" value={totals.sites} />
+              <Metric label="Empresas" value={totals.organizations} />
               <Metric label="Camaras" value={totals.cameras} />
               <Metric label="Alertas" value={totals.alerts} />
             </div>
@@ -354,6 +405,33 @@ export default async function ClientAppPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Tus operaciones</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Empresas protegidas por SegurIA</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada empresa conserva su propio contexto, estado e historial. El cliente ve una lectura clara sin mezclar operaciones.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-white/5 text-white/55">
+            {totals.organizations} empresas / {totals.sites} sitios
+          </Badge>
+        </div>
+
+        {sites.length === 0 ? (
+          <Card className="border-white/10 bg-white/5 shadow-none">
+            <CardContent className="py-12 text-center text-white/60">Todavia no hay empresas asociadas a esta cuenta.</CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {sites.map((site) => (
+              <OperationCard key={site.propertyId} site={site} />
+            ))}
+          </div>
+        )}
       </section>
 
       <ClientNotificationCenter />
@@ -573,7 +651,7 @@ export default async function ClientAppPage() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-white/40">Sitios</p>
-            <h2 className="mt-2 text-2xl font-normal text-white">Tus propiedades</h2>
+            <h2 className="mt-2 text-2xl font-normal text-white">Detalle por sitio</h2>
           </div>
           <p className="text-sm text-white/45">Resumen simple por sitio.</p>
         </div>
@@ -590,7 +668,7 @@ export default async function ClientAppPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <CardTitle className="text-xl font-normal text-white">{site.label}</CardTitle>
-                      <CardDescription className="mt-2 text-white/55">{site.location}</CardDescription>
+                      <CardDescription className="mt-2 text-white/55">{site.organizationName} - {site.location}</CardDescription>
                     </div>
                     <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
                   </div>

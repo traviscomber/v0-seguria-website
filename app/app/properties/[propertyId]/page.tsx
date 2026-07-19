@@ -109,7 +109,7 @@ export default async function PropertyPage({
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
                 <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                  Sitio cliente
+                  {site.organizationName}
                 </Badge>
               </div>
 
