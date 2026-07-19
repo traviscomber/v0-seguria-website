@@ -128,8 +128,31 @@ function OperationCard({
   return (
     <Link
       href={`/app/properties/${site.propertyId}`}
-      className="group block rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] p-5 transition hover:-translate-y-0.5 hover:border-[#4DA3D9]/30 hover:bg-white/[0.065]"
+      className="group block overflow-hidden rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] transition hover:-translate-y-0.5 hover:border-[#4DA3D9]/30 hover:bg-white/[0.065]"
     >
+      <div className="relative h-48 overflow-hidden border-b border-white/10 bg-[#071524]">
+        <img
+          src={site.imageUrl}
+          alt={site.imageAlt}
+          className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,21,36,0.08),rgba(7,21,36,0.72)),linear-gradient(90deg,rgba(7,21,36,0.42),transparent_60%)]" />
+        <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+          <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
+          {site.imageIsRepresentative ? (
+            <span className="rounded-full border border-white/15 bg-[#071524]/75 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/65">
+              Imagen referencial
+            </span>
+          ) : null}
+        </div>
+        <span
+          className="absolute bottom-3 right-3 rounded-full border border-white/10 bg-[#071524]/80 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/55 transition hover:text-white"
+        >
+          {site.imageCredit}
+        </span>
+      </div>
+
+      <div className="p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
@@ -141,7 +164,6 @@ function OperationCard({
             <p className="mt-2 text-sm leading-6 text-white/55">{site.location}</p>
           </div>
         </div>
-        <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -163,6 +185,7 @@ function OperationCard({
           Abrir operacion
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </span>
+      </div>
       </div>
     </Link>
   )

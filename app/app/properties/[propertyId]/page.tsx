@@ -129,21 +129,44 @@ export default async function PropertyPage({
               </div>
             </div>
 
-            <Card className="border-white/10 bg-[#071524]/80 shadow-none backdrop-blur">
-              <CardHeader>
+            <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071524]/80 shadow-[0_20px_70px_rgba(0,0,0,0.26)] backdrop-blur">
+              <div className="relative h-64 overflow-hidden border-b border-white/10">
+                <img src={site.imageUrl} alt={site.imageAlt} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,21,36,0.04),rgba(7,21,36,0.8))]" />
+                <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-white/15 bg-[#071524]/75 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
+                    {site.organizationName}
+                  </span>
+                  {site.imageIsRepresentative ? (
+                    <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-amber-100/80">
+                      Imagen referencial
+                    </span>
+                  ) : null}
+                </div>
+                <a
+                  href={site.imageCreditUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute bottom-3 right-3 rounded-full border border-white/10 bg-[#071524]/85 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/55 transition hover:text-white"
+                >
+                  {site.imageCredit}
+                </a>
+              </div>
+
+              <div className="p-5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-                  <CardTitle className="text-lg font-normal text-white">Resumen rapido</CardTitle>
+                  <h2 className="text-lg font-normal text-white">Resumen rapido</h2>
                 </div>
-                <CardDescription className="text-white/55">Lectura ejecutiva de la operacion del sitio.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <MiniMetric label="Dispositivos" value={site.deviceCount} />
-                <MiniMetric label="Activos" value={activeCount} />
-                <MiniMetric label="Documentos" value={site.documentCount} />
-                <MiniMetric label="Alertas" value={site.alertCount} />
-              </CardContent>
-            </Card>
+                <p className="mt-2 text-sm leading-6 text-white/55">Lectura ejecutiva de la operacion del sitio.</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <MiniMetric label="Dispositivos" value={site.deviceCount} />
+                  <MiniMetric label="Activos" value={activeCount} />
+                  <MiniMetric label="Documentos" value={site.documentCount} />
+                  <MiniMetric label="Alertas" value={site.alertCount} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

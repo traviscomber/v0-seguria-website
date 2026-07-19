@@ -12,6 +12,11 @@ export interface PortalSiteSummary {
   projectId: string
   label: string
   location: string
+  imageUrl: string
+  imageAlt: string
+  imageCredit: string
+  imageCreditUrl: string
+  imageIsRepresentative: boolean
   status: PortalSiteStatus
   statusLabel: string
   deviceCount: number
@@ -112,6 +117,38 @@ const incidentStatusLabels: Record<PortalIncidentStatus, string> = {
   responding: 'En respuesta',
   resolved: 'Resuelto',
   false_alarm: 'Falsa alarma',
+}
+
+function getPortalSiteVisual(organizationName: string, propertyName: string) {
+  const key = `${organizationName} ${propertyName}`.toLowerCase()
+
+  if (key.includes('huilo')) {
+    return {
+      imageUrl: '/portal/huilo-huilo.jpg',
+      imageAlt: 'Hotel en la Reserva Huilo Huilo rodeado de bosque nativo',
+      imageCredit: 'Roberto Araya Barckhahn / CC BY-SA 3.0',
+      imageCreditUrl: 'https://commons.wikimedia.org/wiki/File:Hotel_Baobab,_Huilo-Huilo.JPG',
+      imageIsRepresentative: false,
+    }
+  }
+
+  if (key.includes('santa elena')) {
+    return {
+      imageUrl: '/portal/santa-elena.jpg',
+      imageAlt: 'Ganado lechero alimentandose en una pradera',
+      imageCredit: 'Foto referencial: Gonzalo De La Rosa / CC BY-SA 4.0',
+      imageCreditUrl: 'https://commons.wikimedia.org/wiki/File:Campo_de_vacas_alimentandose.JPG',
+      imageIsRepresentative: true,
+    }
+  }
+
+  return {
+    imageUrl: '/portal/santa-elena.jpg',
+    imageAlt: 'Operacion protegida por SegurIA',
+    imageCredit: 'Foto referencial / Creative Commons',
+    imageCreditUrl: 'https://commons.wikimedia.org/wiki/File:Campo_de_vacas_alimentandose.JPG',
+    imageIsRepresentative: true,
+  }
 }
 
 function determineStatus(devices: Device[]): { status: PortalSiteStatus; label: string } {
@@ -462,6 +499,8 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   }
 
   return (propertiesResult.data || []).map((property) => {
+    const organizationName = organizationNames.get(property.organization_id) || property.name
+    const visual = getPortalSiteVisual(organizationName, property.name)
     const devices = devicesByProperty.get(property.id) || []
     const events = eventsByProperty.get(property.id) || []
     const documents = documentsByProperty.get(property.id) || []
@@ -489,11 +528,12 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
 
     return {
       organizationId: property.organization_id,
-      organizationName: organizationNames.get(property.organization_id) || property.name,
+      organizationName,
       propertyId: property.id,
       projectId: property.id,
       label: property.name,
       location: property.address || 'Ubicacion por definir',
+      ...visual,
       status,
       statusLabel: label,
       deviceCount: devices.length,
