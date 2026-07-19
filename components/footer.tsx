@@ -11,7 +11,7 @@ export function Footer() {
               <img
                 src="/seguria-logo.png"
                 alt="SegurIA"
-                className="h-auto w-56 rounded-[6px]"
+                className="h-10 w-[178px] object-contain object-left"
               />
             </div>
             <p className="text-sm leading-relaxed text-white/50">
