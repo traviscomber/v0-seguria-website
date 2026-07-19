@@ -15,6 +15,27 @@ type Notification = {
   incidents: { status: string } | null
 }
 
+type Preference = {
+  channel: 'email' | 'sms' | 'push' | 'webhook'
+  enabled: boolean
+  target: string
+  minSeverity: 'warning' | 'critical'
+}
+
+const channelLabels: Record<Preference['channel'], string> = {
+  email: 'Correo',
+  sms: 'SMS',
+  push: 'Push',
+  webhook: 'Webhook',
+}
+
+const defaultPreferences: Preference[] = [
+  { channel: 'email', enabled: false, target: '', minSeverity: 'warning' },
+  { channel: 'sms', enabled: false, target: '', minSeverity: 'critical' },
+  { channel: 'push', enabled: false, target: '', minSeverity: 'critical' },
+  { channel: 'webhook', enabled: false, target: '', minSeverity: 'critical' },
+]
+
 function formatTime(value: string) {
   return new Intl.DateTimeFormat('es-CL', {
     hour: '2-digit',
@@ -32,6 +53,9 @@ export function ClientNotificationCenter() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [organizationId, setOrganizationId] = useState('')
+  const [preferences, setPreferences] = useState<Preference[]>(defaultPreferences)
+  const [savingPreferences, setSavingPreferences] = useState(false)
 
   async function load() {
     const response = await fetch('/api/notifications', { cache: 'no-store' })
@@ -40,11 +64,35 @@ export function ClientNotificationCenter() {
     startTransition(() => setNotifications(result.data || []))
   }
 
+  async function loadPreferences() {
+    const response = await fetch('/api/notifications/preferences', { cache: 'no-store' })
+    const result = await response.json().catch(() => null)
+    if (!response.ok || !result?.success) return
+
+    const orgId = result.data?.organizations?.[0] || ''
+    const rows = result.data?.preferences || []
+    setOrganizationId(orgId)
+    setPreferences(defaultPreferences.map((preference) => {
+      const saved = rows.find((row: { organization_id: string; channel: string }) =>
+        row.organization_id === orgId && row.channel === preference.channel
+      )
+      return saved
+        ? {
+            channel: preference.channel,
+            enabled: Boolean(saved.enabled),
+            target: saved.target || '',
+            minSeverity: saved.min_severity === 'critical' ? 'critical' : 'warning',
+          }
+        : preference
+    }))
+  }
+
   useEffect(() => {
     let active = true
     load()
       .catch((loadError) => active && setError(loadError.message))
       .finally(() => active && setLoading(false))
+    loadPreferences().catch(() => undefined)
 
     const interval = window.setInterval(() => load().catch(() => undefined), 30_000)
     return () => {
@@ -74,6 +122,43 @@ export function ClientNotificationCenter() {
     } finally {
       setBusyId(null)
     }
+  }
+
+  async function savePreferences() {
+    if (!organizationId) return
+    setSavingPreferences(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const response = await fetch('/api/notifications/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId,
+          preferences: preferences.map((preference) => ({
+            channel: preference.channel,
+            enabled: preference.enabled,
+            target: preference.target,
+            minSeverity: preference.minSeverity,
+          })),
+        }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.success) throw new Error(result?.error || 'No fue posible guardar preferencias.')
+      setMessage(result.message || 'Preferencias actualizadas.')
+      await loadPreferences()
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'No fue posible guardar preferencias.')
+    } finally {
+      setSavingPreferences(false)
+    }
+  }
+
+  function updatePreference(channel: Preference['channel'], patch: Partial<Preference>) {
+    setPreferences((current) => current.map((preference) =>
+      preference.channel === channel ? { ...preference, ...patch } : preference
+    ))
   }
 
   const pending = notifications.filter((item) => item.status !== 'acknowledged' && !isClosedIncident(item.incidents?.status))
@@ -152,6 +237,63 @@ export function ClientNotificationCenter() {
             )
           })
         )}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#0B1D30] p-5">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-sm font-light text-white">Canales de aviso</p>
+            <p className="mt-1 text-sm leading-6 text-white/55">
+              Activa canales adicionales para avisos importantes. La entrega queda registrada con reintentos y auditoria.
+            </p>
+          </div>
+          <button
+            disabled={savingPreferences || !organizationId}
+            onClick={savePreferences}
+            className="btn-secondary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {savingPreferences ? 'Guardando...' : 'Guardar canales'}
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {preferences.map((preference) => (
+            <div key={preference.channel} className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-white">{channelLabels[preference.channel]}</p>
+                  <p className="mt-1 text-xs text-white/40">
+                    {preference.minSeverity === 'critical' ? 'Solo criticos' : 'Atencion y criticos'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updatePreference(preference.channel, { enabled: !preference.enabled })}
+                  className={`rounded-full px-3 py-1 text-xs ${preference.enabled ? 'bg-[#4DA3D9] text-white' : 'bg-white/8 text-white/55'}`}
+                >
+                  {preference.enabled ? 'Activo' : 'Inactivo'}
+                </button>
+              </div>
+
+              <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+                <input
+                  value={preference.target}
+                  onChange={(event) => updatePreference(preference.channel, { target: event.target.value })}
+                  placeholder={preference.channel === 'sms' ? '+56 9...' : preference.channel === 'webhook' ? 'https://...' : 'Destino opcional'}
+                  className="rounded-xl border border-white/10 bg-[#071524] px-3 py-2 text-sm text-white placeholder:text-white/30"
+                />
+                <select
+                  value={preference.minSeverity}
+                  onChange={(event) => updatePreference(preference.channel, { minSeverity: event.target.value === 'critical' ? 'critical' : 'warning' })}
+                  className="rounded-xl border border-white/10 bg-[#071524] px-3 py-2 text-sm text-white"
+                >
+                  <option value="warning">Atencion+</option>
+                  <option value="critical">Criticos</option>
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )

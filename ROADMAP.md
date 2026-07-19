@@ -634,6 +634,7 @@ Completado en codigo:
 - visualizacion de confirmaciones y vencimientos en el centro de incidentes y dashboard administrativo.
 - reporte operativo en portal cliente con eventos del dia, incidentes del mes, confirmaciones vencidas y tiempos promedio de confirmacion y resolucion.
 - lectura por propiedad de continuidad, sensores por riesgo, incidentes abiertos, accion recomendada y reporte operacional del sitio.
+- preferencias multicanal por usuario para avisos, cola de entregas por canal y monitor de reintentos con backoff y auditoria operacional.
 
 Validado localmente:
 
@@ -655,11 +656,11 @@ Pendiente de infraestructura:
 
 Siguiente bloque autonomo:
 
-1. Incorporar entrega multicanal con reintentos y preferencias por usuario.
-2. Asociar evidencia visual y eventos correlacionados a cada incidente.
-3. Crear resumen diario y reporte mensual por organizacion.
-4. Medir tiempos de confirmacion, respuesta y resolucion por severidad.
-5. Ejecutar el piloto operativo con la primera propiedad real.
+1. Asociar evidencia visual y eventos correlacionados a cada incidente.
+2. Ejecutar el piloto operativo con la primera propiedad real.
+3. Definir proveedores reales para email, SMS o push y activar sus variables internas.
+4. Acordar retencion de evidencia, eventos y auditoria.
+5. Separar un ambiente formal de staging antes del piloto ampliado.
 
 ## Fuentes tecnicas oficiales
 

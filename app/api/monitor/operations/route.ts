@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
+import { processNotificationDeliveries } from '@/lib/notification-delivery'
 import { secretsMatch } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -24,6 +25,13 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error('Operations monitor failed:', error.message)
     return NextResponse.json({ success: false, error: 'Monitor no disponible.' }, { status: 500 })
+  }
+  let deliveryStats = { scanned: 0, delivered: 0, failed: 0, deferred: 0 }
+  try {
+    deliveryStats = await processNotificationDeliveries(supabase, now)
+  } catch (deliveryError) {
+    console.error('Notification delivery monitor failed:', deliveryError)
+    return NextResponse.json({ success: false, error: 'Monitor de entregas no disponible.' }, { status: 500 })
   }
   const { data: expiredAutomations, error: expiredError } = await supabase
     .from('property_automations')
@@ -76,5 +84,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, data: { gatewaysMarkedOffline: gateways.data || 0, notificationsEscalated: notifications.data || 0, automationsRolledBack: expiredAutomations?.length || 0 } })
+  return NextResponse.json({
+    success: true,
+    data: {
+      gatewaysMarkedOffline: gateways.data || 0,
+      notificationsEscalated: notifications.data || 0,
+      automationsRolledBack: expiredAutomations?.length || 0,
+      notificationDeliveries: deliveryStats,
+    },
+  })
 }
