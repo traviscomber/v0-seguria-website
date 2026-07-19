@@ -76,7 +76,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#0A1B2E]">
       <Navigation />
 
-      <section className="relative flex min-h-screen items-center overflow-hidden pt-20">
+      <section className="relative flex min-h-screen items-start overflow-hidden pt-20">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -96,8 +96,8 @@ export default function HomePage() {
         <div className="absolute left-0 top-24 h-px w-full bg-gradient-to-r from-transparent via-[#9DD2F2]/35 to-transparent" />
         <div className="absolute bottom-0 left-0 h-40 w-full bg-gradient-to-t from-[#0A1B2E] to-transparent" />
 
-        <div className="relative z-10 mx-auto grid w-full max-w-[1480px] gap-12 px-6 py-16 lg:grid-cols-[minmax(0,0.92fr)_minmax(500px,0.78fr)] lg:gap-16 lg:px-8 xl:grid-cols-[minmax(0,0.86fr)_minmax(560px,0.74fr)] xl:gap-20">
-          <div className="flex max-w-3xl flex-col justify-center">
+        <div className="relative z-10 mx-auto grid w-full max-w-[1480px] items-start gap-12 px-6 pb-16 pt-20 lg:grid-cols-[minmax(0,0.92fr)_minmax(500px,0.78fr)] lg:gap-16 lg:px-8 lg:pt-24 xl:grid-cols-[minmax(0,0.86fr)_minmax(560px,0.74fr)] xl:gap-20 xl:pt-28">
+          <div className="flex max-w-3xl flex-col">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#4DA3D9]/30 bg-[#4DA3D9]/12 px-4 py-2 text-sm text-[#9DD2F2]">
               <ShieldCheck className="h-4 w-4" strokeWidth={1.6} />
               Sistema integral de seguridad operativa
@@ -130,7 +130,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative flex items-center justify-end lg:pl-6 xl:translate-x-8 2xl:translate-x-14">
+          <div className="relative flex justify-end lg:pl-6 xl:translate-x-8 2xl:translate-x-14">
             <div className="w-full max-w-[580px] rounded-[12px] border border-white/12 bg-[#061525]/76 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl md:p-6 xl:max-w-[620px]">
               <div className="overflow-hidden rounded-[10px] border border-white/10 bg-[#0A1B2E]">
                 <div className="relative h-56 overflow-hidden bg-cover bg-center md:h-72"
