@@ -18,24 +18,6 @@ import { CameraSnapshot } from '@/components/camera-snapshot'
 import { CameraStreamControl } from '@/components/camera-stream-control'
 import { ClientNotificationCenter } from '@/components/client-notification-center'
 
-const sourceCards = [
-  {
-    label: 'Cobertura',
-    value: 'Vista centralizada',
-    description: 'Camaras, sensores y alertas importantes reunidos en un solo lugar.',
-  },
-  {
-    label: 'Continuidad',
-    value: 'Supervision activa',
-    description: 'El estado de los espacios se mantiene actualizado para detectar cambios.',
-  },
-  {
-    label: 'Respuesta',
-    value: 'Alertas con contexto',
-    description: 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
-  },
-]
-
 function formatDate(value?: Date) {
   if (!value) return 'Sin actualizacion'
   return new Intl.DateTimeFormat('es-CL', {
@@ -161,15 +143,15 @@ function OperationCard({
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-white/38">Empresa</p>
             <h3 className="mt-1 text-xl font-light text-white">{site.organizationName}</h3>
-            <p className="mt-2 text-sm leading-6 text-white/55">{site.location}</p>
+            <p className="mt-2 text-sm leading-6 text-white/55">{site.profile.summary}</p>
           </div>
         </div>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Metric label="Camaras" value={site.cameraCount} />
-        <Metric label="Sensores" value={site.sensorCount} />
-        <Metric label="Alertas" value={site.alertCount} />
+        <Metric label={site.profile.metricLabels.camera} value={site.cameraCount} />
+        <Metric label={site.profile.metricLabels.sensor} value={site.sensorCount} />
+        <Metric label={site.profile.metricLabels.alert} value={site.alertCount} />
         <Metric label="Eventos hoy" value={site.report.eventsToday} />
       </div>
 
@@ -308,6 +290,32 @@ export default async function ClientAppPage() {
       : 'Esperar la primera sincronizacion del sitio.'
   const updatedLabel = `Actualizado ${formatDate(primarySite?.lastUpdatedAt)}`
   const continuityHasRisk = totals.offlineGateways > 0 || sensorRisk.critical > 0 || openIncidents.length > 0
+  const primaryProfile = primarySite?.profile || {
+    eyebrow: 'Portal de cliente',
+    headline: 'Tu seguridad, clara y lista para decidir.',
+    summary: 'Una sola pantalla para revisar camaras, espacios vigilados y alertas que necesitan atencion.',
+    focusAreas: ['Cobertura', 'Continuidad', 'Respuesta'],
+    metricLabels: { camera: 'Camaras', sensor: 'Sensores', alert: 'Alertas', access: 'Accesos' },
+    recommendedStableAction: 'Mantener supervision normal.',
+    recommendedAttentionAction: 'Revisar los avisos activos y confirmar recepcion si corresponde.',
+  }
+  const profileCards = [
+    {
+      label: primaryProfile.focusAreas[0] || 'Cobertura',
+      value: 'Vista centralizada',
+      description: primaryProfile.summary,
+    },
+    {
+      label: primaryProfile.focusAreas[1] || 'Continuidad',
+      value: 'Supervision activa',
+      description: continuityHasRisk ? primaryProfile.recommendedAttentionAction : primaryProfile.recommendedStableAction,
+    },
+    {
+      label: primaryProfile.focusAreas[2] || 'Respuesta',
+      value: 'Alertas con contexto',
+      description: 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
+    },
+  ]
 
   return (
     <div className="space-y-8">
@@ -317,7 +325,7 @@ export default async function ClientAppPage() {
           <div className="flex flex-col justify-center space-y-6">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="w-fit border-[#4DA3D9]/30 bg-[#4DA3D9]/15 text-[#9DD2F2] hover:bg-[#4DA3D9]/15">
-                Portal de cliente
+                {primaryProfile.eyebrow}
               </Badge>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
                 {primarySite ? `${totals.organizations} empresas` : 'Cliente'}
@@ -329,10 +337,10 @@ export default async function ClientAppPage() {
 
             <div className="max-w-3xl space-y-4">
               <h1 className="max-w-2xl text-balance text-4xl font-light leading-tight text-white md:text-5xl">
-                Tu seguridad, clara y lista para decidir.
+                {primaryProfile.headline}
               </h1>
               <p className="text-base leading-7 text-white/68 md:text-lg">
-                Una sola pantalla para revisar camaras, espacios vigilados y alertas que necesitan atencion.
+                {primaryProfile.summary}
               </p>
             </div>
 
@@ -350,12 +358,12 @@ export default async function ClientAppPage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               <Metric label="Empresas" value={totals.organizations} />
-              <Metric label="Camaras" value={totals.cameras} />
-              <Metric label="Alertas" value={totals.alerts} />
+              <Metric label={primaryProfile.metricLabels.camera} value={totals.cameras} />
+              <Metric label={primaryProfile.metricLabels.alert} value={totals.alerts} />
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              {sourceCards.map((card) => (
+              {profileCards.map((card) => (
                 <div key={card.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/40">{card.label}</p>
                   <p className="mt-2 text-base font-light text-white">{card.value}</p>
@@ -466,7 +474,7 @@ export default async function ClientAppPage() {
             <h2 className="mt-2 text-2xl font-light text-white">Resumen de seguridad para decidir rapido</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
               Lectura diaria y mensual consolidada para saber si hubo senales relevantes, incidentes activos y tiempos
-              de respuesta.
+              de respuesta en una operacion {primarySite?.profile.key === 'hotel' ? 'hotelera' : primarySite?.profile.key === 'dairy_field' ? 'lechera' : 'de seguridad'}.
             </p>
           </div>
           <Badge className={report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
@@ -522,7 +530,9 @@ export default async function ClientAppPage() {
               <p className="mt-2 text-lg font-light text-white">
                 {openIncidents.length > 0 ? 'Abrir incidente principal' : alerts.length > 0 ? 'Revisar alertas' : 'Mantener supervision'}
               </p>
-              <p className="mt-2 text-sm leading-6 text-white/55">{nextAction}</p>
+              <p className="mt-2 text-sm leading-6 text-white/55">
+                {continuityHasRisk ? primaryProfile.recommendedAttentionAction : nextAction}
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -89,8 +89,8 @@ export default async function PropertyPage({
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
-      ? 'Revisar sensores o continuidad antes de cerrar el dia.'
-      : 'Mantener supervision normal.'
+      ? site.profile.recommendedAttentionAction
+      : site.profile.recommendedStableAction
 
   return (
     <div className="space-y-8">
@@ -114,18 +114,18 @@ export default async function PropertyPage({
               </div>
 
               <div className="space-y-3">
+                <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">{site.profile.eyebrow}</p>
                 <h1 className="text-4xl font-light text-white text-balance md:text-5xl">{site.label}</h1>
                 <p className="max-w-3xl text-base leading-7 text-white/65 md:text-lg">
-                  Vista premium para leer el sitio sin esfuerzo: que hay instalado, que esta activo y que conviene
-                  revisar primero.
+                  {site.profile.headline}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <InfoTile label="Ubicacion" value={site.location} icon={MapPin} />
-                <InfoTile label="Camaras" value={cameraCount.toString()} icon={Camera} />
-                <InfoTile label="Sensores" value={sensorCount.toString()} icon={Signal} />
-                <InfoTile label="Accesos" value={accessCount.toString()} icon={Wifi} />
+                <InfoTile label={site.profile.metricLabels.camera} value={cameraCount.toString()} icon={Camera} />
+                <InfoTile label={site.profile.metricLabels.sensor} value={sensorCount.toString()} icon={Signal} />
+                <InfoTile label={site.profile.metricLabels.access} value={accessCount.toString()} icon={Wifi} />
               </div>
             </div>
 
@@ -158,7 +158,7 @@ export default async function PropertyPage({
                   <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
                   <h2 className="text-lg font-normal text-white">Resumen rapido</h2>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-white/55">Lectura ejecutiva de la operacion del sitio.</p>
+                <p className="mt-2 text-sm leading-6 text-white/55">{site.profile.summary}</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <MiniMetric label="Dispositivos" value={site.deviceCount} />
                   <MiniMetric label="Activos" value={activeCount} />
@@ -286,6 +286,13 @@ export default async function PropertyPage({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
               Resumen operacional para entender que paso hoy y como se esta respondiendo durante el mes.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {site.profile.focusAreas.map((area) => (
+                <span key={area} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/58">
+                  {area}
+                </span>
+              ))}
+            </div>
           </div>
           <Badge className={site.report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
             {site.report.overdueConfirmations > 0 ? 'Confirmaciones vencidas' : 'Confirmaciones al dia'}
@@ -387,19 +394,19 @@ export default async function PropertyPage({
             <CardContent className="space-y-3">
               {site.alertCount > 0 ? (
                 <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-                  Hay equipos que requieren revision. Este sitio debe revisarse antes de cerrar el dia.
+                  {site.profile.recommendedAttentionAction}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-                  El sitio esta estable y listo para monitoreo normal.
+                  {site.profile.recommendedStableAction}
                 </div>
               )}
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  'Confirmar equipos visibles para el cliente.',
-                  'Subir documentos y reportes del sitio.',
-                  'Revisar alertas antes de la siguiente visita.',
+                  site.profile.focusAreas[0] ? `Confirmar ${site.profile.focusAreas[0].toLowerCase()}.` : 'Confirmar equipos visibles para el cliente.',
+                  site.profile.focusAreas[1] ? `Revisar ${site.profile.focusAreas[1].toLowerCase()}.` : 'Revisar alertas antes de la siguiente visita.',
+                  'Subir documentos y evidencia del sitio.',
                   'Compartir acceso al equipo correspondiente.',
                 ].map((step) => (
                   <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
@@ -463,8 +470,8 @@ export default async function PropertyPage({
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              'Una vista limpia del sitio completo.',
-              'Camaras, sensores y accesos agrupados.',
+              site.profile.summary,
+              `${site.profile.metricLabels.camera}, ${site.profile.metricLabels.sensor.toLowerCase()} y ${site.profile.metricLabels.access.toLowerCase()} agrupados.`,
               'Alertas y documentos sin ruido.',
               'Soporte con contexto real del sitio.',
             ].map((text) => (

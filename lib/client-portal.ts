@@ -33,6 +33,23 @@ export interface PortalSiteSummary {
   incidents: PortalIncident[]
   gatewayHealth: PortalGatewayHealth
   report: PortalOperationalReport
+  profile: PortalSiteProfile
+}
+
+export interface PortalSiteProfile {
+  key: 'dairy_field' | 'hotel' | 'general'
+  eyebrow: string
+  headline: string
+  summary: string
+  focusAreas: string[]
+  metricLabels: {
+    camera: string
+    sensor: string
+    alert: string
+    access: string
+  }
+  recommendedStableAction: string
+  recommendedAttentionAction: string
 }
 
 export interface PortalSpace {
@@ -171,6 +188,62 @@ function getPortalSiteVisual(organizationName: string, propertyName: string) {
     imageCredit: 'Foto referencial / Creative Commons',
     imageCreditUrl: 'https://commons.wikimedia.org/wiki/File:Campo_de_vacas_alimentandose.JPG',
     imageIsRepresentative: true,
+  }
+}
+
+function getPortalSiteProfile(organizationName: string, propertyName: string): PortalSiteProfile {
+  const key = `${organizationName} ${propertyName}`.toLowerCase()
+
+  if (key.includes('huilo')) {
+    return {
+      key: 'hotel',
+      eyebrow: 'Operacion hotelera protegida',
+      headline: 'Huespedes tranquilos, equipos atentos y cada acceso bajo control.',
+      summary: 'SegurIA ordena accesos, areas comunes, perimetro y eventos criticos para que la operacion hotelera responda sin ruido.',
+      focusAreas: ['Accesos de huespedes', 'Areas comunes', 'Perimetro y estacionamientos', 'Continuidad operativa'],
+      metricLabels: {
+        camera: 'Vistas',
+        sensor: 'Sensores',
+        alert: 'Avisos',
+        access: 'Accesos',
+      },
+      recommendedStableAction: 'Mantener supervision de accesos y areas comunes durante la operacion diaria.',
+      recommendedAttentionAction: 'Priorizar accesos, huespedes y zonas comunes antes de cerrar el turno.',
+    }
+  }
+
+  if (key.includes('santa elena')) {
+    return {
+      key: 'dairy_field',
+      eyebrow: 'Campo lechero protegido',
+      headline: 'El campo avisa a tiempo: accesos, animales, frio y faena en una sola lectura.',
+      summary: 'SegurIA ayuda a cuidar potreros, sala de frio, bodegas, accesos y continuidad de la operacion lechera.',
+      focusAreas: ['Accesos y portones', 'Sala de frio', 'Bodegas e insumos', 'Potreros y movimiento nocturno'],
+      metricLabels: {
+        camera: 'Puntos de vista',
+        sensor: 'Sensores de campo',
+        alert: 'Avisos',
+        access: 'Portones',
+      },
+      recommendedStableAction: 'Mantener supervision normal de accesos, sala de frio y movimiento nocturno.',
+      recommendedAttentionAction: 'Revisar primero accesos, frio, bodegas y senales fuera de horario.',
+    }
+  }
+
+  return {
+    key: 'general',
+    eyebrow: 'Operacion protegida',
+    headline: 'Tu seguridad, clara y lista para decidir.',
+    summary: 'SegurIA reune camaras, sensores, accesos y eventos importantes para responder con contexto.',
+    focusAreas: ['Perimetro', 'Accesos', 'Espacios sensibles', 'Continuidad operativa'],
+    metricLabels: {
+      camera: 'Camaras',
+      sensor: 'Sensores',
+      alert: 'Alertas',
+      access: 'Accesos',
+    },
+    recommendedStableAction: 'Mantener supervision normal.',
+    recommendedAttentionAction: 'Revisar los avisos activos y confirmar recepcion si corresponde.',
   }
 }
 
@@ -642,6 +715,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   return (propertiesResult.data || []).map((property) => {
     const organizationName = organizationNames.get(property.organization_id) || property.name
     const visual = getPortalSiteVisual(organizationName, property.name)
+    const profile = getPortalSiteProfile(organizationName, property.name)
     const devices = devicesByProperty.get(property.id) || []
     const events = eventsByProperty.get(property.id) || []
     const documents = documentsByProperty.get(property.id) || []
@@ -690,6 +764,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       incidents,
       gatewayHealth: gatewayHealthByProperty.get(property.id) || { total: 0, online: 0, degraded: 0, offline: 0 },
       report: buildOperationalReport({ events, incidents, notifications }),
+      profile,
       spaces: siteSpaces,
     }
   })
