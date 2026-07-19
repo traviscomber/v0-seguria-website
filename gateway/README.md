@@ -36,6 +36,10 @@ OPERATION_QUEUE_FILE=./data/operations.json
 
 When local overrides are absent, the gateway requests its operational configuration from SegurIA using `/api/gateway/config`.
 
+Start from `.env.example`, then run `.\install-site.ps1 -SiteSlug <site-slug>` on Windows or create the same `.env`, `data/` and `mosquitto/passwords` files on Linux.
+
+The baseline Home Assistant installation is documented in `../docs/integrations/home-assistant-installation.md`.
+
 ## Layout
 
 - `src/index.js`

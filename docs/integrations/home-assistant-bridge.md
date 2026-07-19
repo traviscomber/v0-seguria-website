@@ -21,6 +21,7 @@ SegurIA should treat Home Assistant as the primary operational bridge for the MV
 - If a device is not exposed by Home Assistant, treat it as an exception.
 - If the vendor exposes extra functionality that Home Assistant does not surface, keep it out of the MVP.
 - The direct vendor path can remain as a fallback for special cases later.
+- The installation baseline lives in `docs/integrations/home-assistant-installation.md`.
 
 ## Success criteria
 
