@@ -228,6 +228,47 @@ export default async function PropertyPage({
                       {incident.statusLabel}
                     </Badge>
                   </div>
+                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase tracking-[0.16em] text-white/35">Senales asociadas</p>
+                      {incident.relatedEvents.length === 0 ? (
+                        <p className="mt-3 text-sm leading-6 text-white/50">Sin eventos correlacionados publicados para el cliente.</p>
+                      ) : (
+                        <div className="mt-3 space-y-2">
+                          {incident.relatedEvents.slice(0, 3).map((event) => (
+                            <div key={event.id} className="flex items-start gap-2 rounded-lg bg-[#071524]/80 p-3">
+                              <ShieldAlert className={`mt-0.5 h-4 w-4 shrink-0 ${event.severity === 'critical' ? 'text-rose-200' : event.severity === 'warning' ? 'text-amber-200' : 'text-[#9DD2F2]'}`} strokeWidth={1.7} />
+                              <div>
+                                <p className="text-sm text-white/80">{event.title}</p>
+                                <p className="mt-1 text-xs text-white/40">{formatDate(event.occurredAt)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase tracking-[0.16em] text-white/35">Evidencia visual</p>
+                      {incident.evidence.length === 0 ? (
+                        <p className="mt-3 text-sm leading-6 text-white/50">Sin capturas asociadas en la ventana operativa.</p>
+                      ) : (
+                        <div className="mt-3 space-y-2">
+                          {incident.evidence.map((evidence) => (
+                            <div key={evidence.id} className="flex items-start gap-2 rounded-lg bg-[#071524]/80 p-3">
+                              <Camera className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.7} />
+                              <div>
+                                <p className="text-sm text-white/80">{evidence.title}</p>
+                                <p className="mt-1 text-xs text-white/40">
+                                  {formatDate(evidence.capturedAt)} - Asociada por actividad cercana
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <p className="mt-3 text-xs text-white/40">Creado {formatDate(incident.createdAt)}</p>
                 </div>
               ))

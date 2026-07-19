@@ -53,6 +53,15 @@ export interface PortalEvent {
   occurredAt: Date
 }
 
+export interface PortalIncidentEvidence {
+  id: string
+  title: string
+  capturedAt: Date
+  deviceId?: string
+  fileName: string
+  association: 'event' | 'time_window'
+}
+
 export interface PortalDeviceBucket {
   key: 'camera' | 'sensor' | 'alert' | 'access' | 'other'
   label: string
@@ -72,6 +81,8 @@ export interface PortalIncident {
   resolvedAt?: Date
   createdAt: Date
   updatedAt: Date
+  relatedEvents: PortalEvent[]
+  evidence: PortalIncidentEvidence[]
 }
 
 export interface PortalGatewayHealth {
@@ -106,6 +117,16 @@ type PortalNotificationMetric = {
   createdAt: Date
   acknowledgedAt?: Date
   escalatedAt?: Date
+}
+
+type PortalSnapshot = {
+  id: string
+  propertyId: string
+  deviceId?: string
+  objectPath: string
+  mimeType: string
+  capturedAt: Date
+  createdAt: Date
 }
 
 const openIncidentStatuses: PortalIncidentStatus[] = ['new', 'validating', 'confirmed', 'responding']
@@ -256,6 +277,31 @@ function getSafeEvidenceName(objectPath: string) {
   return objectPath.split('/').filter(Boolean).at(-1) || 'evidencia-capturada'
 }
 
+function getIncidentEvidence(incident: Omit<PortalIncident, 'relatedEvents' | 'evidence'>, snapshots: PortalSnapshot[]): PortalIncidentEvidence[] {
+  const incidentStartedAt = incident.createdAt.getTime()
+  const windowStart = incidentStartedAt - 30 * 60 * 1000
+  const windowEnd = incidentStartedAt + 2 * 60 * 60 * 1000
+
+  return snapshots
+    .filter((snapshot) => {
+      const capturedAt = snapshot.capturedAt.getTime()
+      return capturedAt >= windowStart && capturedAt <= windowEnd
+    })
+    .sort((left, right) => right.capturedAt.getTime() - left.capturedAt.getTime())
+    .slice(0, 3)
+    .map((snapshot) => {
+      const fileName = getSafeEvidenceName(snapshot.objectPath)
+      return {
+        id: snapshot.id,
+        title: `Captura cercana - ${fileName}`,
+        capturedAt: snapshot.capturedAt,
+        deviceId: snapshot.deviceId,
+        fileName,
+        association: 'time_window',
+      }
+    })
+}
+
 function getAverage(values: number[]) {
   if (values.length === 0) return undefined
   return values.reduce((total, value) => total + value, 0) / values.length
@@ -315,6 +361,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     snapshotsResult,
     gatewaysResult,
     incidentsResult,
+    incidentEventsResult,
     notificationsResult,
   ] = await Promise.all([
     supabase.from('properties').select('id, organization_id, name, address, updated_at').in('id', user.propertyIds),
@@ -347,6 +394,10 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .order('created_at', { ascending: false })
       .limit(100),
     supabase
+      .from('incident_events')
+      .select('incident_id, property_id, created_at, events(id, property_id, event_type, severity, state, occurred_at, payload)')
+      .in('property_id', user.propertyIds),
+    supabase
       .from('notifications')
       .select('id, property_id, severity, status, due_at, acknowledged_at, escalated_at, created_at')
       .in('property_id', user.propertyIds)
@@ -363,6 +414,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     snapshotsResult.error ||
     gatewaysResult.error ||
     incidentsResult.error ||
+    incidentEventsResult.error ||
     notificationsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
 
@@ -375,8 +427,10 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   const devicesByProperty = new Map<string, Device[]>()
   const eventsByProperty = new Map<string, PortalEvent[]>()
   const documentsByProperty = new Map<string, Document[]>()
+  const snapshotsByProperty = new Map<string, PortalSnapshot[]>()
   const gatewayHealthByProperty = new Map<string, PortalGatewayHealth>()
   const incidentsByProperty = new Map<string, PortalIncident[]>()
+  const incidentEventsByIncident = new Map<string, PortalEvent[]>()
   const notificationsByProperty = new Map<string, PortalNotificationMetric[]>()
 
   for (const row of spacesResult.data || []) {
@@ -428,6 +482,17 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   }
 
   for (const row of snapshotsResult.data || []) {
+    const snapshot: PortalSnapshot = {
+      id: row.id,
+      propertyId: row.property_id,
+      deviceId: row.device_id || undefined,
+      objectPath: row.object_path,
+      mimeType: row.mime_type,
+      capturedAt: new Date(row.captured_at),
+      createdAt: new Date(row.created_at),
+    }
+    snapshotsByProperty.set(row.property_id, [...(snapshotsByProperty.get(row.property_id) || []), snapshot])
+
     const evidenceName = getSafeEvidenceName(row.object_path)
     const document: Document = {
       id: row.id,
@@ -469,7 +534,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
 
   for (const row of incidentsResult.data || []) {
     const status = row.status as PortalIncidentStatus
-    const incident: PortalIncident = {
+    const incidentBase = {
       id: row.id,
       propertyId: row.property_id,
       title: row.title,
@@ -482,7 +547,44 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }
+    const incident: PortalIncident = {
+      ...incidentBase,
+      relatedEvents: [],
+      evidence: getIncidentEvidence(incidentBase, snapshotsByProperty.get(row.property_id) || []),
+    }
     incidentsByProperty.set(row.property_id, [...(incidentsByProperty.get(row.property_id) || []), incident])
+  }
+
+  for (const row of incidentEventsResult.data || []) {
+    const eventRow = Array.isArray(row.events) ? row.events[0] : row.events
+    if (!eventRow) continue
+
+    const payload = (eventRow.payload || {}) as Record<string, unknown>
+    const event: PortalEvent = {
+      id: eventRow.id,
+      type: eventRow.event_type,
+      severity: eventRow.severity as PortalEvent['severity'],
+      state: eventRow.state || undefined,
+      title: typeof payload.title === 'string'
+        ? payload.title
+        : typeof payload.description === 'string'
+          ? payload.description
+          : eventRow.event_type.replace(/[._]/g, ' '),
+      occurredAt: new Date(eventRow.occurred_at),
+    }
+    incidentEventsByIncident.set(row.incident_id, [
+      ...(incidentEventsByIncident.get(row.incident_id) || []),
+      event,
+    ])
+  }
+
+  for (const [propertyId, incidents] of incidentsByProperty.entries()) {
+    incidentsByProperty.set(propertyId, incidents.map((incident) => ({
+      ...incident,
+      relatedEvents: (incidentEventsByIncident.get(incident.id) || [])
+        .sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime())
+        .slice(0, 5),
+    })))
   }
 
   for (const row of notificationsResult.data || []) {
