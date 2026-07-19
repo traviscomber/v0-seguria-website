@@ -13,28 +13,29 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   metadataBase: new URL('https://seguria.tech'),
   title: {
-    default: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
+    default: 'SegurIA | Plataforma de seguridad para campos y propiedades',
     template: '%s | SegurIA',
   },
   description:
-    'Conectamos tecnologia. Protegemos lo que importa. Preparamos tu operacion para crecer con soluciones de seguridad e infraestructura inteligente.',
+    'SegurIA unifica operacion, evidencia y respuesta para propiedades y operaciones multiempresa, sin exponer el stack tecnico al cliente.',
   keywords: [
     'seguridad',
-    'infraestructura inteligente',
+    'plataforma de seguridad',
     'campos',
     'propiedades',
-    'monitoreo',
+    'operacion',
     'camaras',
     'sensores',
-    'IoT',
+    'incidentes',
+    'automatizacion',
   ],
   alternates: {
     canonical: 'https://seguria.tech',
   },
   openGraph: {
-    title: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
+    title: 'SegurIA | Plataforma de seguridad para campos y propiedades',
     description:
-      'Conectamos tecnologia. Protegemos lo que importa. Soluciones de seguridad e infraestructura inteligente para campos y propiedades.',
+      'SegurIA entrega una experiencia clara para operar seguridad, evidencia e incidentes sin mostrar la tecnologia subyacente.',
     url: 'https://seguria.tech',
     siteName: 'SegurIA',
     locale: 'es_CL',
@@ -42,9 +43,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SegurIA | Infraestructura Inteligente para Campos y Propiedades',
+    title: 'SegurIA | Plataforma de seguridad para campos y propiedades',
     description:
-      'Conectamos tecnologia. Protegemos lo que importa. Soluciones de seguridad e infraestructura inteligente.',
+      'Una plataforma clara para seguridad, evidencia, automatizacion y operacion multiempresa.',
   },
   robots: {
     index: true,
@@ -68,7 +69,7 @@ export default function RootLayout({
     alternateName: 'Segur IA',
     url: 'https://seguria.tech',
     sameAs: ['https://segur-ia.cl'],
-    description: 'Infraestructura inteligente para campos y propiedades',
+    description: 'Plataforma de seguridad para campos y propiedades',
     foundingDate: '2024',
     areaServed: 'CL',
     contactPoint: {

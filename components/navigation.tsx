@@ -8,92 +8,50 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 w-full bg-[#0A1B2E]/95 backdrop-blur-sm z-50 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+    <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#0A1B2E]/95 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[5px] bg-[#4DA3D9] flex items-center justify-center">
-              <span className="text-white font-light text-sm">S</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-[#4DA3D9]">
+              <span className="text-sm font-light text-white">S</span>
             </div>
-            <span className="text-white font-light text-lg">SegurIA</span>
+            <span className="text-lg font-light text-white">SegurIA</span>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/campos-inteligentes" className="text-white/70 hover:text-white transition-colors text-sm">
-              Campos Inteligentes
-            </Link>
-            <Link href="/propiedades-inteligentes" className="text-white/70 hover:text-white transition-colors text-sm">
-              Propiedades Inteligentes
-            </Link>
-            <Link href="/hoteleria-inteligente" className="text-white/70 hover:text-white transition-colors text-sm">
-              Hotelería Inteligente
-            </Link>
-            <Link href="/soluciones" className="text-white/70 hover:text-white transition-colors text-sm">
+          <div className="hidden items-center gap-8 md:flex">
+            <Link href="/soluciones" className="text-sm text-white/70 transition-colors hover:text-white">
               Soluciones
             </Link>
-            <Link href="/integraciones" className="text-white/70 hover:text-white transition-colors text-sm">
-              Integraciones
+            <Link href="/app" className="text-sm text-white/70 transition-colors hover:text-white">
+              Portal
             </Link>
             <Link href="/contacto" className="btn-primary px-6 py-2 text-sm">
               Contacto
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-white"
-            aria-label="Toggle menu"
-          >
+          <button onClick={() => setIsOpen(!isOpen)} className="text-white md:hidden" aria-label="Toggle menu">
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden pb-4 space-y-2">
-            <Link
-              href="/campos-inteligentes"
-              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
-              onClick={() => setIsOpen(false)}
-            >
-              Campos Inteligentes
-            </Link>
-            <Link
-              href="/propiedades-inteligentes"
-              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
-              onClick={() => setIsOpen(false)}
-            >
-              Propiedades Inteligentes
-            </Link>
-            <Link
-              href="/hoteleria-inteligente"
-              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
-              onClick={() => setIsOpen(false)}
-            >
-              Hotelería Inteligente
-            </Link>
+          <div className="space-y-2 pb-4 md:hidden">
             <Link
               href="/soluciones"
-              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
+              className="block px-4 py-2 text-sm text-white/70 transition-colors hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               Soluciones
             </Link>
             <Link
-              href="/integraciones"
-              className="block px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
+              href="/app"
+              className="block px-4 py-2 text-sm text-white/70 transition-colors hover:text-white"
               onClick={() => setIsOpen(false)}
             >
-              Integraciones
+              Portal
             </Link>
-            <Link
-              href="/contacto"
-              className="block px-4 py-2 btn-primary text-sm"
-              onClick={() => setIsOpen(false)}
-            >
+            <Link href="/contacto" className="btn-primary block px-4 py-2 text-sm" onClick={() => setIsOpen(false)}>
               Contacto
             </Link>
           </div>

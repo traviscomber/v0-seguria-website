@@ -105,8 +105,8 @@ export default function ContactoPage() {
               <Link href="/" className="btn-primary px-8 py-4 text-[15px]">
                 Volver al inicio
               </Link>
-              <Link href="/integraciones" className="btn-secondary px-8 py-4 text-[15px]">
-                Ver integraciones
+              <Link href="/soluciones" className="btn-secondary px-8 py-4 text-[15px]">
+                Ver soluciones
               </Link>
             </div>
           </div>
