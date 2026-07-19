@@ -11,6 +11,7 @@ The installer deploys:
 - Home Assistant container
 - Mosquitto MQTT broker
 - SegurIA Gateway
+- optional Cloudflare reverse tunnel
 
 ## Before running
 
@@ -28,6 +29,17 @@ curl -fsSL https://www.seguria.tech/install/install.sh | sh -s -- \
   --gateway-id "<SEGURIA_GATEWAY_ID>" \
   --gateway-secret "<SEGURIA_GATEWAY_SECRET>" \
   --home-assistant-url "http://127.0.0.1:8123"
+```
+
+With reverse tunnel:
+
+```bash
+curl -fsSL https://www.seguria.tech/install/install.sh | sh -s -- \
+  --site santa-elena \
+  --gateway-id "<SEGURIA_GATEWAY_ID>" \
+  --gateway-secret "<SEGURIA_GATEWAY_SECRET>" \
+  --home-assistant-url "http://127.0.0.1:8123" \
+  --cloudflare-tunnel-token "<CLOUDFLARE_TUNNEL_TOKEN>"
 ```
 
 For Huilo Huilo:
@@ -50,6 +62,24 @@ irm https://www.seguria.tech/install/install.ps1 -OutFile install.ps1
   -GatewaySecret "<SEGURIA_GATEWAY_SECRET>" `
   -HomeAssistantUrl "http://127.0.0.1:8123"
 ```
+
+With reverse tunnel:
+
+```powershell
+irm https://www.seguria.tech/install/install.ps1 -OutFile install.ps1
+.\install.ps1 `
+  -Site santa-elena `
+  -GatewayId "<SEGURIA_GATEWAY_ID>" `
+  -GatewaySecret "<SEGURIA_GATEWAY_SECRET>" `
+  -HomeAssistantUrl "http://127.0.0.1:8123" `
+  -CloudflareTunnelToken "<CLOUDFLARE_TUNNEL_TOKEN>"
+```
+
+## Tunnel model
+
+Vercel remains the SegurIA control plane and API endpoint. It should not be treated as a persistent tunnel server.
+
+For remote access, the local host runs `cloudflared`, which creates outbound-only connections to Cloudflare. The tunnel can expose a protected internal route such as `ha-santa-elena.seguria.tech` to Home Assistant or a technician-only diagnostic route. Keep these routes behind Cloudflare Access.
 
 ## After first boot
 
@@ -80,6 +110,7 @@ Expected:
 - `seguria-homeassistant` running
 - `seguria-mqtt` running
 - `seguria-gateway` running
+- `seguria-cloudflared` running when a tunnel token was provided
 - Gateway online in SegurIA Admin
 - Inventory appears after Home Assistant token is added
 
