@@ -59,7 +59,9 @@ export interface PortalIncidentEvidence {
   capturedAt: Date
   deviceId?: string
   fileName: string
-  association: 'event' | 'time_window'
+  association: 'primary' | 'correlated' | 'operator_pinned' | 'time_window'
+  note?: string
+  pinned: boolean
 }
 
 export interface PortalDeviceBucket {
@@ -298,6 +300,7 @@ function getIncidentEvidence(incident: Omit<PortalIncident, 'relatedEvents' | 'e
         deviceId: snapshot.deviceId,
         fileName,
         association: 'time_window',
+        pinned: false,
       }
     })
 }
@@ -362,6 +365,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     gatewaysResult,
     incidentsResult,
     incidentEventsResult,
+    incidentEvidenceResult,
     notificationsResult,
   ] = await Promise.all([
     supabase.from('properties').select('id, organization_id, name, address, updated_at').in('id', user.propertyIds),
@@ -398,6 +402,10 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .select('incident_id, property_id, created_at, events(id, property_id, event_type, severity, state, occurred_at, payload)')
       .in('property_id', user.propertyIds),
     supabase
+      .from('incident_evidence')
+      .select('incident_id, association, note, camera_snapshots(id, property_id, device_id, object_path, mime_type, captured_at, created_at)')
+      .in('property_id', user.propertyIds),
+    supabase
       .from('notifications')
       .select('id, property_id, severity, status, due_at, acknowledged_at, escalated_at, created_at')
       .in('property_id', user.propertyIds)
@@ -417,6 +425,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     incidentEventsResult.error ||
     notificationsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
+  const incidentEvidenceUnavailable = Boolean(incidentEvidenceResult.error)
 
   const organizationNames = new Map((organizationsResult.data || []).map((organization) => [
     organization.id,
@@ -431,6 +440,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   const gatewayHealthByProperty = new Map<string, PortalGatewayHealth>()
   const incidentsByProperty = new Map<string, PortalIncident[]>()
   const incidentEventsByIncident = new Map<string, PortalEvent[]>()
+  const incidentEvidenceByIncident = new Map<string, PortalIncidentEvidence[]>()
   const notificationsByProperty = new Map<string, PortalNotificationMetric[]>()
 
   for (const row of spacesResult.data || []) {
@@ -513,6 +523,31 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     ])
   }
 
+  if (!incidentEvidenceUnavailable) {
+    for (const row of incidentEvidenceResult.data || []) {
+      const snapshotRow = Array.isArray(row.camera_snapshots) ? row.camera_snapshots[0] : row.camera_snapshots
+      if (!snapshotRow) continue
+
+      const fileName = getSafeEvidenceName(snapshotRow.object_path)
+      const evidence: PortalIncidentEvidence = {
+        id: snapshotRow.id,
+        title: `Evidencia fijada - ${fileName}`,
+        capturedAt: new Date(snapshotRow.captured_at),
+        deviceId: snapshotRow.device_id || undefined,
+        fileName,
+        association: ['primary', 'correlated', 'operator_pinned', 'time_window'].includes(String(row.association))
+          ? row.association as PortalIncidentEvidence['association']
+          : 'operator_pinned',
+        note: row.note || undefined,
+        pinned: true,
+      }
+      incidentEvidenceByIncident.set(row.incident_id, [
+        ...(incidentEvidenceByIncident.get(row.incident_id) || []),
+        evidence,
+      ])
+    }
+  }
+
   for (const row of gatewaysResult.data || []) {
     const current = gatewayHealthByProperty.get(row.property_id) || {
       total: 0,
@@ -550,7 +585,11 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     const incident: PortalIncident = {
       ...incidentBase,
       relatedEvents: [],
-      evidence: getIncidentEvidence(incidentBase, snapshotsByProperty.get(row.property_id) || []),
+      evidence: (incidentEvidenceByIncident.get(row.id) || [])
+        .sort((left, right) => right.capturedAt.getTime() - left.capturedAt.getTime()),
+    }
+    if (incident.evidence.length === 0) {
+      incident.evidence = getIncidentEvidence(incidentBase, snapshotsByProperty.get(row.property_id) || [])
     }
     incidentsByProperty.set(row.property_id, [...(incidentsByProperty.get(row.property_id) || []), incident])
   }

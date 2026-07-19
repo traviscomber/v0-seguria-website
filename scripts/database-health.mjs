@@ -123,6 +123,11 @@ const checks = [
     columns: 'id,organization_id,property_id,device_id,object_path,mime_type,size_bytes,captured_at,created_at',
   },
   {
+    name: 'incident_evidence',
+    table: 'incident_evidence',
+    columns: 'id,organization_id,property_id,incident_id,snapshot_id,evidence_kind,association,note,created_by,created_at',
+  },
+  {
     name: 'camera_stream_sessions',
     table: 'camera_stream_sessions',
     columns: 'id,organization_id,property_id,device_id,gateway_id,requested_by,status,session_token_hash,gateway_stream_ref,expires_at,started_at,ended_at,last_heartbeat_at,metadata,created_at,updated_at',

@@ -260,8 +260,9 @@ export default async function PropertyPage({
                               <div>
                                 <p className="text-sm text-white/80">{evidence.title}</p>
                                 <p className="mt-1 text-xs text-white/40">
-                                  {formatDate(evidence.capturedAt)} - Asociada por actividad cercana
+                                  {formatDate(evidence.capturedAt)} - {evidence.pinned ? 'Fijada al incidente' : 'Asociada por actividad cercana'}
                                 </p>
+                                {evidence.note ? <p className="mt-2 text-xs leading-5 text-white/50">{evidence.note}</p> : null}
                               </div>
                             </div>
                           ))}
