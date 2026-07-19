@@ -20,28 +20,28 @@ import {
 const coreBenefits = [
   {
     icon: Moon,
-    title: 'Todo conectado en una sola mirada',
-    description: 'Camaras, accesos, sensores, alertas y evidencia viven en un mismo sistema, ordenados por sitio y prioridad.',
+    title: 'Mejoramos lo que ya tienes',
+    description: 'Nos integramos a tus camaras, sensores, accesos y sistemas actuales para darles una capa de inteligencia, no para obligarte a partir de cero.',
   },
   {
     icon: Siren,
-    title: 'Alertas que llegan con sentido',
-    description: 'No se trata de hacer ruido. Se trata de avisar cuando algo importa, con contexto suficiente para actuar bien.',
+    title: 'Alertas con IA, no ruido',
+    description: 'La plataforma mira cambios, cruza eventos y avisa cuando algo merece atencion, con contexto suficiente para actuar bien.',
   },
   {
     icon: FileSearch,
-    title: 'Evidencia lista cuando la necesitas',
-    description: 'Cada evento deja una historia clara: que paso, donde paso, quien fue avisado y que decision se tomo.',
+    title: 'Evidencia lista para decidir',
+    description: 'Cada alerta deja una historia clara: que paso, donde paso, que camara o sensor lo vio y que decision conviene tomar.',
   },
 ]
 
 const customerWins = [
   'Una operacion que se entiende sin perseguir pantallas',
   'Camaras y sensores convertidos en informacion util',
+  'Tus sistemas actuales trabajando juntos, con una capa inteligente encima',
   'Incidentes ordenados desde la primera senal hasta el cierre',
   'Clientes, tecnicos y administradores mirando la misma verdad',
   'Menos llamadas, menos dudas y menos decisiones a ciegas',
-  'Una experiencia profesional que se siente simple desde el primer dia',
 ]
 
 const places = [
@@ -108,11 +108,11 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-balance text-xl leading-9 text-white/78">
-              SegurIA une camaras, sensores, accesos, eventos e incidentes en una experiencia simple: sabes que pasa, entiendes por que importa y respondes sin improvisar.
+              SegurIA se conecta a tus camaras, sensores y sistemas de seguridad actuales para convertirlos en una operacion inteligente: menos ruido, mejores alertas y decisiones a tiempo.
             </p>
 
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              {['Mas control', 'Menos ruido', 'Mejor reaccion'].map((item) => (
+              {['Aprovecha lo instalado', 'Alertas con IA', 'Mejor reaccion'].map((item) => (
                 <div key={item} className="rounded-[8px] border border-white/10 bg-white/[0.07] px-4 py-3 text-sm text-white/76 backdrop-blur-md">
                   {item}
                 </div>
@@ -175,9 +175,9 @@ export default function HomePage() {
                     </div>
                     <div className="mt-5 space-y-4">
                       {[
-                        'Sabes que paso sin perseguir grabaciones.',
+                        'Tus camaras dejan de ser solo grabaciones.',
+                        'La IA separa senales utiles del ruido diario.',
                         'Tu equipo actua con informacion, no intuicion.',
-                        'Tus clientes sienten orden, no improvisacion.',
                       ].map((item) => (
                         <div key={item} className="flex items-start gap-3">
                           <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#9DD2F2]" strokeWidth={1.6} />
@@ -187,7 +187,7 @@ export default function HomePage() {
                     </div>
                     <div className="mt-5 rounded-[8px] border border-[#9DD2F2]/20 bg-[#123A5A]/70 p-4">
                       <p className="text-sm leading-6 text-white/72">
-                        La seguridad deja de ser una suma de equipos y se vuelve una operacion viva: observa, entiende y acompana cada decision.
+                        No reemplazamos tu seguridad: la conectamos, la ordenamos y la volvemos mas inteligente.
                       </p>
                     </div>
                   </div>
@@ -203,8 +203,11 @@ export default function HomePage() {
           <div className="mb-14 max-w-3xl">
             <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Que hace SegurIA</p>
             <h2 className="mt-4 text-balance text-3xl font-light text-white md:text-4xl">
-              Convierte tecnologia dispersa en una operacion de seguridad entendible.
+              Convierte tu seguridad existente en una operacion inteligente.
             </h2>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/64">
+              Camaras, alarmas, sensores, controles de acceso y registros que antes vivian separados empiezan a conversar. SegurIA agrega IA, reglas, alertas y trazabilidad sobre lo que ya tienes.
+            </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">

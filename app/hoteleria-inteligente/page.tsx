@@ -26,18 +26,18 @@ const capabilityCards = [
   },
   {
     icon: Camera,
-    title: 'Ves todo en vivo',
-    description: 'Lobby, pasillos, cocina, bar, áreas comunes. HD 24/7. Si algo pasa, lo ves primero.',
+    title: 'Tus cámaras empiezan a pensar',
+    description: 'Integramos las cámaras actuales del hotel para detectar cambios relevantes, ordenar evidencia y avisar sin perseguir grabaciones.',
   },
   {
     icon: AlertCircle,
     title: 'Alertas inteligentes',
-    description: 'Movimiento anómalo, acceso no autorizado, aglomeración. Actúas antes del problema.',
+    description: 'Movimiento anómalo, acceso no autorizado, aglomeración o actividad fuera de horario. Actúas antes del problema.',
   },
   {
     icon: Wifi,
-    title: 'Integración total',
-    description: 'Conecta con tu sistema de reservas, control de acceso, facturación. Todo en un dashboard.',
+    title: 'Integración con lo existente',
+    description: 'Conectamos cámaras, alarmas, control de acceso y sistemas operativos. Agregamos IA encima de la infraestructura que ya funciona.',
   },
 ]
 
@@ -93,7 +93,7 @@ export default function HoteleriaPage() {
                   Tu hotel bajo control. Tus huéspedes seguros.
                 </h1>
                 <p className="text-lg text-white/70 leading-relaxed max-w-lg">
-                  No es solo vigilancia. Es operación inteligente. Sabes qué pasa en cada rincón. Actúas cuando importa. Tus clientes nunca se enteran.
+                  No reemplazamos tu seguridad: la hacemos más inteligente. SegurIA se conecta a tus cámaras, accesos, alarmas y sistemas actuales para detectar lo importante y alertar a tiempo.
                 </p>
                 <div className="flex gap-4 pt-4">
                   <Link href="/contacto" className="btn-primary px-8 py-3">
@@ -118,7 +118,7 @@ export default function HoteleriaPage() {
                       Hotel Huilo Huilo
                     </div>
                     <div className="absolute bottom-6 left-6 right-6 grid gap-3 sm:grid-cols-3">
-                      {['Huespedes tranquilos', 'Staff atento', 'Operacion clara'].map((item) => (
+                      {['Camaras conectadas', 'IA mirando cambios', 'Alertas utiles'].map((item) => (
                         <div key={item} className="rounded-[8px] border border-white/10 bg-[#0A1B2E]/76 p-4 text-sm text-white/80 backdrop-blur-md">
                           {item}
                         </div>

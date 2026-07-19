@@ -23,26 +23,26 @@ const heroMetrics = [
 const pillars = [
   {
     icon: Home,
-    title: 'Una vista unica',
-    description: 'El cliente entra a un solo portal para revisar sitios, equipos y alertas sin saltar entre sistemas.',
+    title: 'Tus sistemas, una sola vista',
+    description: 'El cliente entra a un solo portal para revisar camaras, alarmas, sensores, accesos y alertas sin saltar entre plataformas.',
   },
   {
     icon: Cpu,
-    title: 'Datos ordenados',
-    description: 'Camaras, sensores y accesos quedan agrupados para leer la operacion de inmediato.',
+    title: 'IA sobre equipos reales',
+    description: 'La inteligencia se agrega sobre lo que ya existe: interpreta eventos, prioriza senales y transforma grabaciones en decisiones.',
   },
   {
     icon: GitBranch,
     title: 'Operacion clara',
-    description: 'Tu equipo sabe que esta activo, que requiere revision y que necesita seguimiento.',
+    description: 'Tu equipo sabe que esta activo, que requiere revision, que alerta importa y que necesita seguimiento.',
   },
 ]
 
 const capabilities = [
-  'Un portal simple para cliente y soporte',
+  'Conectamos camaras y sistemas actuales',
+  'Agregamos IA y reglas de negocio',
   'Alertas faciles de entender',
-  'Equipos agrupados por tipo',
-  'Base lista para crecer a version pro',
+  'Evidencia agrupada por evento',
 ]
 
 const flow = [
@@ -87,12 +87,11 @@ export default function IntegracionesPage() {
             </div>
 
             <h1 className="mt-8 max-w-3xl text-balance text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">
-              Una experiencia premium para conectar sitios, equipos y alertas.
+              Conectamos tu seguridad actual y la volvemos inteligente.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
-              SegurIA ordena lo complejo para que el cliente vea solo lo importante: que hay instalado, que esta
-              funcionando y que requiere atencion. La experiencia busca ser clara, directa y facil de explicar.
+              SegurIA se integra a camaras, alarmas, sensores, accesos y sistemas operativos existentes. Sobre esa base agregamos IA, alertas utiles y evidencia ordenada para que el cliente vea solo lo que importa.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -152,7 +151,7 @@ export default function IntegracionesPage() {
                   </div>
                   <p className="mt-3 text-sm leading-7 text-white/60">
                     El portal queda listo para recibir datos, mostrar estado y crecer hacia una experiencia pro sin
-                    rehacer la historia de marca.
+                    rehacer lo que el cliente ya tiene instalado.
                   </p>
                 </div>
               </div>

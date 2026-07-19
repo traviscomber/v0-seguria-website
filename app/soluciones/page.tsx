@@ -7,7 +7,7 @@ const solutionPages = [
   {
     eyebrow: 'Campos Inteligentes',
     title: 'El campo despierta antes que el riesgo.',
-    description: 'Ganado, cultivos, accesos y bodegas bajo una mirada clara, incluso cuando cae la noche.',
+    description: 'Integramos camaras, sensores, portones y alarmas existentes para detectar senales utiles antes de que el problema avance.',
     href: '/campos-inteligentes',
     background:
       "linear-gradient(to bottom, rgba(10, 27, 46, 0.55), rgba(10, 27, 46, 0.88)), url('https://images.unsplash.com/photo-1500595046743-cd271d694d30?q=70&w=1400&auto=format&fit=crop')",
@@ -15,7 +15,7 @@ const solutionPages = [
   {
     eyebrow: 'Propiedades Inteligentes',
     title: 'Tu casa tranquila. Tu mundo en orden.',
-    description: 'Entradas, patios, portones y espacios sensibles siempre visibles, siempre cerca.',
+    description: 'Aprovechamos camaras, alarmas, accesos y sensores actuales para transformar una propiedad en un sistema que avisa con inteligencia.',
     href: '/propiedades-inteligentes',
     background:
       "linear-gradient(to bottom, rgba(10, 27, 46, 0.55), rgba(10, 27, 46, 0.88)), url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=70&w=1400&auto=format&fit=crop')",
@@ -49,7 +49,7 @@ export default function SolucionesPage() {
             Seguridad integral para operar con calma.
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-balance text-lg leading-8 text-white/72 md:text-xl">
-            Visibilidad, alertas, evidencia y respuesta para proteger personas, espacios y operaciones.
+            Nos conectamos a tus sistemas actuales de camaras, alarmas, sensores y accesos para agregar IA, alertas utiles, evidencia y respuesta.
           </p>
         </div>
       </section>
@@ -58,8 +58,11 @@ export default function SolucionesPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mb-12">
             <h2 className="text-balance text-3xl font-light text-white md:text-4xl">
-              Tres formas de cuidar lo que importa.
+              Inteligencia sobre lo que ya existe.
             </h2>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-white/62">
+              SegurIA no parte borrando tu infraestructura. La lee, la ordena y la convierte en una operacion integral de seguridad.
+            </p>
           </div>
 
           <div className="grid gap-6">
@@ -119,7 +122,7 @@ export default function SolucionesPage() {
                   Tu hotel sereno. Cada detalle bajo control.
                 </h3>
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-white/72">
-                  Huespedes tranquilos, equipos atentos y una operacion que sabe responder a tiempo.
+                  Integramos camaras, accesos, alarmas y sistemas operativos para que la IA detecte lo importante sin incomodar al huesped.
                 </p>
                 <span className="mt-8 inline-flex items-center gap-2 text-[15px] text-[#9DD2F2]">
                   Ver solucion
