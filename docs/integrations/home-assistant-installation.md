@@ -43,6 +43,17 @@ Do not make HACS or custom Tuya integrations part of the MVP baseline.
 
 ## SegurIA Gateway setup
 
+Preferred remote install:
+
+```bash
+curl -fsSL https://www.seguria.tech/install/install.sh | sh -s -- \
+  --site santa-elena \
+  --gateway-id "<SEGURIA_GATEWAY_ID>" \
+  --gateway-secret "<SEGURIA_GATEWAY_SECRET>"
+```
+
+Detailed remote instructions live in `docs/integrations/remote-one-click-install.md`.
+
 From `gateway/`:
 
 ```powershell

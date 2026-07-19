@@ -40,6 +40,12 @@ Start from `.env.example`, then run `.\install-site.ps1 -SiteSlug <site-slug>` o
 
 The baseline Home Assistant installation is documented in `../docs/integrations/home-assistant-installation.md`.
 
+For remote installs, use the scripts served by the production site:
+
+```bash
+curl -fsSL https://www.seguria.tech/install/install.sh | sh -s -- --site santa-elena --gateway-id <id> --gateway-secret <secret>
+```
+
 ## Layout
 
 - `src/index.js`

@@ -1,0 +1,7 @@
+data
+mosquitto
+mosquitto-data
+mosquitto-log
+node_modules
+.env
+*.log

@@ -1,0 +1,4 @@
+*.sh text eol=lf
+public/install/*.yml text eol=lf
+public/install/*.template text eol=lf
+public/install/mosquitto.conf text eol=lf
