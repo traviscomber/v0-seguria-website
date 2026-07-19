@@ -39,8 +39,9 @@ Set-Content -Path $envPath -Value $envText
 docker run --rm -v "${mosquittoDir}:/mosquitto/config" eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwords seguria $mqttPassword
 
 Push-Location $siteDir
-docker compose pull
-docker compose up -d
+docker compose pull homeassistant mqtt
+docker compose pull seguria-gateway
+docker compose up -d --build
 docker compose ps
 Pop-Location
 

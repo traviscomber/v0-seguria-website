@@ -21,6 +21,8 @@ services:
 
   seguria-gateway:
     image: ghcr.io/traviscomber/seguria-gateway:latest
+    build:
+      context: https://github.com/traviscomber/v0-seguria-website.git#main:gateway
     container_name: seguria-gateway
     restart: unless-stopped
     env_file:

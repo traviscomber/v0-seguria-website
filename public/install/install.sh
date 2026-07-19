@@ -76,8 +76,9 @@ docker run --rm -v "$SITE_DIR/mosquitto:/mosquitto/config" eclipse-mosquitto:2 \
   mosquitto_passwd -b -c /mosquitto/config/passwords seguria "$MQTT_PASSWORD"
 
 cd "$SITE_DIR"
-$COMPOSE pull
-$COMPOSE up -d
+$COMPOSE pull homeassistant mqtt || true
+$COMPOSE pull seguria-gateway || true
+$COMPOSE up -d --build
 
 echo "SegurIA remote install complete."
 echo "Site: $SITE"
