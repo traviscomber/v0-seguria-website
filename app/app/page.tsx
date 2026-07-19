@@ -1,11 +1,18 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowRight, CheckCircle2, CircleAlert, FileText, LayoutGrid, ShieldAlert, Wifi } from 'lucide-react'
+import { ArrowRight, CheckCircle2, CircleAlert, FileText, LayoutGrid, Radar, ShieldAlert, Siren, Wifi } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getCurrentAuthSession } from '@/lib/auth-store'
-import { getAccessiblePortalSites, getPortalActivityFeed, getPortalAlertDevices, getPortalDashboardTotals } from '@/lib/client-portal'
+import {
+  getAccessiblePortalSites,
+  getPortalActivityFeed,
+  getPortalAlertDevices,
+  getPortalDashboardTotals,
+  getPortalSensorRisk,
+  isOpenPortalIncident,
+} from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
 import { CameraStreamControl } from '@/components/camera-stream-control'
 import { ClientNotificationCenter } from '@/components/client-notification-center'
@@ -46,6 +53,12 @@ function getAlertTone(status?: string) {
   if (status === 'falla') return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
   if (status === 'mantencion') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
   return 'border-cyan-400/20 bg-cyan-400/10 text-cyan-100'
+}
+
+function getContinuityTone(hasRisk: boolean) {
+  return hasRisk
+    ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+    : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
 }
 
 function getCameraFrameTint(index: number) {
@@ -149,6 +162,19 @@ export default async function ClientAppPage() {
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
+  const openIncidents = sites
+    .flatMap((site) => site.incidents.filter(isOpenPortalIncident).map((incident) => ({ site, incident })))
+    .sort((left, right) => right.incident.createdAt.getTime() - left.incident.createdAt.getTime())
+  const sensorRisk = sites.reduce(
+    (current, site) => {
+      const next = getPortalSensorRisk(site.devices)
+      current.stable += next.stable
+      current.attention += next.attention
+      current.critical += next.critical
+      return current
+    },
+    { stable: 0, attention: 0, critical: 0 }
+  )
   const primaryCamera = sites
     .flatMap((site) => site.devices.map((device) => ({ site, device })))
     .filter(({ device }) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
@@ -183,6 +209,7 @@ export default async function ClientAppPage() {
       ? 'Mantener monitoreo normal y revisar la ultima actividad.'
       : 'Esperar la primera sincronizacion del sitio.'
   const updatedLabel = `Actualizado ${formatDate(primarySite?.lastUpdatedAt)}`
+  const continuityHasRisk = totals.offlineGateways > 0 || sensorRisk.critical > 0 || openIncidents.length > 0
 
   return (
     <div className="space-y-8">
@@ -306,6 +333,85 @@ export default async function ClientAppPage() {
       </section>
 
       <ClientNotificationCenter />
+
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Radar className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Estado operativo</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Lectura simple del sitio, sensores e incidentes.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div className={`rounded-2xl border p-5 ${getContinuityTone(continuityHasRisk)}`}>
+              <p className="text-xs uppercase tracking-[0.18em] opacity-70">Continuidad</p>
+              <p className="mt-2 text-2xl font-light">{continuityHasRisk ? 'Revisar' : 'Estable'}</p>
+              <p className="mt-2 text-sm leading-6 opacity-75">
+                {totals.onlineGateways} conexiones activas y {totals.offlineGateways} con atencion.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">Sensores</p>
+              <p className="mt-2 text-2xl font-light text-white">{sensorRisk.stable + sensorRisk.attention + sensorRisk.critical}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-100">{sensorRisk.stable} estables</span>
+                <span className="rounded-full bg-amber-400/10 px-3 py-1 text-amber-100">{sensorRisk.attention} revisar</span>
+                <span className="rounded-full bg-rose-400/10 px-3 py-1 text-rose-100">{sensorRisk.critical} criticos</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">Incidentes abiertos</p>
+              <p className="mt-2 text-2xl font-light text-white">{openIncidents.length}</p>
+              <p className="mt-2 text-sm leading-6 text-white/55">
+                {openIncidents.length > 0 ? 'Hay situaciones con seguimiento activo.' : 'Sin incidentes activos para el cliente.'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">Proxima accion</p>
+              <p className="mt-2 text-lg font-light text-white">
+                {openIncidents.length > 0 ? 'Abrir incidente principal' : alerts.length > 0 ? 'Revisar alertas' : 'Mantener supervision'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-white/55">{nextAction}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Siren className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Incidentes en seguimiento</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Situaciones agrupadas por sitio y prioridad.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {openIncidents.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/45">
+                No hay incidentes abiertos. El portal queda atento a nuevas senales.
+              </p>
+            ) : (
+              openIncidents.slice(0, 4).map(({ site, incident }) => (
+                <Link
+                  key={incident.id}
+                  href={`/app/properties/${site.propertyId}`}
+                  className="block rounded-2xl border border-white/10 bg-[#0B1D30] p-4 transition hover:bg-white/8"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-white">{incident.title}</p>
+                      <p className="mt-1 text-xs text-white/45">{site.label} - {formatDate(incident.createdAt)}</p>
+                    </div>
+                    <Badge className={incident.severity === 'critical' ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-amber-400/25 bg-amber-400/10 text-amber-100'}>
+                      {incident.statusLabel}
+                    </Badge>
+                  </div>
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">

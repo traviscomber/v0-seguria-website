@@ -6,8 +6,10 @@ import {
   CheckCircle2,
   FileText,
   MapPin,
+  Radar,
   ShieldAlert,
   Signal,
+  Siren,
   Sparkles,
   Wifi,
 } from 'lucide-react'
@@ -16,7 +18,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CameraStreamControl } from '@/components/camera-stream-control'
 import { getCurrentAuthSession } from '@/lib/auth-store'
-import { getPortalActivityFeed, getPortalDeviceBuckets, getPortalSiteForUser } from '@/lib/client-portal'
+import {
+  getPortalActivityFeed,
+  getPortalDeviceBuckets,
+  getPortalSensorRisk,
+  getPortalSiteForUser,
+  isOpenPortalIncident,
+} from '@/lib/client-portal'
 
 function formatDate(value?: Date) {
   if (!value) return 'Sin actualizacion'
@@ -48,10 +56,6 @@ function groupLabel(group: string) {
   return 'Otros'
 }
 
-function countDevices(devices: { tipo: string }[], target: string[]) {
-  return devices.filter((device) => target.includes(device.tipo)).length
-}
-
 export default async function PropertyPage({
   params,
 }: {
@@ -70,10 +74,18 @@ export default async function PropertyPage({
 
   const activity = getPortalActivityFeed([site])
   const buckets = getPortalDeviceBuckets(site.devices)
-  const cameraCount = countDevices(site.devices, ['camara_ip', 'camara_analogica'])
-  const sensorCount = countDevices(site.devices, ['sensor_movimiento', 'sensor_temperatura', 'sensor_humedad', 'sensor_puerta'])
-  const accessCount = countDevices(site.devices, ['control_acceso'])
+  const cameraCount = site.cameraCount
+  const sensorCount = site.sensorCount
+  const accessCount = site.accessCount
   const activeCount = site.devices.filter((device) => device.estado === 'activo').length
+  const sensorRisk = getPortalSensorRisk(site.devices)
+  const openIncidents = site.incidents.filter(isOpenPortalIncident)
+  const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+  const recommendedAction = openIncidents.length > 0
+    ? 'Atender el incidente abierto y confirmar recepcion.'
+    : sensorRisk.critical > 0 || gatewayRisk > 0
+      ? 'Revisar sensores o continuidad antes de cerrar el dia.'
+      : 'Mantener supervision normal.'
 
   return (
     <div className="space-y-8">
@@ -129,6 +141,71 @@ export default async function PropertyPage({
             </Card>
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Radar className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Estado de proteccion</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Lo que importa para operar este sitio hoy.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <RiskTile
+              label="Continuidad"
+              value={gatewayRisk > 0 ? 'Atencion' : site.gatewayHealth.total > 0 ? 'Conectada' : 'Pendiente'}
+              detail={`${site.gatewayHealth.online} conexiones activas, ${gatewayRisk} con revision.`}
+              tone={gatewayRisk > 0 ? 'warning' : 'ok'}
+            />
+            <RiskTile
+              label="Sensores"
+              value={`${sensorRisk.stable + sensorRisk.attention + sensorRisk.critical}`}
+              detail={`${sensorRisk.stable} estables, ${sensorRisk.attention} en revision, ${sensorRisk.critical} criticos.`}
+              tone={sensorRisk.critical > 0 ? 'critical' : sensorRisk.attention > 0 ? 'warning' : 'ok'}
+            />
+            <RiskTile
+              label="Incidentes"
+              value={openIncidents.length.toString()}
+              detail={openIncidents.length > 0 ? 'Hay seguimiento activo en este sitio.' : 'Sin incidentes abiertos.'}
+              tone={openIncidents.some((incident) => incident.severity === 'critical') ? 'critical' : openIncidents.length > 0 ? 'warning' : 'ok'}
+            />
+            <RiskTile label="Accion recomendada" value="Ahora" detail={recommendedAction} tone={openIncidents.length > 0 ? 'warning' : 'ok'} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Siren className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Incidentes del sitio</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">Alertas convertidas en seguimiento operativo.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {openIncidents.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/45">
+                No hay incidentes abiertos en esta propiedad.
+              </p>
+            ) : (
+              openIncidents.map((incident) => (
+                <div key={incident.id} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-white">{incident.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-white/55">{incident.description || 'Seguimiento activo sin detalle adicional.'}</p>
+                    </div>
+                    <Badge className={incident.severity === 'critical' ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-amber-400/25 bg-amber-400/10 text-amber-100'}>
+                      {incident.statusLabel}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 text-xs text-white/40">Creado {formatDate(incident.createdAt)}</p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -338,6 +415,33 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
       <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function RiskTile({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string
+  value: string
+  detail: string
+  tone: 'ok' | 'warning' | 'critical'
+}) {
+  const className =
+    tone === 'critical'
+      ? 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+      : tone === 'warning'
+        ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+        : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
+
+  return (
+    <div className={`rounded-2xl border p-5 ${className}`}>
+      <p className="text-xs uppercase tracking-[0.18em] opacity-70">{label}</p>
+      <p className="mt-2 text-2xl font-light">{value}</p>
+      <p className="mt-2 text-sm leading-6 opacity-75">{detail}</p>
     </div>
   )
 }

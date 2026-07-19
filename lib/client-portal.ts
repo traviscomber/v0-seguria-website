@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Device, Document } from '@/lib/types'
 
 type PortalSiteStatus = 'operativo' | 'atencion' | 'revision'
+type PortalIncidentStatus = 'new' | 'validating' | 'confirmed' | 'responding' | 'resolved' | 'false_alarm'
 
 export interface PortalSiteSummary {
   propertyId: string
@@ -22,6 +23,8 @@ export interface PortalSiteSummary {
   documents: Document[]
   events: PortalEvent[]
   spaces: PortalSpace[]
+  incidents: PortalIncident[]
+  gatewayHealth: PortalGatewayHealth
 }
 
 export interface PortalSpace {
@@ -47,6 +50,43 @@ export interface PortalDeviceBucket {
   label: string
   count: number
   devices: Device[]
+}
+
+export interface PortalIncident {
+  id: string
+  propertyId: string
+  title: string
+  description?: string
+  severity: 'warning' | 'critical'
+  status: PortalIncidentStatus
+  statusLabel: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface PortalGatewayHealth {
+  total: number
+  online: number
+  degraded: number
+  offline: number
+  lastSeenAt?: Date
+}
+
+export interface PortalSensorRisk {
+  stable: number
+  attention: number
+  critical: number
+}
+
+const openIncidentStatuses: PortalIncidentStatus[] = ['new', 'validating', 'confirmed', 'responding']
+
+const incidentStatusLabels: Record<PortalIncidentStatus, string> = {
+  new: 'Nuevo',
+  validating: 'Validando',
+  confirmed: 'Confirmado',
+  responding: 'En respuesta',
+  resolved: 'Resuelto',
+  false_alarm: 'Falsa alarma',
 }
 
 function determineStatus(devices: Device[]): { status: PortalSiteStatus; label: string } {
@@ -89,6 +129,10 @@ function getPortalGroup(device: Device): PortalDeviceBucket['key'] {
   return 'other'
 }
 
+export function isOpenPortalIncident(incident: PortalIncident) {
+  return openIncidentStatuses.includes(incident.status)
+}
+
 export function getPortalDeviceBuckets(devices: Device[]): PortalDeviceBucket[] {
   const buckets: PortalDeviceBucket[] = [
     { key: 'camera', label: 'Camaras', count: 0, devices: [] },
@@ -111,6 +155,18 @@ export function getPortalDeviceBuckets(devices: Device[]): PortalDeviceBucket[] 
       return rightAt.getTime() - leftAt.getTime()
     }),
   }))
+}
+
+export function getPortalSensorRisk(devices: Device[]): PortalSensorRisk {
+  return devices.filter(isSensor).reduce<PortalSensorRisk>(
+    (risk, device) => {
+      if (device.estado === 'falla') risk.critical += 1
+      else if (device.estado === 'mantencion' || device.estado === 'inactivo') risk.attention += 1
+      else risk.stable += 1
+      return risk
+    },
+    { stable: 0, attention: 0, critical: 0 }
+  )
 }
 
 function mapDeviceKind(kind: string, metadata: Record<string, unknown>): Device['tipo'] {
@@ -144,7 +200,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   const supabase = await createSupabaseServerClient()
   if (!supabase) throw new Error('Portal data service is not configured.')
 
-  const [propertiesResult, spacesResult, devicesResult, eventsResult, snapshotsResult] = await Promise.all([
+  const [propertiesResult, spacesResult, devicesResult, eventsResult, snapshotsResult, gatewaysResult, incidentsResult] = await Promise.all([
     supabase.from('properties').select('id, name, address, updated_at').in('id', user.propertyIds),
     supabase.from('spaces').select('id, property_id, name').in('property_id', user.propertyIds),
     supabase
@@ -163,9 +219,26 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .in('property_id', user.propertyIds)
       .order('captured_at', { ascending: false })
       .limit(100),
+    supabase
+      .from('gateways')
+      .select('id, property_id, status, last_seen_at, updated_at')
+      .in('property_id', user.propertyIds),
+    supabase
+      .from('incidents')
+      .select('id, property_id, title, description, severity, status, created_at, updated_at')
+      .in('property_id', user.propertyIds)
+      .order('created_at', { ascending: false })
+      .limit(100),
   ])
 
-  const queryError = propertiesResult.error || spacesResult.error || devicesResult.error || eventsResult.error || snapshotsResult.error
+  const queryError =
+    propertiesResult.error ||
+    spacesResult.error ||
+    devicesResult.error ||
+    eventsResult.error ||
+    snapshotsResult.error ||
+    gatewaysResult.error ||
+    incidentsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
 
   const spaces = new Map((spacesResult.data || []).map((space) => [space.id, space.name]))
@@ -173,6 +246,8 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   const devicesByProperty = new Map<string, Device[]>()
   const eventsByProperty = new Map<string, PortalEvent[]>()
   const documentsByProperty = new Map<string, Document[]>()
+  const gatewayHealthByProperty = new Map<string, PortalGatewayHealth>()
+  const incidentsByProperty = new Map<string, PortalIncident[]>()
 
   for (const row of spacesResult.data || []) {
     spacesByProperty.set(row.property_id, [
@@ -243,10 +318,46 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     ])
   }
 
+  for (const row of gatewaysResult.data || []) {
+    const current = gatewayHealthByProperty.get(row.property_id) || {
+      total: 0,
+      online: 0,
+      degraded: 0,
+      offline: 0,
+      lastSeenAt: undefined,
+    }
+    const lastSeenAt = row.last_seen_at ? new Date(row.last_seen_at) : row.updated_at ? new Date(row.updated_at) : undefined
+    current.total += 1
+    if (row.status === 'online') current.online += 1
+    else if (row.status === 'degraded') current.degraded += 1
+    else current.offline += 1
+    if (lastSeenAt && (!current.lastSeenAt || lastSeenAt.getTime() > current.lastSeenAt.getTime())) {
+      current.lastSeenAt = lastSeenAt
+    }
+    gatewayHealthByProperty.set(row.property_id, current)
+  }
+
+  for (const row of incidentsResult.data || []) {
+    const status = row.status as PortalIncidentStatus
+    const incident: PortalIncident = {
+      id: row.id,
+      propertyId: row.property_id,
+      title: row.title,
+      description: row.description || undefined,
+      severity: row.severity as PortalIncident['severity'],
+      status,
+      statusLabel: incidentStatusLabels[status] || status,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }
+    incidentsByProperty.set(row.property_id, [...(incidentsByProperty.get(row.property_id) || []), incident])
+  }
+
   return (propertiesResult.data || []).map((property) => {
     const devices = devicesByProperty.get(property.id) || []
     const events = eventsByProperty.get(property.id) || []
     const documents = documentsByProperty.get(property.id) || []
+    const incidents = incidentsByProperty.get(property.id) || []
     const buckets = getPortalDeviceBuckets(devices)
     const siteSpaces = (spacesByProperty.get(property.id) || []).map((space) => {
       const spaceDevices = devices.filter((device) => device.metadata?.spaceId === space.id)
@@ -279,11 +390,13 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       sensorCount: buckets.find((bucket) => bucket.key === 'sensor')?.count || 0,
       accessCount: buckets.find((bucket) => bucket.key === 'access')?.count || 0,
       documentCount: documents.length,
-      alertCount: devices.filter((device) => device.estado === 'falla').length,
+      alertCount: devices.filter((device) => device.estado === 'falla').length + incidents.filter(isOpenPortalIncident).length,
       lastUpdatedAt: lastDeviceUpdate || new Date(property.updated_at),
       devices,
       documents,
       events,
+      incidents,
+      gatewayHealth: gatewayHealthByProperty.get(property.id) || { total: 0, online: 0, degraded: 0, offline: 0 },
       spaces: siteSpaces,
     }
   })
@@ -303,6 +416,9 @@ export function getPortalDashboardTotals(sites: PortalSiteSummary[]) {
     sensors: buckets.filter((bucket) => bucket.key === 'sensor').reduce((total, bucket) => total + bucket.count, 0),
     alerts: sites.reduce((total, site) => total + site.alertCount, 0),
     documents: sites.reduce((total, site) => total + site.documentCount, 0),
+    openIncidents: sites.reduce((total, site) => total + site.incidents.filter(isOpenPortalIncident).length, 0),
+    onlineGateways: sites.reduce((total, site) => total + site.gatewayHealth.online, 0),
+    offlineGateways: sites.reduce((total, site) => total + site.gatewayHealth.offline + site.gatewayHealth.degraded, 0),
   }
 }
 
