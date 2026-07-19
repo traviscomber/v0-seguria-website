@@ -25,6 +25,7 @@ export interface PortalSiteSummary {
   spaces: PortalSpace[]
   incidents: PortalIncident[]
   gatewayHealth: PortalGatewayHealth
+  report: PortalOperationalReport
 }
 
 export interface PortalSpace {
@@ -60,6 +61,8 @@ export interface PortalIncident {
   severity: 'warning' | 'critical'
   status: PortalIncidentStatus
   statusLabel: string
+  acknowledgedAt?: Date
+  resolvedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -76,6 +79,26 @@ export interface PortalSensorRisk {
   stable: number
   attention: number
   critical: number
+}
+
+export interface PortalOperationalReport {
+  eventsToday: number
+  criticalEventsToday: number
+  incidentsThisMonth: number
+  resolvedThisMonth: number
+  overdueConfirmations: number
+  averageConfirmationMinutes?: number
+  averageResolutionHours?: number
+}
+
+type PortalNotificationMetric = {
+  propertyId: string
+  severity: 'warning' | 'critical'
+  status: string
+  dueAt: Date
+  createdAt: Date
+  acknowledgedAt?: Date
+  escalatedAt?: Date
 }
 
 const openIncidentStatuses: PortalIncidentStatus[] = ['new', 'validating', 'confirmed', 'responding']
@@ -194,13 +217,66 @@ function getSafeEvidenceName(objectPath: string) {
   return objectPath.split('/').filter(Boolean).at(-1) || 'evidencia-capturada'
 }
 
+function getAverage(values: number[]) {
+  if (values.length === 0) return undefined
+  return values.reduce((total, value) => total + value, 0) / values.length
+}
+
+function buildOperationalReport({
+  events,
+  incidents,
+  notifications,
+}: {
+  events: PortalEvent[]
+  incidents: PortalIncident[]
+  notifications: PortalNotificationMetric[]
+}): PortalOperationalReport {
+  const now = new Date()
+  const todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const eventsToday = events.filter((event) => event.occurredAt >= todayStart)
+  const monthIncidents = incidents.filter((incident) => incident.createdAt >= monthStart)
+  const resolvedThisMonth = incidents.filter((incident) => incident.resolvedAt && incident.resolvedAt >= monthStart)
+  const confirmationMinutes = notifications
+    .filter((notification) => notification.acknowledgedAt)
+    .map((notification) => (notification.acknowledgedAt!.getTime() - notification.createdAt.getTime()) / 60_000)
+    .filter((value) => value >= 0)
+  const resolutionHours = incidents
+    .filter((incident) => incident.resolvedAt)
+    .map((incident) => (incident.resolvedAt!.getTime() - incident.createdAt.getTime()) / 3_600_000)
+    .filter((value) => value >= 0)
+
+  return {
+    eventsToday: eventsToday.length,
+    criticalEventsToday: eventsToday.filter((event) => event.severity === 'critical').length,
+    incidentsThisMonth: monthIncidents.length,
+    resolvedThisMonth: resolvedThisMonth.length,
+    overdueConfirmations: notifications.filter((notification) =>
+      notification.status === 'escalated' ||
+      Boolean(!notification.acknowledgedAt && notification.dueAt.getTime() <= now.getTime())
+    ).length,
+    averageConfirmationMinutes: getAverage(confirmationMinutes),
+    averageResolutionHours: getAverage(resolutionHours),
+  }
+}
+
 export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSiteSummary[]> {
   if (user.propertyIds.length === 0) return []
 
   const supabase = await createSupabaseServerClient()
   if (!supabase) throw new Error('Portal data service is not configured.')
 
-  const [propertiesResult, spacesResult, devicesResult, eventsResult, snapshotsResult, gatewaysResult, incidentsResult] = await Promise.all([
+  const [
+    propertiesResult,
+    spacesResult,
+    devicesResult,
+    eventsResult,
+    snapshotsResult,
+    gatewaysResult,
+    incidentsResult,
+    notificationsResult,
+  ] = await Promise.all([
     supabase.from('properties').select('id, name, address, updated_at').in('id', user.propertyIds),
     supabase.from('spaces').select('id, property_id, name').in('property_id', user.propertyIds),
     supabase
@@ -225,10 +301,16 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       .in('property_id', user.propertyIds),
     supabase
       .from('incidents')
-      .select('id, property_id, title, description, severity, status, created_at, updated_at')
+      .select('id, property_id, title, description, severity, status, acknowledged_at, resolved_at, created_at, updated_at')
       .in('property_id', user.propertyIds)
       .order('created_at', { ascending: false })
       .limit(100),
+    supabase
+      .from('notifications')
+      .select('id, property_id, severity, status, due_at, acknowledged_at, escalated_at, created_at')
+      .in('property_id', user.propertyIds)
+      .order('created_at', { ascending: false })
+      .limit(200),
   ])
 
   const queryError =
@@ -238,7 +320,8 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     eventsResult.error ||
     snapshotsResult.error ||
     gatewaysResult.error ||
-    incidentsResult.error
+    incidentsResult.error ||
+    notificationsResult.error
   if (queryError) throw new Error(`Portal data query failed: ${queryError.message}`)
 
   const spaces = new Map((spacesResult.data || []).map((space) => [space.id, space.name]))
@@ -248,6 +331,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
   const documentsByProperty = new Map<string, Document[]>()
   const gatewayHealthByProperty = new Map<string, PortalGatewayHealth>()
   const incidentsByProperty = new Map<string, PortalIncident[]>()
+  const notificationsByProperty = new Map<string, PortalNotificationMetric[]>()
 
   for (const row of spacesResult.data || []) {
     spacesByProperty.set(row.property_id, [
@@ -347,10 +431,25 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       severity: row.severity as PortalIncident['severity'],
       status,
       statusLabel: incidentStatusLabels[status] || status,
+      acknowledgedAt: row.acknowledged_at ? new Date(row.acknowledged_at) : undefined,
+      resolvedAt: row.resolved_at ? new Date(row.resolved_at) : undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }
     incidentsByProperty.set(row.property_id, [...(incidentsByProperty.get(row.property_id) || []), incident])
+  }
+
+  for (const row of notificationsResult.data || []) {
+    const notification: PortalNotificationMetric = {
+      propertyId: row.property_id,
+      severity: row.severity as PortalNotificationMetric['severity'],
+      status: row.status,
+      dueAt: new Date(row.due_at),
+      createdAt: new Date(row.created_at),
+      acknowledgedAt: row.acknowledged_at ? new Date(row.acknowledged_at) : undefined,
+      escalatedAt: row.escalated_at ? new Date(row.escalated_at) : undefined,
+    }
+    notificationsByProperty.set(row.property_id, [...(notificationsByProperty.get(row.property_id) || []), notification])
   }
 
   return (propertiesResult.data || []).map((property) => {
@@ -358,6 +457,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     const events = eventsByProperty.get(property.id) || []
     const documents = documentsByProperty.get(property.id) || []
     const incidents = incidentsByProperty.get(property.id) || []
+    const notifications = notificationsByProperty.get(property.id) || []
     const buckets = getPortalDeviceBuckets(devices)
     const siteSpaces = (spacesByProperty.get(property.id) || []).map((space) => {
       const spaceDevices = devices.filter((device) => device.metadata?.spaceId === space.id)
@@ -397,6 +497,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
       events,
       incidents,
       gatewayHealth: gatewayHealthByProperty.get(property.id) || { total: 0, online: 0, degraded: 0, offline: 0 },
+      report: buildOperationalReport({ events, incidents, notifications }),
       spaces: siteSpaces,
     }
   })
@@ -419,6 +520,30 @@ export function getPortalDashboardTotals(sites: PortalSiteSummary[]) {
     openIncidents: sites.reduce((total, site) => total + site.incidents.filter(isOpenPortalIncident).length, 0),
     onlineGateways: sites.reduce((total, site) => total + site.gatewayHealth.online, 0),
     offlineGateways: sites.reduce((total, site) => total + site.gatewayHealth.offline + site.gatewayHealth.degraded, 0),
+    eventsToday: sites.reduce((total, site) => total + site.report.eventsToday, 0),
+    criticalEventsToday: sites.reduce((total, site) => total + site.report.criticalEventsToday, 0),
+    incidentsThisMonth: sites.reduce((total, site) => total + site.report.incidentsThisMonth, 0),
+    resolvedThisMonth: sites.reduce((total, site) => total + site.report.resolvedThisMonth, 0),
+    overdueConfirmations: sites.reduce((total, site) => total + site.report.overdueConfirmations, 0),
+  }
+}
+
+export function getPortalPortfolioReport(sites: PortalSiteSummary[]): PortalOperationalReport {
+  const confirmationValues = sites
+    .map((site) => site.report.averageConfirmationMinutes)
+    .filter((value): value is number => typeof value === 'number')
+  const resolutionValues = sites
+    .map((site) => site.report.averageResolutionHours)
+    .filter((value): value is number => typeof value === 'number')
+
+  return {
+    eventsToday: sites.reduce((total, site) => total + site.report.eventsToday, 0),
+    criticalEventsToday: sites.reduce((total, site) => total + site.report.criticalEventsToday, 0),
+    incidentsThisMonth: sites.reduce((total, site) => total + site.report.incidentsThisMonth, 0),
+    resolvedThisMonth: sites.reduce((total, site) => total + site.report.resolvedThisMonth, 0),
+    overdueConfirmations: sites.reduce((total, site) => total + site.report.overdueConfirmations, 0),
+    averageConfirmationMinutes: getAverage(confirmationValues),
+    averageResolutionHours: getAverage(resolutionValues),
   }
 }
 

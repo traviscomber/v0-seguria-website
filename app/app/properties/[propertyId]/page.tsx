@@ -34,6 +34,11 @@ function formatDate(value?: Date) {
   }).format(value)
 }
 
+function formatDuration(value: number | undefined, unit: 'min' | 'h') {
+  if (typeof value !== 'number') return 'Sin datos'
+  return `${Math.round(value)} ${unit}`
+}
+
 function getStatusTone(status: string) {
   if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
   if (status === 'revision') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
@@ -206,6 +211,30 @@ export default async function PropertyPage({
             )}
           </CardContent>
         </Card>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.13),transparent_30%),rgba(255,255,255,0.04)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Reporte del sitio</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Actividad, respuesta y cierre</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Resumen operacional para entender que paso hoy y como se esta respondiendo durante el mes.
+            </p>
+          </div>
+          <Badge className={site.report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
+            {site.report.overdueConfirmations > 0 ? 'Confirmaciones vencidas' : 'Confirmaciones al dia'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <ReportTile label="Eventos hoy" value={site.report.eventsToday.toString()} />
+          <ReportTile label="Criticos hoy" value={site.report.criticalEventsToday.toString()} tone={site.report.criticalEventsToday > 0 ? 'critical' : 'default'} />
+          <ReportTile label="Incidentes mes" value={site.report.incidentsThisMonth.toString()} />
+          <ReportTile label="Resueltos mes" value={site.report.resolvedThisMonth.toString()} />
+          <ReportTile label="Confirmacion" value={formatDuration(site.report.averageConfirmationMinutes, 'min')} />
+          <ReportTile label="Resolucion" value={formatDuration(site.report.averageResolutionHours, 'h')} />
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -415,6 +444,23 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
       <p className="mt-2 text-2xl font-light text-white">{value}</p>
+    </div>
+  )
+}
+
+function ReportTile({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'critical'
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${tone === 'critical' ? 'border-rose-400/25 bg-rose-400/10' : 'border-white/10 bg-[#0B1D30]'}`}>
+      <p className="text-xs uppercase tracking-[0.16em] text-white/35">{label}</p>
+      <p className={`mt-2 text-xl font-light ${tone === 'critical' ? 'text-rose-100' : 'text-white'}`}>{value}</p>
     </div>
   )
 }

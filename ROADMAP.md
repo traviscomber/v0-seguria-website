@@ -632,6 +632,8 @@ Completado en codigo:
 - SLA de 5 minutos para criticidad alta y 30 minutos para atencion,
 - escalamiento automatico de avisos vencidos mediante monitor autenticado,
 - visualizacion de confirmaciones y vencimientos en el centro de incidentes y dashboard administrativo.
+- reporte operativo en portal cliente con eventos del dia, incidentes del mes, confirmaciones vencidas y tiempos promedio de confirmacion y resolucion.
+- lectura por propiedad de continuidad, sensores por riesgo, incidentes abiertos, accion recomendada y reporte operacional del sitio.
 
 Validado localmente:
 

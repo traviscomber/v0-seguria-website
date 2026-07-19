@@ -10,6 +10,7 @@ import {
   getPortalActivityFeed,
   getPortalAlertDevices,
   getPortalDashboardTotals,
+  getPortalPortfolioReport,
   getPortalSensorRisk,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
@@ -41,6 +42,11 @@ function formatDate(value?: Date) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(value)
+}
+
+function formatDuration(value: number | undefined, unit: 'min' | 'h') {
+  if (typeof value !== 'number') return 'Sin datos'
+  return `${Math.round(value)} ${unit}`
 }
 
 function getStatusTone(status: string) {
@@ -90,6 +96,23 @@ function InfoLine({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/10 bg-[#0B1D30] px-4 py-3">
       <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
       <p className="mt-1 text-sm text-white">{value}</p>
+    </div>
+  )
+}
+
+function ReportMetric({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'critical'
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${tone === 'critical' ? 'border-rose-400/25 bg-rose-400/10' : 'border-white/10 bg-[#0B1D30]'}`}>
+      <p className="text-xs uppercase tracking-[0.16em] text-white/35">{label}</p>
+      <p className={`mt-2 text-xl font-light ${tone === 'critical' ? 'text-rose-100' : 'text-white'}`}>{value}</p>
     </div>
   )
 }
@@ -159,6 +182,7 @@ export default async function ClientAppPage() {
 
   const sites = await getAccessiblePortalSites(session.user)
   const totals = getPortalDashboardTotals(sites)
+  const report = getPortalPortfolioReport(sites)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -333,6 +357,31 @@ export default async function ClientAppPage() {
       </section>
 
       <ClientNotificationCenter />
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_28%),rgba(255,255,255,0.04)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Reporte operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Resumen de seguridad para decidir rapido</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Lectura diaria y mensual consolidada para saber si hubo senales relevantes, incidentes activos y tiempos
+              de respuesta.
+            </p>
+          </div>
+          <Badge className={report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
+            {report.overdueConfirmations > 0 ? 'Hay SLA vencidos' : 'SLA al dia'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <ReportMetric label="Eventos hoy" value={report.eventsToday.toString()} />
+          <ReportMetric label="Criticos hoy" value={report.criticalEventsToday.toString()} tone={report.criticalEventsToday > 0 ? 'critical' : 'default'} />
+          <ReportMetric label="Incidentes mes" value={report.incidentsThisMonth.toString()} />
+          <ReportMetric label="Resueltos mes" value={report.resolvedThisMonth.toString()} />
+          <ReportMetric label="Confirmacion" value={formatDuration(report.averageConfirmationMinutes, 'min')} />
+          <ReportMetric label="Resolucion" value={formatDuration(report.averageResolutionHours, 'h')} />
+        </div>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
