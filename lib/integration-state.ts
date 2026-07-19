@@ -44,6 +44,7 @@ export async function getIntegrationConnections(user?: AuthUser): Promise<Integr
   }
 
   return (integrationsResult.data || []).map((integration) => ({
+    propertyId: integration.property_id as string | undefined,
     provider: integration.provider as IntegrationProvider,
     name: integration.display_name,
     description: 'Conexion operativa administrada por SegurIA.',

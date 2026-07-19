@@ -213,6 +213,7 @@ export type IntegrationProvider = 'home_assistant' | 'tuya'
 export type IntegrationStatus = 'pending' | 'connected' | 'degraded' | 'offline'
 
 export interface IntegrationConnection {
+  propertyId?: string
   provider: IntegrationProvider
   name: string
   description: string
