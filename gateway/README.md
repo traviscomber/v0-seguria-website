@@ -46,6 +46,8 @@ For remote installs, use the scripts served by the production site:
 curl -fsSL https://www.seguria.tech/install/install.sh | sh -s -- --site santa-elena --gateway-id <id> --gateway-secret <secret>
 ```
 
+The remote installer prefers `ghcr.io/traviscomber/seguria-gateway:latest` and can build from the `gateway/` directory if the image is not available yet.
+
 ## Layout
 
 - `src/index.js`
