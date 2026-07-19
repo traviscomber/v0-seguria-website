@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, Menu, ShieldCheck, House, Building2 } from 'lucide-react'
+import { LogOut, Menu, House, Building2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -41,12 +41,13 @@ export function ClientPortalShell({
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081624]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/app" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/20 text-[#9DD2F2]">
-              <ShieldCheck className="h-5 w-5" strokeWidth={1.6} />
-            </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/40">Portal de cliente</p>
-              <p className="text-sm font-medium text-white">SegurIA</p>
+              <img
+                src="/seguria-logo.png"
+                alt="SegurIA"
+                className="mt-1 h-7 w-[126px] rounded-[4px] object-contain object-left"
+              />
             </div>
           </Link>
 

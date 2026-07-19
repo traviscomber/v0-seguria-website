@@ -45,7 +45,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     <main className="flex min-h-screen items-center justify-center bg-[#0A1B2E] px-6">
       <div className="glass-card w-full max-w-md p-8">
         <div className="mb-8">
-          <p className="text-sm text-[#4DA3D9]">SegurIA Access</p>
+          <img
+            src="/seguria-logo.png"
+            alt="SegurIA"
+            className="mb-6 h-auto w-56 rounded-[6px]"
+          />
+          <p className="text-sm text-[#4DA3D9]">Acceso seguro</p>
           <h1 className="mt-2 text-3xl font-light text-white">Iniciar sesion</h1>
           <p className="mt-2 text-sm text-white/55">Acceso para clientes, tecnicos y administradores.</p>
         </div>

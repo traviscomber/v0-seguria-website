@@ -11,11 +11,12 @@ export function Navigation() {
     <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#0A1B2E]/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-[#4DA3D9]">
-              <span className="text-sm font-light text-white">S</span>
-            </div>
-            <span className="text-lg font-light text-white">SegurIA</span>
+          <Link href="/" className="flex items-center">
+            <img
+              src="/seguria-logo.png"
+              alt="SegurIA"
+              className="h-10 w-[178px] rounded-[5px] object-contain object-left"
+            />
           </Link>
 
           <div className="hidden items-center gap-8 md:flex">

@@ -7,11 +7,12 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="mb-12 grid gap-12 md:grid-cols-4">
           <div>
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-[#4DA3D9]">
-                <span className="text-sm font-light text-white">S</span>
-              </div>
-              <span className="text-lg font-light text-white">SegurIA</span>
+            <div className="mb-5">
+              <img
+                src="/seguria-logo.png"
+                alt="SegurIA"
+                className="h-auto w-56 rounded-[6px]"
+              />
             </div>
             <p className="text-sm leading-relaxed text-white/50">
               Plataforma de seguridad para campos y propiedades. Unificamos operacion, evidencia y respuesta en una
