@@ -20,55 +20,55 @@ import {
 const coreBenefits = [
   {
     icon: Moon,
-    title: 'Dormir sin revisar todo',
-    description: 'El campo, la casa o el hotel siguen observados mientras tu no estas mirando.',
+    title: 'Todo conectado en una sola mirada',
+    description: 'Camaras, accesos, sensores, alertas y evidencia viven en un mismo sistema, ordenados por sitio y prioridad.',
   },
   {
     icon: Siren,
-    title: 'Responder antes del dano',
-    description: 'Si algo se mueve fuera de lugar, si alguien entra o si una zona queda expuesta, lo sabes a tiempo.',
+    title: 'Alertas que llegan con sentido',
+    description: 'No se trata de hacer ruido. Se trata de avisar cuando algo importa, con contexto suficiente para actuar bien.',
   },
   {
     icon: FileSearch,
-    title: 'Tener evidencia clara',
-    description: 'Cuando hay dudas, no dependes de recuerdos ni versiones cruzadas. Tienes una historia para revisar.',
+    title: 'Evidencia lista cuando la necesitas',
+    description: 'Cada evento deja una historia clara: que paso, donde paso, quien fue avisado y que decision se tomo.',
   },
 ]
 
 const customerWins = [
-  'Menos llamadas preguntando que paso',
-  'Menos falsas alarmas que cansan al equipo',
-  'Mas claridad para decidir rapido',
-  'Mas control sobre accesos y zonas sensibles',
-  'Mejor respuesta ante intrusos, fallas o movimientos raros',
-  'Una experiencia simple para duenos, administradores y equipos',
+  'Una operacion que se entiende sin perseguir pantallas',
+  'Camaras y sensores convertidos en informacion util',
+  'Incidentes ordenados desde la primera senal hasta el cierre',
+  'Clientes, tecnicos y administradores mirando la misma verdad',
+  'Menos llamadas, menos dudas y menos decisiones a ciegas',
+  'Una experiencia profesional que se siente simple desde el primer dia',
 ]
 
 const places = [
   {
     icon: Leaf,
     title: 'Campos',
-    description: 'Ganado, cultivos, bodegas, portones, caminos y zonas remotas con una mirada continua.',
+    description: 'Perimetros, portones, bodegas, caminos y zonas remotas con vigilancia que avisa antes de que el problema avance.',
     href: '/campos-inteligentes',
   },
   {
     icon: Home,
     title: 'Casas y propiedades',
-    description: 'Familia, entradas, patios, condominios y negocios protegidos sin complicar la vida diaria.',
+    description: 'Accesos, patios, condominios, oficinas y segundas viviendas protegidas con claridad, calma y respuesta.',
     href: '/propiedades-inteligentes',
   },
   {
     icon: Hotel,
     title: 'Hoteles',
-    description: 'Huespedes tranquilos, staff coordinado, areas comunes visibles y eventos bajo control.',
+    description: 'Areas comunes, accesos, staff, proveedores y eventos bajo control sin romper la experiencia del huesped.',
     href: '/hoteleria-inteligente',
   },
 ]
 
 const proofPoints = [
-  { label: 'Noche', value: 'vigilada' },
-  { label: 'Accesos', value: 'claros' },
-  { label: 'Alertas', value: 'utiles' },
+  { label: 'Sitios', value: 'visibles' },
+  { label: 'Eventos', value: 'claros' },
+  { label: 'Respuesta', value: 'a tiempo' },
 ]
 
 export default function HomePage() {
@@ -96,23 +96,23 @@ export default function HomePage() {
         <div className="absolute left-0 top-24 h-px w-full bg-gradient-to-r from-transparent via-[#9DD2F2]/35 to-transparent" />
         <div className="absolute bottom-0 left-0 h-40 w-full bg-gradient-to-t from-[#0A1B2E] to-transparent" />
 
-        <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
-          <div className="flex flex-col justify-center">
+        <div className="relative z-10 mx-auto grid w-full max-w-[1480px] gap-12 px-6 py-16 lg:grid-cols-[minmax(0,0.92fr)_minmax(500px,0.78fr)] lg:gap-16 lg:px-8 xl:grid-cols-[minmax(0,0.86fr)_minmax(560px,0.74fr)] xl:gap-20">
+          <div className="flex max-w-3xl flex-col justify-center">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#4DA3D9]/30 bg-[#4DA3D9]/12 px-4 py-2 text-sm text-[#9DD2F2]">
               <ShieldCheck className="h-4 w-4" strokeWidth={1.6} />
-              Seguridad integral para operar con calma
+              Sistema integral de seguridad operativa
             </div>
 
-            <h1 className="mt-8 max-w-5xl text-balance text-5xl font-light leading-[0.98] text-white md:text-6xl lg:text-7xl">
-              Protege sin perseguir camaras.
+            <h1 className="mt-8 max-w-[760px] text-balance text-5xl font-light leading-[0.98] text-white md:text-6xl lg:text-7xl">
+              Lo que proteges, por fin habla claro.
             </h1>
 
             <p className="mt-6 max-w-2xl text-balance text-xl leading-9 text-white/78">
-              SegurIA te muestra lo importante, avisa cuando algo cambia y deja evidencia clara para decidir antes de que el problema crezca.
+              SegurIA une camaras, sensores, accesos, eventos e incidentes en una experiencia simple: sabes que pasa, entiendes por que importa y respondes sin improvisar.
             </p>
 
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              {['Menos incertidumbre', 'Mejor respuesta', 'Mas tranquilidad'].map((item) => (
+              {['Mas control', 'Menos ruido', 'Mejor reaccion'].map((item) => (
                 <div key={item} className="rounded-[8px] border border-white/10 bg-white/[0.07] px-4 py-3 text-sm text-white/76 backdrop-blur-md">
                   {item}
                 </div>
@@ -121,22 +121,17 @@ export default function HomePage() {
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Link href="/soluciones" className="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
-                Ver soluciones
+                Ver sistema
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/contacto" className="btn-secondary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
-                Pedir asesoria
+                Disenar mi operacion
               </Link>
             </div>
           </div>
 
-          <div className="relative flex items-center">
-            <div className="absolute -left-5 top-10 hidden rounded-[8px] border border-white/10 bg-[#E6F1F8]/92 p-4 text-[#0A1B2E] shadow-2xl backdrop-blur-md lg:block">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#2B5C7E]">Ahora</p>
-              <p className="mt-1 text-2xl font-light">Todo visible</p>
-            </div>
-
-            <div className="w-full rounded-[12px] border border-white/12 bg-[#061525]/76 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl md:p-6">
+          <div className="relative flex items-center justify-end lg:pl-6 xl:translate-x-8 2xl:translate-x-14">
+            <div className="w-full max-w-[580px] rounded-[12px] border border-white/12 bg-[#061525]/76 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl md:p-6 xl:max-w-[620px]">
               <div className="overflow-hidden rounded-[10px] border border-white/10 bg-[#0A1B2E]">
                 <div className="relative h-56 overflow-hidden bg-cover bg-center md:h-72"
                   style={{
@@ -145,7 +140,7 @@ export default function HomePage() {
                   }}
                 >
                   <div className="absolute left-5 top-5 rounded-full border border-[#9DD2F2]/30 bg-[#0A1B2E]/70 px-4 py-2 text-xs uppercase tracking-[0.16em] text-[#9DD2F2] backdrop-blur">
-                    Vista protegida
+                    Operacion protegida
                   </div>
                   <div className="absolute bottom-5 left-5 right-5 grid gap-3 sm:grid-cols-3">
                     {proofPoints.map((point) => (
@@ -181,7 +176,7 @@ export default function HomePage() {
                     <div className="mt-5 space-y-4">
                       {[
                         'Sabes que paso sin perseguir grabaciones.',
-                        'Tu equipo responde con informacion, no intuicion.',
+                        'Tu equipo actua con informacion, no intuicion.',
                         'Tus clientes sienten orden, no improvisacion.',
                       ].map((item) => (
                         <div key={item} className="flex items-start gap-3">
@@ -190,15 +185,14 @@ export default function HomePage() {
                         </div>
                       ))}
                     </div>
+                    <div className="mt-5 rounded-[8px] border border-[#9DD2F2]/20 bg-[#123A5A]/70 p-4">
+                      <p className="text-sm leading-6 text-white/72">
+                        La seguridad deja de ser una suma de equipos y se vuelve una operacion viva: observa, entiende y acompana cada decision.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="absolute -bottom-7 right-4 hidden max-w-xs rounded-[8px] border border-[#9DD2F2]/25 bg-[#123A5A]/90 p-5 shadow-2xl backdrop-blur-md md:block">
-              <p className="text-sm leading-6 text-white/76">
-                Un lugar cuidado se nota antes de que ocurra algo: hay orden, hay respuesta y hay calma.
-              </p>
             </div>
           </div>
         </div>
@@ -207,9 +201,9 @@ export default function HomePage() {
       <section className="bg-[#123A5A] py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mb-14 max-w-3xl">
-            <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Beneficios directos</p>
+            <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Que hace SegurIA</p>
             <h2 className="mt-4 text-balance text-3xl font-light text-white md:text-4xl">
-              Seguridad que se siente en la vida diaria.
+              Convierte tecnologia dispersa en una operacion de seguridad entendible.
             </h2>
           </div>
 
@@ -232,10 +226,10 @@ export default function HomePage() {
           <div>
             <p className="text-sm uppercase tracking-[0.25em] text-[#9DD2F2]">Por que importa</p>
             <h2 className="mt-4 text-balance text-3xl font-light text-white md:text-4xl">
-              El costo real no es la alarma. Es enterarte tarde.
+              El riesgo no aparece de golpe. Primero deja senales.
             </h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-white/62">
-              Una puerta abierta, una visita fuera de horario, una bodega expuesta o una camara que nadie reviso pueden terminar en perdida, conflicto o desorden.
+              Una puerta abierta, un movimiento fuera de horario, una camara sin revision o una bodega expuesta pueden parecer detalles. SegurIA los ordena antes de que se transformen en perdida, conflicto o desorden.
             </p>
           </div>
 
@@ -253,9 +247,9 @@ export default function HomePage() {
       <section className="bg-[#E6F1F8] py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mb-14 text-center">
-            <p className="text-sm uppercase tracking-[0.25em] text-[#2B5C7E]">Aplicaciones</p>
+            <p className="text-sm uppercase tracking-[0.25em] text-[#2B5C7E]">Donde vive</p>
             <h2 className="mx-auto mt-4 max-w-3xl text-balance text-3xl font-light text-[#0A1B2E] md:text-4xl">
-              Cada lugar tiene sus riesgos. SegurIA los vuelve visibles.
+              Un mismo sistema, adaptado al ritmo de cada lugar.
             </h2>
           </div>
 
@@ -281,17 +275,17 @@ export default function HomePage() {
         <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
           <Clock className="mx-auto mb-6 h-10 w-10 text-[#9DD2F2]" strokeWidth={1.4} />
           <h2 className="text-balance text-3xl font-light text-white md:text-4xl">
-            Si algo pasa, la diferencia es saberlo a tiempo.
+            Seguridad integral, sin hacer compleja la vida de nadie.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/62">
-            Cuentanos que quieres proteger y armamos una ruta simple para darte visibilidad, evidencia y respuesta.
+            Cuentanos que lugares quieres proteger y armamos una ruta clara para unir monitoreo, inventario, eventos, incidentes y respuesta en una sola experiencia.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/contacto" className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-[15px]">
-              Pedir llamada
+              Pedir asesoria
             </Link>
             <Link href="/soluciones" className="btn-secondary inline-flex items-center gap-2 px-8 py-4 text-[15px]">
-              Ver soluciones
+              Ver sistema
             </Link>
           </div>
         </div>

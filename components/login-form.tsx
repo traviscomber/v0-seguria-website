@@ -52,8 +52,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm text-white/70">Correo autorizado</label>
+            <label htmlFor="login-email" className="mb-2 block text-sm text-white/70">Correo autorizado</label>
             <input
+              id="login-email"
+              name="email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -63,8 +65,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/70">Clave</label>
+            <label htmlFor="login-password" className="mb-2 block text-sm text-white/70">Clave</label>
             <input
+              id="login-password"
+              name="password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
