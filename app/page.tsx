@@ -103,7 +103,7 @@ export default function HomePage() {
               Sistema integral de seguridad operativa
             </div>
 
-            <h1 className="mt-8 max-w-[760px] text-balance text-5xl font-light leading-[0.98] text-white md:text-6xl lg:text-7xl">
+            <h1 className="mt-8 max-w-[720px] text-balance text-5xl font-light leading-[1.02] text-white md:text-[4rem] lg:text-[4.7rem]">
               Lo que proteges, por fin habla claro.
             </h1>
 

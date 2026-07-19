@@ -15,7 +15,7 @@ export function Navigation() {
             <img
               src="/seguria-logo.png"
               alt="SegurIA"
-              className="h-10 w-[178px] rounded-[5px] object-contain object-left"
+              className="h-12 w-[220px] object-contain object-left"
             />
           </Link>
 
