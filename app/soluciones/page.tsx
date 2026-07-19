@@ -99,7 +99,7 @@ export default function SolucionesPage() {
               className="group relative flex min-h-[420px] items-end overflow-hidden rounded-[8px] border border-white/10 bg-cover bg-center p-8 transition-all duration-300 hover:border-[#9DD2F2]/45 md:p-12"
               style={{
                 backgroundImage:
-                  "linear-gradient(to bottom, rgba(10, 27, 46, 0.5), rgba(10, 27, 46, 0.88)), url('https://images.unsplash.com/photo-1621293954908-907159247fc8?q=70&w=1800&auto=format&fit=crop')",
+                  "linear-gradient(to bottom, rgba(10, 27, 46, 0.3), rgba(10, 27, 46, 0.9)), url('/portal/huilo-huilo.jpg')",
               }}
             >
               <div

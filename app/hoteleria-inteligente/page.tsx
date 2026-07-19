@@ -106,10 +106,24 @@ export default function HoteleriaPage() {
               </div>
 
               <div className="hidden lg:block">
-                <div className="glass-card p-8 h-96 flex items-center justify-center">
-                  <div className="text-center">
-                    <Camera size={64} className="mx-auto text-[#4DA3D9] mb-4" />
-                    <p className="text-white/60">Vigilancia discreta. Control total.</p>
+                <div className="glass-card overflow-hidden p-0">
+                  <div className="relative h-[430px]">
+                    <img
+                      src="/portal/huilo-huilo.jpg"
+                      alt="Hotel Huilo Huilo rodeado de bosque nativo"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,27,46,0.05),rgba(10,27,46,0.82)),linear-gradient(90deg,rgba(10,27,46,0.34),transparent_65%)]" />
+                    <div className="absolute left-6 top-6 rounded-full border border-[#9DD2F2]/30 bg-[#0A1B2E]/70 px-4 py-2 text-xs uppercase tracking-[0.18em] text-[#9DD2F2] backdrop-blur">
+                      Hotel Huilo Huilo
+                    </div>
+                    <div className="absolute bottom-6 left-6 right-6 grid gap-3 sm:grid-cols-3">
+                      {['Huespedes tranquilos', 'Staff atento', 'Operacion clara'].map((item) => (
+                        <div key={item} className="rounded-[8px] border border-white/10 bg-[#0A1B2E]/76 p-4 text-sm text-white/80 backdrop-blur-md">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
