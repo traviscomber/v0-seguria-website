@@ -15,6 +15,7 @@ import {
   getPortalOperationalScore,
   getPortalPortfolioReport,
   getPortalSensorRisk,
+  getPortalServiceCommitments,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
@@ -251,6 +252,7 @@ export default async function ClientAppPage() {
   const operationalScore = getPortalOperationalScore(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
+  const serviceCommitments = getPortalServiceCommitments(sites)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -603,6 +605,43 @@ export default async function ClientAppPage() {
               <p className="mt-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-4 text-sm leading-6 text-white/70">
                 {zone.action}
               </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.15),transparent_30%),rgba(255,255,255,0.04)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Compromisos operativos</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Servicio medible, no promesas sueltas</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Confirmacion, cierre, evidencia y continuidad quedan visibles para que el cliente entienda que esta
+              bajo control y que requiere accion antes del cierre.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            respuesta / evidencia / cierre
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {serviceCommitments.slice(0, 4).map((commitment) => (
+            <div key={commitment.id} className={`rounded-[24px] border p-5 ${getScoreTone(commitment.tone)}`}>
+              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{commitment.siteLabel}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{commitment.label}</h3>
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Objetivo</p>
+                  <p className="mt-2 text-sm leading-6 text-white/72">{commitment.target}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Lectura actual</p>
+                  <p className="mt-2 text-lg font-light text-white">{commitment.current}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{commitment.summary}</p>
+              <p className="mt-3 text-sm leading-6 text-white/74">{commitment.action}</p>
             </div>
           ))}
         </div>

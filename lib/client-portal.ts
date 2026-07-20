@@ -189,6 +189,18 @@ export interface PortalCoverageZone {
   updatedAt?: Date
 }
 
+export interface PortalServiceCommitment {
+  id: string
+  siteLabel: string
+  label: string
+  target: string
+  current: string
+  summary: string
+  action: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -550,6 +562,11 @@ function getIncidentEvidence(incident: Omit<PortalIncident, 'relatedEvents' | 'e
 function getAverage(values: number[]) {
   if (values.length === 0) return undefined
   return values.reduce((total, value) => total + value, 0) / values.length
+}
+
+function formatCommitmentDuration(value: number | undefined, unit: 'min' | 'h') {
+  if (typeof value !== 'number') return 'Sin historial'
+  return `${Math.round(value)} ${unit}`
 }
 
 function buildOperationalReport({
@@ -1245,6 +1262,109 @@ export function getPortalCoverageZones(site: PortalSiteSummary): PortalCoverageZ
     const toneRank = { critical: 3, warning: 2, ok: 1 }
     return toneRank[right.tone] - toneRank[left.tone] || left.score - right.score || left.name.localeCompare(right.name)
   })
+}
+
+export function getPortalServiceCommitments(sites: PortalSiteSummary[]): PortalServiceCommitment[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-service',
+      siteLabel: 'Sin sitio',
+      label: 'Activacion inicial',
+      target: 'Sitio visible',
+      current: 'Pendiente',
+      summary: 'Aun no hay una operacion publicada para medir servicio.',
+      action: 'Asignar sitio, inventario y responsables antes de medir compromisos.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const commitments = sites.flatMap((site) => {
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const evidenceMissing = openIncidents.filter((incident) => incident.evidence.length === 0).length
+    const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+    const confirmationTone = site.report.overdueConfirmations > 0
+      ? 'critical'
+      : typeof site.report.averageConfirmationMinutes === 'number' && site.report.averageConfirmationMinutes > 30
+        ? 'warning'
+        : 'ok'
+    const resolutionTone = openIncidents.some((incident) => incident.severity === 'critical')
+      ? 'critical'
+      : openIncidents.length > 0
+        ? 'warning'
+        : 'ok'
+    const evidenceTone = evidenceMissing > 0 ? 'warning' : 'ok'
+    const continuityTone = gatewayRisk > 0 ? 'warning' : 'ok'
+
+    return [
+      {
+        id: `${site.propertyId}-acknowledgement`,
+        siteLabel: site.label,
+        label: 'Confirmacion de avisos',
+        target: 'Alta en 5 min / atencion en 30 min',
+        current: site.report.overdueConfirmations > 0
+          ? `${site.report.overdueConfirmations} vencida${site.report.overdueConfirmations === 1 ? '' : 's'}`
+          : formatCommitmentDuration(site.report.averageConfirmationMinutes, 'min'),
+        summary: site.report.overdueConfirmations > 0
+          ? 'Hay avisos que pasaron el tiempo esperado de confirmacion.'
+          : 'Los avisos quedan medidos para saber si el equipo responde a tiempo.',
+        action: site.report.overdueConfirmations > 0
+          ? 'Confirmar recepcion y documentar si corresponde escalamiento.'
+          : 'Mantener confirmacion visible y revisar demoras al cierre del turno.',
+        tone: confirmationTone,
+        rank: confirmationTone === 'critical' ? 100 : confirmationTone === 'warning' ? 76 : 25,
+      },
+      {
+        id: `${site.propertyId}-incident-closure`,
+        siteLabel: site.label,
+        label: 'Cierre de incidentes',
+        target: 'Responsable, causa y cierre trazable',
+        current: openIncidents.length > 0 ? `${openIncidents.length} abierto${openIncidents.length === 1 ? '' : 's'}` : formatCommitmentDuration(site.report.averageResolutionHours, 'h'),
+        summary: openIncidents.length > 0
+          ? 'Hay situaciones que todavia necesitan seguimiento operativo.'
+          : 'Los cierres quedan medidos para mejorar respuesta y aprendizaje.',
+        action: openIncidents.length > 0
+          ? 'Asignar responsable, revisar evidencia y dejar siguiente accion clara.'
+          : 'Revisar cierres mensuales y ajustar reglas si hubo ruido operativo.',
+        tone: resolutionTone,
+        rank: resolutionTone === 'critical' ? 96 : resolutionTone === 'warning' ? 80 : 22,
+      },
+      {
+        id: `${site.propertyId}-evidence-quality`,
+        siteLabel: site.label,
+        label: 'Evidencia lista',
+        target: 'Evento + contexto + respaldo',
+        current: evidenceMissing > 0 ? `${evidenceMissing} incompleta${evidenceMissing === 1 ? '' : 's'}` : 'Disponible',
+        summary: evidenceMissing > 0
+          ? 'Algunos incidentes abiertos aun no muestran respaldo visual o documental.'
+          : 'La informacion critica queda preparada para explicar decisiones.',
+        action: evidenceMissing > 0
+          ? 'Completar respaldo o cerrar con causa documentada.'
+          : 'Mantener capturas y documentos asociados a cada situacion relevante.',
+        tone: evidenceTone,
+        rank: evidenceTone === 'warning' ? 72 : 18,
+      },
+      {
+        id: `${site.propertyId}-continuity`,
+        siteLabel: site.label,
+        label: 'Continuidad visible',
+        target: 'Lectura operativa sin puntos mudos',
+        current: gatewayRisk > 0 ? `${gatewayRisk} con revision` : 'Conectada',
+        summary: gatewayRisk > 0
+          ? 'Hay conexiones que pueden reducir visibilidad del sitio.'
+          : 'La operacion mantiene lectura disponible para el cliente.',
+        action: gatewayRisk > 0
+          ? 'Restituir lectura antes de depender de supervision manual.'
+          : 'Mantener revision normal de zonas y avisos relevantes.',
+        tone: continuityTone,
+        rank: continuityTone === 'warning' ? 68 : 15,
+      },
+    ] satisfies PortalServiceCommitment[]
+  })
+
+  return commitments
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {
