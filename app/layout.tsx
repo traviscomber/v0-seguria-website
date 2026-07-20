@@ -34,8 +34,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'SegurIA | Plataforma de seguridad para campos y propiedades',
-    description:
-      'SegurIA entrega una experiencia clara para operar seguridad, evidencia e incidentes sin mostrar la tecnologia subyacente.',
+  description:
+      'SegurIA entrega una experiencia clara para operar seguridad, evidencia e incidentes con una lectura simple para cada cliente.',
     url: 'https://seguria.tech',
     siteName: 'SegurIA',
     locale: 'es_CL',
