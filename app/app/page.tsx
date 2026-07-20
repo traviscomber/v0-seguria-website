@@ -24,6 +24,7 @@ import {
   getPortalSensorRisk,
   getPortalServiceCommitments,
   getPortalSensitiveWindows,
+  getPortalTraceabilityLedger,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
 import { CameraSnapshot } from '@/components/camera-snapshot'
@@ -262,6 +263,7 @@ export default async function ClientAppPage() {
   const boardReport = getPortalBoardReport(sites)
   const governanceRituals = getPortalGovernanceRituals(sites)
   const actionRegister = getPortalActionRegister(sites)
+  const traceabilityLedger = getPortalTraceabilityLedger(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
@@ -728,6 +730,42 @@ export default async function ClientAppPage() {
                 <InfoLine label="Plazo" value={action.due} />
                 <InfoLine label="Siguiente paso" value={action.nextStep} />
                 <InfoLine label="Criterio de cierre" value={action.successCriteria} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Trazabilidad cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La historia que respalda cada decision</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Senal, evidencia, accion relacionada, estado y fecha quedan en una misma lectura para explicar decisiones
+              sin reconstruir la operacion despues.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            evidencia / estado / fecha
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {traceabilityLedger.slice(0, 6).map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.status}</Badge>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <InfoLine label="Origen" value={item.source} />
+                <InfoLine label="Evidencia" value={item.evidence} />
+                <InfoLine label="Accion vinculada" value={item.decisionLink} />
+                <InfoLine label="Fecha" value={formatDate(item.occurredAt)} />
               </div>
             </div>
           ))}
