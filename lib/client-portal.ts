@@ -211,6 +211,20 @@ export interface PortalExecutiveBrief {
   tone: 'ok' | 'warning' | 'critical'
 }
 
+export interface PortalSensitiveWindow {
+  id: string
+  siteLabel: string
+  label: string
+  range: string
+  eventCount: number
+  incidentCount: number
+  criticalCount: number
+  summary: string
+  action: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1442,6 +1456,93 @@ export function getPortalExecutiveBrief(sites: PortalSiteSummary[]): PortalExecu
     ],
     tone,
   }
+}
+
+function getWindowSlot(date: Date) {
+  const hour = date.getHours()
+  if (hour >= 5 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 18) return 'afternoon'
+  if (hour >= 18 && hour < 23) return 'evening'
+  return 'night'
+}
+
+const sensitiveWindowLabels = {
+  morning: { label: 'Apertura', range: '05:00 - 12:00' },
+  afternoon: { label: 'Operacion diaria', range: '12:00 - 18:00' },
+  evening: { label: 'Cierre y cambios', range: '18:00 - 23:00' },
+  night: { label: 'Noche sensible', range: '23:00 - 05:00' },
+} as const
+
+export function getPortalSensitiveWindows(sites: PortalSiteSummary[]): PortalSensitiveWindow[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-window',
+      siteLabel: 'Sin sitio',
+      label: 'Sin lectura',
+      range: 'Pendiente',
+      eventCount: 0,
+      incidentCount: 0,
+      criticalCount: 0,
+      summary: 'Aun no hay actividad suficiente para detectar horarios sensibles.',
+      action: 'Publicar eventos e incidentes del primer sitio para construir la lectura.',
+      tone: 'warning',
+      rank: 80,
+    }]
+  }
+
+  const windows = sites.flatMap((site) => {
+    const groups = {
+      morning: { events: 0, incidents: 0, critical: 0 },
+      afternoon: { events: 0, incidents: 0, critical: 0 },
+      evening: { events: 0, incidents: 0, critical: 0 },
+      night: { events: 0, incidents: 0, critical: 0 },
+    }
+
+    for (const event of site.events) {
+      const slot = getWindowSlot(event.occurredAt)
+      groups[slot].events += 1
+      if (event.severity === 'critical') groups[slot].critical += 1
+    }
+
+    for (const incident of site.incidents) {
+      const slot = getWindowSlot(incident.createdAt)
+      groups[slot].incidents += 1
+      if (incident.severity === 'critical') groups[slot].critical += 1
+    }
+
+    return Object.entries(groups).map(([slot, metrics]) => {
+      const meta = sensitiveWindowLabels[slot as keyof typeof sensitiveWindowLabels]
+      const tone: PortalSensitiveWindow['tone'] = metrics.critical > 0
+        ? 'critical'
+        : metrics.incidents > 0 || metrics.events >= 3
+          ? 'warning'
+          : 'ok'
+      const rank = metrics.critical * 25 + metrics.incidents * 12 + metrics.events * 3
+      return {
+        id: `${site.propertyId}-${slot}`,
+        siteLabel: site.label,
+        label: meta.label,
+        range: meta.range,
+        eventCount: metrics.events,
+        incidentCount: metrics.incidents,
+        criticalCount: metrics.critical,
+        summary: metrics.events + metrics.incidents === 0
+          ? 'Sin senales relevantes en esta franja.'
+          : `${metrics.events} evento${metrics.events === 1 ? '' : 's'} y ${metrics.incidents} incidente${metrics.incidents === 1 ? '' : 's'} aparecen en esta franja.`,
+        action: tone === 'critical'
+          ? 'Reforzar revision, evidencia y responsable durante esta ventana.'
+          : tone === 'warning'
+            ? 'Dejar esta franja en seguimiento y revisar si hay patron repetido.'
+            : 'Mantener rutina normal y conservar lectura disponible.',
+        tone,
+        rank,
+      }
+    })
+  })
+
+  return windows
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

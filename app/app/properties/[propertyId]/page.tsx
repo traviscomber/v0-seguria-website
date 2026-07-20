@@ -27,6 +27,7 @@ import {
   getPortalOperationalScore,
   getPortalSensorRisk,
   getPortalServiceCommitments,
+  getPortalSensitiveWindows,
   getPortalSiteForUser,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
@@ -102,6 +103,7 @@ export default async function PropertyPage({
   const coverageZones = getPortalCoverageZones(site)
   const serviceCommitments = getPortalServiceCommitments([site])
   const executiveBrief = getPortalExecutiveBrief([site])
+  const sensitiveWindows = getPortalSensitiveWindows([site])
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -270,6 +272,53 @@ export default async function PropertyPage({
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_15%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Ventanas sensibles</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Horarios que conviene mirar en {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              La lectura separa apertura, operacion diaria, cierre y noche para orientar turnos, rondas y evidencia
+              con criterio operativo.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            patron por turno
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {sensitiveWindows.slice(0, 4).map((window) => (
+            <div key={window.id} className={`rounded-[24px] border p-5 ${getScoreTone(window.tone)}`}>
+              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{window.siteLabel}</p>
+              <div className="mt-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-light text-white">{window.label}</h3>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/42">{window.range}</p>
+                </div>
+                <Badge className={getScoreTone(window.tone)}>{window.criticalCount > 0 ? 'critica' : window.incidentCount > 0 ? 'atencion' : 'normal'}</Badge>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Eventos</p>
+                  <p className="mt-1 text-lg font-light text-white">{window.eventCount}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Incid.</p>
+                  <p className="mt-1 text-lg font-light text-white">{window.incidentCount}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Crit.</p>
+                  <p className="mt-1 text-lg font-light text-white">{window.criticalCount}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{window.summary}</p>
+              <p className="mt-3 text-sm leading-6 text-white/74">{window.action}</p>
+            </div>
+          ))}
         </div>
       </section>
 
