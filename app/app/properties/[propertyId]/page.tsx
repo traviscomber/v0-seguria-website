@@ -29,6 +29,7 @@ import {
   getPortalExecutiveBrief,
   getPortalGovernanceRituals,
   getPortalImprovementActions,
+  getPortalMaturityScorecard,
   getPortalOperationalScore,
   getPortalOperationalFlow,
   getPortalRiskMap,
@@ -107,6 +108,7 @@ export default async function PropertyPage({
   const openIncidents = site.incidents.filter(isOpenPortalIncident)
   const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
   const operationalScore = getPortalOperationalScore([site])
+  const maturityScorecard = getPortalMaturityScorecard([site])
   const operationalFlow = getPortalOperationalFlow([site])
   const boardReport = getPortalBoardReport([site])
   const governanceRituals = getPortalGovernanceRituals([site])
@@ -288,6 +290,41 @@ export default async function PropertyPage({
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Scorecard de madurez</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que tan madura esta la operacion de {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              La lectura resume visibilidad, respuesta, evidencia, gobierno y continuidad del sitio en una sola
+              evaluacion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            cinco pilares
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-5">
+          {maturityScorecard.map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-4xl font-light text-white">{item.score}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.level}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{item.reading}</p>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Siguiente mejora</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">{item.nextStep}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

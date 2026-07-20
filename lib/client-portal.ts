@@ -331,6 +331,17 @@ export interface PortalRiskMapItem {
   rank: number
 }
 
+export interface PortalMaturityScorecardItem {
+  id: string
+  label: string
+  score: number
+  level: string
+  reading: string
+  nextStep: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2586,6 +2597,138 @@ export function getPortalRiskMap(sites: PortalSiteSummary[]): PortalRiskMapItem[
   return mapItems
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
+}
+
+function getMaturityTone(score: number): PortalMaturityScorecardItem['tone'] {
+  if (score >= 82) return 'ok'
+  if (score >= 58) return 'warning'
+  return 'critical'
+}
+
+function getMaturityLevel(score: number) {
+  if (score >= 90) return 'Avanzado'
+  if (score >= 76) return 'Profesional'
+  if (score >= 58) return 'En mejora'
+  return 'Exigido'
+}
+
+export function getPortalMaturityScorecard(sites: PortalSiteSummary[]): PortalMaturityScorecardItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-maturity',
+      label: 'Base operativa',
+      score: 0,
+      level: 'Pendiente',
+      reading: 'No hay sitios publicados para evaluar madurez.',
+      nextStep: 'Activar sitio, inventario y responsables iniciales.',
+      tone: 'warning',
+      rank: 100,
+    }]
+  }
+
+  const totals = getPortalDashboardTotals(sites)
+  const report = getPortalPortfolioReport(sites)
+  const operationalScore = getPortalOperationalScore(sites)
+  const actions = getPortalActionRegister(sites)
+  const decisions = getPortalDecisionPackets(sites)
+  const traceability = getPortalTraceabilityLedger(sites)
+  const governance = getPortalGovernanceRituals(sites)
+  const coverage = sites.flatMap((site) => getPortalCoverageZones(site))
+  const sensorRisk = sites.reduce(
+    (current, site) => {
+      const next = getPortalSensorRisk(site.devices)
+      current.stable += next.stable
+      current.attention += next.attention
+      current.critical += next.critical
+      return current
+    },
+    { stable: 0, attention: 0, critical: 0 }
+  )
+  const coveredZones = coverage.filter((zone) => zone.tone === 'ok').length
+  const warningZones = coverage.filter((zone) => zone.tone === 'warning').length
+  const criticalZones = coverage.filter((zone) => zone.tone === 'critical').length
+  const openIncidents = totals.openIncidents
+  const criticalActions = actions.filter((action) => action.tone === 'critical').length
+  const evidenceItems = traceability.filter((item) => item.tone !== 'critical').length
+  const governanceOk = governance.filter((item) => item.tone === 'ok').length
+
+  const visibilityScore = Math.max(0, Math.min(100,
+    35 +
+    Math.min(25, totals.cameras * 4) +
+    Math.min(20, totals.sensors * 3) +
+    coveredZones * 6 -
+    warningZones * 8 -
+    criticalZones * 16
+  ))
+  const responseScore = Math.max(0, Math.min(100,
+    100 -
+    openIncidents * 12 -
+    report.overdueConfirmations * 18 -
+    criticalActions * 10
+  ))
+  const evidenceScore = Math.max(0, Math.min(100,
+    45 +
+    Math.min(30, totals.documents * 6) +
+    Math.min(25, evidenceItems * 5) -
+    decisions.filter((decision) => decision.tone === 'critical').length * 10
+  ))
+  const governanceScore = Math.max(0, Math.min(100,
+    52 +
+    governanceOk * 8 +
+    Math.min(20, governance.length * 3) -
+    actions.filter((action) => action.tone !== 'ok').length * 6
+  ))
+  const continuityScore = Math.max(0, Math.min(100,
+    100 -
+    totals.offlineGateways * 16 -
+    sensorRisk.critical * 12 -
+    sensorRisk.attention * 5
+  ))
+
+  const items = [
+    {
+      id: 'visibility',
+      label: 'Visibilidad',
+      score: visibilityScore,
+      reading: `${coveredZones} zona${coveredZones === 1 ? '' : 's'} cubierta${coveredZones === 1 ? '' : 's'}, ${criticalZones} punto${criticalZones === 1 ? '' : 's'} ciego${criticalZones === 1 ? '' : 's'}.`,
+      nextStep: criticalZones > 0 ? 'Cerrar puntos ciegos antes de sumar nuevas reglas.' : 'Mantener cobertura y revisar zonas parciales.',
+    },
+    {
+      id: 'response',
+      label: 'Respuesta',
+      score: responseScore,
+      reading: `${openIncidents} incidente${openIncidents === 1 ? '' : 's'} abierto${openIncidents === 1 ? '' : 's'} y ${report.overdueConfirmations} confirmacion${report.overdueConfirmations === 1 ? '' : 'es'} vencida${report.overdueConfirmations === 1 ? '' : 's'}.`,
+      nextStep: report.overdueConfirmations > 0 ? 'Cerrar confirmaciones vencidas antes del cambio de turno.' : 'Mantener responsables y cierres visibles.',
+    },
+    {
+      id: 'evidence',
+      label: 'Evidencia',
+      score: evidenceScore,
+      reading: `${totals.documents} documento${totals.documents === 1 ? '' : 's'} y ${evidenceItems} respaldo${evidenceItems === 1 ? '' : 's'} util${evidenceItems === 1 ? '' : 'es'}.`,
+      nextStep: evidenceScore < 76 ? 'Completar respaldo de incidentes y decisiones abiertas.' : 'Usar evidencia para aprendizaje operativo.',
+    },
+    {
+      id: 'governance',
+      label: 'Gobierno',
+      score: governanceScore,
+      reading: `${governance.length} ritual${governance.length === 1 ? '' : 'es'} y ${actions.length} accion${actions.length === 1 ? '' : 'es'} priorizada${actions.length === 1 ? '' : 's'}.`,
+      nextStep: governanceScore < 76 ? 'Ordenar responsables, plazos y criterios de cierre.' : 'Mantener cadencia diaria, semanal y mensual.',
+    },
+    {
+      id: 'continuity',
+      label: 'Continuidad',
+      score: continuityScore,
+      reading: `${totals.onlineGateways} conexion${totals.onlineGateways === 1 ? '' : 'es'} activa${totals.onlineGateways === 1 ? '' : 's'}, ${totals.offlineGateways} con revision.`,
+      nextStep: totals.offlineGateways > 0 ? 'Restituir lectura de sitio antes de depender de rondas manuales.' : 'Mantener recencia y estabilidad de equipos.',
+    },
+  ].map((item) => ({
+    ...item,
+    level: getMaturityLevel(item.score),
+    tone: getMaturityTone(item.score),
+    rank: 100 - item.score,
+  }))
+
+  return items.sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label))
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {
