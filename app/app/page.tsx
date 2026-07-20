@@ -18,6 +18,7 @@ import {
   getPortalExecutiveBrief,
   getPortalGovernanceRituals,
   getPortalImprovementActions,
+  getPortalLeadershipBrief,
   getPortalMaturityScorecard,
   getPortalOperationalScore,
   getPortalOperationalFlow,
@@ -274,6 +275,7 @@ export default async function ClientAppPage() {
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
   const executiveBrief = getPortalExecutiveBrief(sites)
+  const leadershipBrief = getPortalLeadershipBrief(sites)
   const sensitiveWindows = getPortalSensitiveWindows(sites)
   const improvementActions = getPortalImprovementActions(sites)
   const decisionPackets = getPortalDecisionPackets(sites)
@@ -577,6 +579,34 @@ export default async function ClientAppPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(leadershipBrief.tone)}`}>
+        <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{leadershipBrief.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white">{leadershipBrief.headline}</h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{leadershipBrief.businessReading}</p>
+            <div className="mt-5 grid gap-3">
+              <InfoLine label="Valor para el cliente" value={leadershipBrief.customerOutcome} />
+              <InfoLine label="Proxima conversacion" value={leadershipBrief.nextConversation} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {leadershipBrief.pillars.map((pillar) => (
+              <div key={pillar.label} className={`rounded-[24px] border p-5 ${getScoreTone(pillar.tone)}`}>
+                <p className="text-xs uppercase tracking-[0.18em] opacity-70">{pillar.label}</p>
+                <h3 className="mt-3 text-2xl font-light text-white">{pillar.value}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/64">{pillar.detail}</p>
+                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Prueba</p>
+                  <p className="mt-2 text-xs leading-5 text-white/60">{pillar.proof}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

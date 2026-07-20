@@ -356,6 +356,22 @@ export interface PortalWeeklyDecisionAgendaItem {
   rank: number
 }
 
+export interface PortalLeadershipBrief {
+  title: string
+  headline: string
+  businessReading: string
+  customerOutcome: string
+  nextConversation: string
+  tone: 'ok' | 'warning' | 'critical'
+  pillars: {
+    label: string
+    value: string
+    detail: string
+    proof: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1586,6 +1602,110 @@ export function getPortalExecutiveBrief(sites: PortalSiteSummary[]): PortalExecu
       evidenceReady < totals.incidentsThisMonth ? 'Completar evidencia de cierres mensuales.' : 'Usar evidencia disponible para aprendizaje operativo.',
     ],
     tone,
+  }
+}
+
+export function getPortalLeadershipBrief(sites: PortalSiteSummary[]): PortalLeadershipBrief {
+  if (sites.length === 0) {
+    return {
+      title: 'Brief de direccion',
+      headline: 'Primero hay que activar una lectura confiable',
+      businessReading: 'Sin sitios publicados no existe una base comun para decidir, responder o medir seguridad.',
+      customerOutcome: 'El primer valor para el cliente es tener una operacion visible y facil de revisar.',
+      nextConversation: 'Definir sitio inicial, responsables, inventario minimo y criterio de atencion.',
+      tone: 'warning',
+      pillars: [
+        {
+          label: 'Base',
+          value: 'pendiente',
+          detail: 'Falta publicar la primera operacion cliente.',
+          proof: 'Sin sitios activos',
+          tone: 'warning',
+        },
+      ],
+    }
+  }
+
+  const totals = getPortalDashboardTotals(sites)
+  const score = getPortalOperationalScore(sites)
+  const report = getPortalPortfolioReport(sites)
+  const maturity = getPortalMaturityScorecard(sites)
+  const agenda = getPortalWeeklyDecisionAgenda(sites)
+  const evidenceReady = sites.reduce((total, site) =>
+    total + site.incidents.filter((incident) => incident.evidence.length > 0 || incident.relatedEvents.length > 0).length,
+    0
+  )
+  const protectedZones = sites
+    .flatMap((site) => getPortalCoverageZones(site))
+    .filter((zone) => zone.tone === 'ok').length
+  const exposedZones = sites
+    .flatMap((site) => getPortalCoverageZones(site))
+    .filter((zone) => zone.tone !== 'ok').length
+  const criticalAgenda = agenda.filter((item) => item.tone === 'critical').length
+  const warningAgenda = agenda.filter((item) => item.tone === 'warning').length
+  const tone: PortalLeadershipBrief['tone'] = criticalAgenda > 0 || score.tone === 'critical'
+    ? 'critical'
+    : warningAgenda > 0 || score.tone === 'warning'
+      ? 'warning'
+      : 'ok'
+  const weakest = maturity[0]
+
+  return {
+    title: 'Brief de direccion',
+    headline: tone === 'critical'
+      ? 'Hay decisiones que no conviene postergar'
+      : tone === 'warning'
+        ? 'La operacion esta visible y tiene mejoras claras'
+        : 'La seguridad opera con orden, evidencia y calma',
+    businessReading: `La lectura consolida ${totals.sites} sitio${totals.sites === 1 ? '' : 's'}, ${totals.devices} equipo${totals.devices === 1 ? '' : 's'} y ${totals.eventsToday} evento${totals.eventsToday === 1 ? '' : 's'} de hoy en una sola historia operativa.`,
+    customerOutcome: totals.openIncidents > 0
+      ? 'El cliente gana foco: sabe que incidentes siguen abiertos, que evidencia existe y quien debe cerrar.'
+      : 'El cliente gana tranquilidad: la seguridad se entiende por estado, prioridad y evidencia, no por cantidad de pantallas.',
+    nextConversation: agenda[0]?.decision || 'Mantener la rutina de control y revisar oportunidades de mejora.',
+    tone,
+    pillars: [
+      {
+        label: 'Claridad',
+        value: `${score.score}/100`,
+        detail: score.summary,
+        proof: `${score.drivers.slice(0, 2).join(' · ') || 'Lectura operativa disponible'}`,
+        tone: score.tone,
+      },
+      {
+        label: 'Cobertura',
+        value: `${protectedZones}/${protectedZones + exposedZones || 1}`,
+        detail: exposedZones > 0
+          ? `${exposedZones} zona${exposedZones === 1 ? '' : 's'} necesita${exposedZones === 1 ? '' : 'n'} criterio o senal complementaria.`
+          : 'Las zonas publicadas tienen lectura suficiente para seguimiento.',
+        proof: `${totals.cameras} vista${totals.cameras === 1 ? '' : 's'} y ${totals.sensors} senal${totals.sensors === 1 ? '' : 'es'} visibles.`,
+        tone: exposedZones > 0 ? 'warning' : 'ok',
+      },
+      {
+        label: 'Respuesta',
+        value: `${totals.openIncidents}`,
+        detail: totals.openIncidents > 0
+          ? 'Hay incidentes que requieren responsable, evidencia o cierre.'
+          : 'No hay incidentes abiertos en esta lectura.',
+        proof: `${report.overdueConfirmations} confirmacion${report.overdueConfirmations === 1 ? '' : 'es'} vencida${report.overdueConfirmations === 1 ? '' : 's'}.`,
+        tone: totals.openIncidents > 0 || report.overdueConfirmations > 0 ? 'critical' : 'ok',
+      },
+      {
+        label: 'Evidencia',
+        value: `${evidenceReady}`,
+        detail: evidenceReady > 0
+          ? 'Hay respaldo suficiente para explicar decisiones sin reconstruir la historia.'
+          : 'Conviene fortalecer respaldo antes de que una excepcion escale.',
+        proof: `${totals.documents} documento${totals.documents === 1 ? '' : 's'} publicado${totals.documents === 1 ? '' : 's'}.`,
+        tone: evidenceReady > 0 || totals.documents > 0 ? 'ok' : 'warning',
+      },
+      {
+        label: 'Madurez',
+        value: weakest?.level || 'Pendiente',
+        detail: weakest?.reading || 'Sin scorecard disponible.',
+        proof: weakest?.nextStep || 'Activar scorecard de madurez.',
+        tone: weakest?.tone || 'warning',
+      },
+    ],
   }
 }
 
