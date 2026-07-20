@@ -20,6 +20,7 @@ import { CameraStreamControl } from '@/components/camera-stream-control'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import {
   getPortalActivityFeed,
+  getPortalDailyPriorities,
   getPortalDeviceBuckets,
   getPortalOperationalScore,
   getPortalSensorRisk,
@@ -94,6 +95,7 @@ export default async function PropertyPage({
   const openIncidents = site.incidents.filter(isOpenPortalIncident)
   const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
   const operationalScore = getPortalOperationalScore([site])
+  const dailyPriorities = getPortalDailyPriorities([site])
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -226,6 +228,43 @@ export default async function PropertyPage({
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_30%),rgba(255,255,255,0.045)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Prioridad del dia</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que revisar primero en {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Una lectura corta para decidir si el equipo mantiene rutina, revisa una senal o escala una situacion
+              antes del cierre operativo.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            prioridad por impacto
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {dailyPriorities.slice(0, 3).map((priority, index) => (
+            <div key={priority.id} className={`rounded-[24px] border p-5 ${getScoreTone(priority.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">Lectura {index + 1}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{priority.title}</h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
+                  0{index + 1}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{priority.detail}</p>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion recomendada</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">{priority.action}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

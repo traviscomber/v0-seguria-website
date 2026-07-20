@@ -164,6 +164,16 @@ export interface PortalOperationalScore {
   drivers: string[]
 }
 
+export interface PortalDailyPriority {
+  id: string
+  siteLabel: string
+  title: string
+  detail: string
+  action: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1024,6 +1034,121 @@ export function getPortalOperationalScore(sites: PortalSiteSummary[]): PortalOpe
     summary: 'La prioridad es estabilizar eventos, conexiones o confirmaciones pendientes.',
     drivers,
   }
+}
+
+export function getPortalDailyPriorities(sites: PortalSiteSummary[]): PortalDailyPriority[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-portal',
+      siteLabel: 'Sin sitio',
+      title: 'Completar primera operacion',
+      detail: 'Aun no hay sitios visibles para construir una lectura diaria.',
+      action: 'Crear o asignar el primer sitio protegido.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const priorities = sites.flatMap((site) => {
+    const sensorRisk = getPortalSensorRisk(site.devices)
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const evidenceMissing = openIncidents.filter((incident) => incident.evidence.length === 0).length
+    const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+    const criticalEvents = site.events.filter((event) => event.severity === 'critical')
+    const items: PortalDailyPriority[] = []
+
+    if (openIncidents.length > 0) {
+      const criticalIncidents = openIncidents.filter((incident) => incident.severity === 'critical').length
+      items.push({
+        id: `${site.propertyId}-open-incidents`,
+        siteLabel: site.label,
+        title: criticalIncidents > 0 ? 'Incidente critico abierto' : 'Incidente en seguimiento',
+        detail: `${openIncidents.length} incidente${openIncidents.length === 1 ? '' : 's'} requiere${openIncidents.length === 1 ? '' : 'n'} cierre operativo.`,
+        action: 'Revisar responsable, evidencia y siguiente accion antes del cierre del turno.',
+        tone: criticalIncidents > 0 ? 'critical' : 'warning',
+        rank: criticalIncidents > 0 ? 100 : 82,
+      })
+    }
+
+    if (site.report.overdueConfirmations > 0) {
+      items.push({
+        id: `${site.propertyId}-overdue-confirmations`,
+        siteLabel: site.label,
+        title: 'Confirmacion vencida',
+        detail: `${site.report.overdueConfirmations} aviso${site.report.overdueConfirmations === 1 ? '' : 's'} paso${site.report.overdueConfirmations === 1 ? '' : 'n'} el tiempo esperado de respuesta.`,
+        action: 'Confirmar recepcion y registrar si corresponde escalamiento o cierre.',
+        tone: 'critical',
+        rank: 96,
+      })
+    }
+
+    if (criticalEvents.length > 0) {
+      items.push({
+        id: `${site.propertyId}-critical-events`,
+        siteLabel: site.label,
+        title: 'Senales criticas recientes',
+        detail: `${criticalEvents.length} evento${criticalEvents.length === 1 ? '' : 's'} critico${criticalEvents.length === 1 ? '' : 's'} aparece${criticalEvents.length === 1 ? '' : 'n'} en la lectura reciente.`,
+        action: 'Cruzar lugar, hora y evidencia antes de decidir si se mantiene seguimiento.',
+        tone: 'critical',
+        rank: 94,
+      })
+    }
+
+    if (gatewayRisk > 0) {
+      items.push({
+        id: `${site.propertyId}-continuity-risk`,
+        siteLabel: site.label,
+        title: 'Continuidad con revision',
+        detail: `${gatewayRisk} conexion${gatewayRisk === 1 ? '' : 'es'} necesita${gatewayRisk === 1 ? '' : 'n'} atencion para sostener visibilidad.`,
+        action: 'Priorizar restitucion de la lectura antes de depender solo de rondas manuales.',
+        tone: 'warning',
+        rank: 78,
+      })
+    }
+
+    if (sensorRisk.critical > 0 || sensorRisk.attention > 0) {
+      const sensorCount = sensorRisk.critical + sensorRisk.attention
+      items.push({
+        id: `${site.propertyId}-sensor-risk`,
+        siteLabel: site.label,
+        title: sensorRisk.critical > 0 ? 'Sensores criticos' : 'Sensores para revisar',
+        detail: `${sensorCount} sensor${sensorCount === 1 ? '' : 'es'} no esta${sensorCount === 1 ? '' : 'n'} en lectura normal.`,
+        action: site.profile.recommendedAttentionAction,
+        tone: sensorRisk.critical > 0 ? 'critical' : 'warning',
+        rank: sensorRisk.critical > 0 ? 88 : 70,
+      })
+    }
+
+    if (evidenceMissing > 0) {
+      items.push({
+        id: `${site.propertyId}-evidence-gap`,
+        siteLabel: site.label,
+        title: 'Evidencia incompleta',
+        detail: `${evidenceMissing} incidente${evidenceMissing === 1 ? '' : 's'} abierto${evidenceMissing === 1 ? '' : 's'} no muestra${evidenceMissing === 1 ? '' : 'n'} captura asociada.`,
+        action: 'Abrir el incidente y confirmar si requiere respaldo visual o cierre documentado.',
+        tone: 'warning',
+        rank: 74,
+      })
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: `${site.propertyId}-stable-routine`,
+        siteLabel: site.label,
+        title: 'Rutina estable',
+        detail: 'No hay incidentes abiertos ni senales criticas visibles para este sitio.',
+        action: site.profile.recommendedStableAction,
+        tone: 'ok',
+        rank: 20,
+      })
+    }
+
+    return items
+  })
+
+  return priorities
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 6)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {
