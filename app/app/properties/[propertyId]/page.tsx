@@ -39,6 +39,7 @@ import {
   getPortalSensitiveWindows,
   getPortalSiteForUser,
   getPortalTraceabilityLedger,
+  getPortalTrustCenter,
   getPortalWeeklyDecisionAgenda,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
@@ -123,6 +124,7 @@ export default async function PropertyPage({
   const serviceCommitments = getPortalServiceCommitments([site])
   const executiveBrief = getPortalExecutiveBrief([site])
   const leadershipBrief = getPortalLeadershipBrief([site])
+  const trustCenter = getPortalTrustCenter([site])
   const sensitiveWindows = getPortalSensitiveWindows([site])
   const improvementActions = getPortalImprovementActions([site])
   const decisionPackets = getPortalDecisionPackets([site])
@@ -322,6 +324,37 @@ export default async function PropertyPage({
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_32%),radial-gradient(circle_at_86%_6%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Centro de confianza</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Por que {site.label} puede operar con calma</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Garantias simples para revisar el sitio sin depender de explicaciones internas: acceso acotado,
+              evidencia, respuesta, continuidad y mejora permanente.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            confianza del sitio
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-5">
+          {trustCenter.map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/64">{item.promise}</p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Que significa</p>
+                <p className="mt-2 text-sm leading-6 text-white/70">{item.customerMeaning}</p>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-white/45">{item.proof}</p>
+            </div>
+          ))}
         </div>
       </section>
 

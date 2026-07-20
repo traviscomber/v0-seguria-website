@@ -372,6 +372,17 @@ export interface PortalLeadershipBrief {
   }[]
 }
 
+export interface PortalTrustCenterItem {
+  id: string
+  label: string
+  value: string
+  promise: string
+  proof: string
+  customerMeaning: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1707,6 +1718,96 @@ export function getPortalLeadershipBrief(sites: PortalSiteSummary[]): PortalLead
       },
     ],
   }
+}
+
+export function getPortalTrustCenter(sites: PortalSiteSummary[]): PortalTrustCenterItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-trust-center',
+      label: 'Confianza inicial',
+      value: 'pendiente',
+      promise: 'El cliente necesita una primera operacion publicada para revisar garantias reales.',
+      proof: 'Sin sitios activos en esta cuenta.',
+      customerMeaning: 'Aun no existe una lectura comun para cuidar, decidir y auditar.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const totals = getPortalDashboardTotals(sites)
+  const report = getPortalPortfolioReport(sites)
+  const score = getPortalOperationalScore(sites)
+  const traceability = getPortalTraceabilityLedger(sites)
+  const actions = getPortalActionRegister(sites)
+  const evidenceItems = traceability.filter((item) => item.tone !== 'critical').length
+  const openActions = actions.filter((action) => action.tone !== 'ok').length
+  const continuityRisk = totals.offlineGateways
+  const openIncidents = totals.openIncidents
+  const staleSites = sites.filter((site) => {
+    if (!site.lastUpdatedAt) return true
+    return Date.now() - site.lastUpdatedAt.getTime() > 1000 * 60 * 60 * 24
+  }).length
+
+  const items: PortalTrustCenterItem[] = [
+    {
+      id: 'scoped-access',
+      label: 'Acceso acotado',
+      value: `${totals.organizations} empresa${totals.organizations === 1 ? '' : 's'}`,
+      promise: 'Cada cliente ve solo su operacion, sus sitios y sus decisiones.',
+      proof: `${totals.sites} sitio${totals.sites === 1 ? '' : 's'} visible${totals.sites === 1 ? '' : 's'} en esta cuenta.`,
+      customerMeaning: 'La informacion aparece ordenada por empresa y propiedad, sin mezclar audiencias.',
+      tone: 'ok',
+      rank: 12,
+    },
+    {
+      id: 'protected-evidence',
+      label: 'Evidencia explicable',
+      value: `${evidenceItems}`,
+      promise: 'Las decisiones importantes quedan respaldadas por senales, documentos o evidencia visible.',
+      proof: `${totals.documents} documento${totals.documents === 1 ? '' : 's'} y ${traceability.length} registro${traceability.length === 1 ? '' : 's'} trazable${traceability.length === 1 ? '' : 's'}.`,
+      customerMeaning: evidenceItems > 0
+        ? 'El cliente puede explicar que paso sin reconstruir la historia a mano.'
+        : 'Conviene completar respaldo antes de cerrar excepciones relevantes.',
+      tone: evidenceItems > 0 || totals.documents > 0 ? 'ok' : 'warning',
+      rank: evidenceItems > 0 || totals.documents > 0 ? 18 : 72,
+    },
+    {
+      id: 'response-control',
+      label: 'Respuesta gobernada',
+      value: `${openIncidents}`,
+      promise: 'Los incidentes y avisos no quedan sueltos: tienen responsable, plazo y criterio de cierre.',
+      proof: `${openActions} accion${openActions === 1 ? '' : 'es'} priorizada${openActions === 1 ? '' : 's'} y ${report.overdueConfirmations} confirmacion${report.overdueConfirmations === 1 ? '' : 'es'} vencida${report.overdueConfirmations === 1 ? '' : 's'}.`,
+      customerMeaning: openIncidents > 0 || report.overdueConfirmations > 0
+        ? 'Hay trabajo concreto para cerrar antes de que el riesgo se vuelva ruido.'
+        : 'La operacion mantiene una lectura clara de respuesta y cierre.',
+      tone: openIncidents > 0 || report.overdueConfirmations > 0 ? 'critical' : openActions > 0 ? 'warning' : 'ok',
+      rank: openIncidents > 0 || report.overdueConfirmations > 0 ? 96 : openActions > 0 ? 58 : 10,
+    },
+    {
+      id: 'continuity',
+      label: 'Continuidad visible',
+      value: continuityRisk > 0 ? `${continuityRisk} en revision` : 'estable',
+      promise: 'La plataforma avisa cuando una conexion o sitio deja de dar lectura suficiente.',
+      proof: `${totals.onlineGateways} conexion${totals.onlineGateways === 1 ? '' : 'es'} activa${totals.onlineGateways === 1 ? '' : 's'}, ${staleSites} sitio${staleSites === 1 ? '' : 's'} con lectura antigua.`,
+      customerMeaning: continuityRisk > 0 || staleSites > 0
+        ? 'Antes de prometer calma, hay que recuperar visibilidad donde falta lectura.'
+        : 'El cliente conserva visibilidad diaria sobre sus zonas principales.',
+      tone: continuityRisk > 0 || staleSites > 0 ? 'warning' : 'ok',
+      rank: continuityRisk > 0 || staleSites > 0 ? 70 : 14,
+    },
+    {
+      id: 'continuous-improvement',
+      label: 'Mejora continua',
+      value: `${score.score}/100`,
+      promise: 'El portal no se limita a mostrar equipos: propone mejoras para reducir riesgo y ruido.',
+      proof: score.drivers.slice(0, 2).join(' · ') || 'Lectura operativa disponible.',
+      customerMeaning: 'Cada revision semanal puede terminar con una mejora concreta, no solo con una lista de eventos.',
+      tone: score.tone,
+      rank: score.tone === 'critical' ? 88 : score.tone === 'warning' ? 54 : 16,
+    },
+  ]
+
+  return items.sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label))
 }
 
 function getWindowSlot(date: Date) {
