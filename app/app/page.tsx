@@ -303,6 +303,12 @@ export default async function ClientAppPage() {
       { label: 'Respuesta', value: 'accion clara', detail: 'Cada senal viene con siguiente paso y evidencia disponible.' },
       { label: 'Continuidad', value: 'operacion estable', detail: 'La plataforma ayuda a detectar cortes, fallas y excepciones antes de que escalen.' },
     ],
+    assurance: [
+      { label: 'Privacidad', value: 'solo lo necesario', detail: 'La vista cliente evita ruido tecnico y expone informacion util para operar.' },
+      { label: 'Roles', value: 'responsables claros', detail: 'Cada accion se puede leer por equipo, sitio y prioridad.' },
+      { label: 'SLA', value: 'tiempos visibles', detail: 'Confirmacion, resolucion y alertas pendientes quedan medibles.' },
+      { label: 'Auditoria', value: 'historia completa', detail: 'Eventos, evidencia e incidentes quedan ordenados para revisar y mejorar.' },
+    ],
     responsePlan: [
       'Revisar primero alertas criticas y conexiones con atencion.',
       'Confirmar evidencia antes de escalar una excepcion.',
@@ -512,6 +518,32 @@ export default async function ClientAppPage() {
       </section>
 
       <ClientNotificationCenter />
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Confianza operacional</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Profesional por dentro, simple por fuera</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              El cliente no necesita ver la tecnologia que sostiene la operacion: necesita privacidad, responsables claros,
+              tiempos medibles y evidencia disponible cuando importa.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-white/5 text-white/58">
+            roles / SLA / evidencia
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {primaryProfile.assurance.map((item) => (
+            <div key={`${item.label}-${item.value}`} className="rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">{item.label}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/56">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_28%),rgba(255,255,255,0.04)] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">

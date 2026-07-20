@@ -49,6 +49,11 @@ export interface PortalSiteProfile {
     value: string
     detail: string
   }[]
+  assurance: {
+    label: string
+    value: string
+    detail: string
+  }[]
   responsePlan: string[]
   metricLabels: {
     camera: string
@@ -217,6 +222,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'Equipo', value: 'turnos atentos', detail: 'Cada aviso indica donde mirar, que cambio y quien debe actuar primero.' },
         { label: 'Evidencia', value: 'sin busqueda larga', detail: 'Eventos, capturas y documentos quedan unidos para revisar rapidamente lo que importa.' },
       ],
+      assurance: [
+        { label: 'Privacidad', value: 'operacion discreta', detail: 'El portal muestra contexto de seguridad sin exponer informacion innecesaria del huesped.' },
+        { label: 'Roles', value: 'cada turno sabe', detail: 'Recepcion, mantencion y administracion reciben una lectura orientada a su responsabilidad.' },
+        { label: 'SLA', value: 'respuesta medible', detail: 'Los tiempos de confirmacion y resolucion quedan visibles para mejorar cada guardia.' },
+        { label: 'Auditoria', value: 'historial ordenado', detail: 'Incidentes, evidencia y cierres quedan trazables para revisar despues sin reconstruir la historia.' },
+      ],
       responsePlan: [
         'Priorizar recepcion, accesos y estacionamientos durante cambios de turno.',
         'Cruzar eventos con evidencia visual antes de escalar una alerta.',
@@ -249,6 +260,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'Noche', value: 'movimiento claro', detail: 'Avisos fuera de horario separan rutina, animales, visitas y excepciones que requieren revision.' },
         { label: 'Evidencia', value: 'decisiones simples', detail: 'Cada alerta queda asociada a lugar, hora, equipo y material de respaldo.' },
       ],
+      assurance: [
+        { label: 'Continuidad', value: 'faena protegida', detail: 'La lectura prioriza puntos que pueden afectar frio, riego, bodegas y movimiento diario.' },
+        { label: 'Roles', value: 'accion por equipo', detail: 'Administrador, encargado y operador ven que revisar primero sin mezclar responsabilidades.' },
+        { label: 'SLA', value: 'avisos medibles', detail: 'Confirmaciones, demoras y cierres permiten controlar respuesta sin depender de memoria.' },
+        { label: 'Auditoria', value: 'evidencia rural', detail: 'Cada excepcion queda unida a horario, ubicacion y respaldo visual para cerrar con criterio.' },
+      ],
       responsePlan: [
         'Revisar primero accesos, portones y movimiento nocturno.',
         'Confirmar continuidad de sala de frio, riego y bodegas sensibles.',
@@ -279,6 +296,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
       { label: 'Prioridad', value: 'menos ruido', detail: 'Las alertas se agrupan por impacto para evitar decisiones a ciegas.' },
       { label: 'Respuesta', value: 'accion clara', detail: 'Cada senal viene con siguiente paso y evidencia disponible.' },
       { label: 'Continuidad', value: 'operacion estable', detail: 'La plataforma ayuda a detectar cortes, fallas y excepciones antes de que escalen.' },
+    ],
+    assurance: [
+      { label: 'Privacidad', value: 'solo lo necesario', detail: 'La vista cliente evita ruido tecnico y expone informacion util para operar.' },
+      { label: 'Roles', value: 'responsables claros', detail: 'Cada accion se puede leer por equipo, sitio y prioridad.' },
+      { label: 'SLA', value: 'tiempos visibles', detail: 'Confirmacion, resolucion y alertas pendientes quedan medibles.' },
+      { label: 'Auditoria', value: 'historia completa', detail: 'Eventos, evidencia e incidentes quedan ordenados para revisar y mejorar.' },
     ],
     responsePlan: [
       'Revisar primero alertas criticas y conexiones con atencion.',

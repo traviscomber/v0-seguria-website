@@ -187,6 +187,32 @@ export default async function PropertyPage({
         ))}
       </section>
 
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Confianza del sitio</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Control que se puede explicar y auditar</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada senal debe servir para decidir, no para acumular pantallas. Esta vista ordena privacidad, roles,
+              tiempos y evidencia segun la realidad de {site.label}.
+            </p>
+          </div>
+          <Badge className={site.report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
+            {site.report.overdueConfirmations > 0 ? 'Revisar SLA' : 'SLA visible'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {site.profile.assurance.map((item) => (
+            <div key={`${item.label}-${item.value}`} className="rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">{item.label}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/56">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
