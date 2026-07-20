@@ -291,6 +291,20 @@ export interface PortalGovernanceRitual {
   rank: number
 }
 
+export interface PortalActionRegisterItem {
+  id: string
+  siteLabel: string
+  title: string
+  owner: string
+  due: string
+  status: string
+  why: string
+  nextStep: string
+  successCriteria: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2160,6 +2174,211 @@ export function getPortalGovernanceRituals(sites: PortalSiteSummary[]): PortalGo
   })
 
   return rituals
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 10)
+}
+
+export function getPortalActionRegister(sites: PortalSiteSummary[]): PortalActionRegisterItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-action-register',
+      siteLabel: 'Sin sitio',
+      title: 'Activar primer plan de accion',
+      owner: 'Equipo SegurIA',
+      due: 'Antes del inicio operativo',
+      status: 'Pendiente',
+      why: 'Sin sitio publicado no hay acciones priorizadas para el cliente.',
+      nextStep: 'Crear sitio, cargar inventario y asignar responsables.',
+      successCriteria: 'Portal con acciones visibles, responsables y criterios de cierre.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const actions = sites.flatMap((site) => {
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalIncident = openIncidents.find((incident) => incident.severity === 'critical')
+    const decisions = getPortalDecisionPackets([site])
+    const improvements = getPortalImprovementActions([site])
+    const commitments = getPortalServiceCommitments([site])
+    const windows = getPortalSensitiveWindows([site])
+    const coverage = getPortalCoverageZones(site)
+    const connectionRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+    const overdue = site.report.overdueConfirmations
+    const evidenceGap = openIncidents.find((incident) => incident.evidence.length === 0)
+    const blindZone = coverage.find((zone) => zone.tone === 'critical')
+    const weakCommitment = commitments.find((commitment) => commitment.tone !== 'ok')
+    const sensitiveWindow = windows.find((window) => window.tone !== 'ok')
+    const decision = decisions[0]
+    const improvement = improvements[0]
+    const operationsOwner = site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio'
+    const continuityOwner = site.profile.escalationMatrix[1]?.owner || 'Operacion'
+    const siteActions: PortalActionRegisterItem[] = []
+
+    if (criticalIncident) {
+      siteActions.push({
+        id: `${site.propertyId}-critical-action`,
+        siteLabel: site.label,
+        title: criticalIncident.title,
+        owner: operationsOwner,
+        due: 'Hoy, antes del cierre de turno',
+        status: criticalIncident.statusLabel,
+        why: criticalIncident.description || 'Incidente critico abierto con impacto potencial en la operacion.',
+        nextStep: criticalIncident.evidence.length > 0 ? 'Confirmar evidencia, asignar respuesta y registrar cierre.' : 'Completar evidencia antes de escalar o cerrar.',
+        successCriteria: 'Incidente con causa, responsable, evidencia y estado actualizado.',
+        tone: 'critical',
+        rank: 100,
+      })
+    }
+
+    if (overdue > 0) {
+      siteActions.push({
+        id: `${site.propertyId}-overdue-action`,
+        siteLabel: site.label,
+        title: 'Cerrar confirmaciones vencidas',
+        owner: operationsOwner,
+        due: 'Antes del cambio de turno',
+        status: 'Vencido',
+        why: `${overdue} aviso${overdue === 1 ? '' : 's'} esta${overdue === 1 ? '' : 'n'} fuera del tiempo esperado.`,
+        nextStep: 'Confirmar recepcion, escalar o documentar motivo de excepcion.',
+        successCriteria: 'Sin confirmaciones vencidas y con trazabilidad de respuesta.',
+        tone: 'critical',
+        rank: 96,
+      })
+    }
+
+    if (connectionRisk > 0) {
+      siteActions.push({
+        id: `${site.propertyId}-continuity-action`,
+        siteLabel: site.label,
+        title: 'Restaurar continuidad visible',
+        owner: continuityOwner,
+        due: 'Proxima revision operativa',
+        status: 'En revision',
+        why: `${connectionRisk} conexion${connectionRisk === 1 ? '' : 'es'} requiere${connectionRisk === 1 ? '' : 'n'} atencion para sostener visibilidad.`,
+        nextStep: 'Revisar recencia, enlace y equipos prioritarios antes de sumar nuevas reglas.',
+        successCriteria: 'Conexiones activas y lectura reciente del sitio.',
+        tone: 'warning',
+        rank: 84,
+      })
+    }
+
+    if (blindZone) {
+      siteActions.push({
+        id: `${site.propertyId}-coverage-action`,
+        siteLabel: site.label,
+        title: `Cubrir ${blindZone.name}`,
+        owner: continuityOwner,
+        due: 'Proxima visita o reunion de sitio',
+        status: blindZone.statusLabel,
+        why: blindZone.summary,
+        nextStep: blindZone.action,
+        successCriteria: 'Zona con vista, senal o criterio de revision suficiente.',
+        tone: 'critical',
+        rank: 88,
+      })
+    }
+
+    if (evidenceGap) {
+      siteActions.push({
+        id: `${site.propertyId}-evidence-action`,
+        siteLabel: site.label,
+        title: 'Completar respaldo pendiente',
+        owner: site.profile.escalationMatrix[2]?.owner || operationsOwner,
+        due: 'Antes de cerrar incidente',
+        status: evidenceGap.statusLabel,
+        why: `${evidenceGap.title} sigue sin respaldo visual publicado.`,
+        nextStep: 'Adjuntar captura, senal relacionada o causa documentada.',
+        successCriteria: 'Decision explicable sin reconstruir la historia.',
+        tone: 'warning',
+        rank: 78,
+      })
+    }
+
+    if (weakCommitment) {
+      siteActions.push({
+        id: `${site.propertyId}-commitment-action`,
+        siteLabel: site.label,
+        title: weakCommitment.label,
+        owner: 'Administrador del cliente',
+        due: 'Revision semanal',
+        status: weakCommitment.current,
+        why: weakCommitment.summary,
+        nextStep: weakCommitment.action,
+        successCriteria: weakCommitment.target,
+        tone: weakCommitment.tone,
+        rank: weakCommitment.rank - 2,
+      })
+    }
+
+    if (sensitiveWindow) {
+      siteActions.push({
+        id: `${site.propertyId}-window-action`,
+        siteLabel: site.label,
+        title: `Ajustar ${sensitiveWindow.label}`,
+        owner: operationsOwner,
+        due: 'Antes de la siguiente ventana',
+        status: sensitiveWindow.criticalCount > 0 ? 'Critica' : 'Atencion',
+        why: sensitiveWindow.summary,
+        nextStep: sensitiveWindow.action,
+        successCriteria: 'Turno con criterio, responsable y evidencia esperada.',
+        tone: sensitiveWindow.tone,
+        rank: sensitiveWindow.rank + 40,
+      })
+    }
+
+    if (decision) {
+      siteActions.push({
+        id: `${site.propertyId}-decision-action`,
+        siteLabel: site.label,
+        title: decision.decision,
+        owner: decision.owner,
+        due: decision.timing,
+        status: 'Por decidir',
+        why: decision.evidence,
+        nextStep: decision.outcome,
+        successCriteria: 'Decision registrada con responsable y evidencia minima.',
+        tone: decision.tone,
+        rank: decision.rank - 10,
+      })
+    }
+
+    if (improvement) {
+      siteActions.push({
+        id: `${site.propertyId}-improvement-action`,
+        siteLabel: site.label,
+        title: improvement.title,
+        owner: 'Administrador del cliente',
+        due: 'Mejora mensual',
+        status: 'Planificado',
+        why: improvement.why,
+        nextStep: improvement.nextStep,
+        successCriteria: improvement.expectedImpact,
+        tone: improvement.tone,
+        rank: improvement.rank - 14,
+      })
+    }
+
+    if (siteActions.length === 0) {
+      siteActions.push({
+        id: `${site.propertyId}-stable-action`,
+        siteLabel: site.label,
+        title: 'Mantener rutina de control',
+        owner: 'Administrador del cliente',
+        due: 'Revision mensual',
+        status: 'Al dia',
+        why: 'La lectura actual no muestra brechas criticas o advertencias abiertas.',
+        nextStep: 'Revisar patrones, reglas y tiempos para seguir reduciendo ruido.',
+        successCriteria: 'Operacion consistente, visible y facil de explicar.',
+        tone: 'ok',
+        rank: 18,
+      })
+    }
+
+    return siteActions
+  })
+
+  return actions
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 10)
 }

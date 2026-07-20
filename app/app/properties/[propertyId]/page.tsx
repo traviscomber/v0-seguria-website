@@ -20,6 +20,7 @@ import { CameraStreamControl } from '@/components/camera-stream-control'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import {
   getPortalActivityFeed,
+  getPortalActionRegister,
   getPortalBoardReport,
   getPortalCoverageZones,
   getPortalDailyPriorities,
@@ -107,6 +108,7 @@ export default async function PropertyPage({
   const operationalFlow = getPortalOperationalFlow([site])
   const boardReport = getPortalBoardReport([site])
   const governanceRituals = getPortalGovernanceRituals([site])
+  const actionRegister = getPortalActionRegister([site])
   const dailyPriorities = getPortalDailyPriorities([site])
   const coverageZones = getPortalCoverageZones(site)
   const serviceCommitments = getPortalServiceCommitments([site])
@@ -403,6 +405,43 @@ export default async function PropertyPage({
                 <InfoTile label="Responsable" value={ritual.owner} icon={ShieldAlert} />
                 <InfoTile label="Entrada" value={ritual.input} icon={FileText} />
                 <InfoTile label="Salida" value={ritual.output} icon={CheckCircle2} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bandeja de acciones</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Pendientes accionables de {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Riesgos, decisiones y mejoras quedan convertidos en trabajo concreto: responsable, plazo, siguiente paso
+              y criterio de cierre.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {actionRegister.length} acciones del sitio
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {actionRegister.slice(0, 6).map((action) => (
+            <div key={action.id} className={`rounded-[24px] border p-5 ${getScoreTone(action.tone)}`}>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{action.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{action.title}</h3>
+                </div>
+                <Badge className={getScoreTone(action.tone)}>{action.status}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{action.why}</p>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <InfoTile label="Responsable" value={action.owner} icon={ShieldAlert} />
+                <InfoTile label="Plazo" value={action.due} icon={Siren} />
+                <InfoTile label="Siguiente paso" value={action.nextStep} icon={FileText} />
+                <InfoTile label="Criterio de cierre" value={action.successCriteria} icon={CheckCircle2} />
               </div>
             </div>
           ))}

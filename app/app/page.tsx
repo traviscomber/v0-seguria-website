@@ -8,6 +8,7 @@ import { getCurrentAuthSession } from '@/lib/auth-store'
 import {
   getAccessiblePortalSites,
   getPortalActivityFeed,
+  getPortalActionRegister,
   getPortalAlertDevices,
   getPortalBoardReport,
   getPortalCoverageZones,
@@ -260,6 +261,7 @@ export default async function ClientAppPage() {
   const operationalFlow = getPortalOperationalFlow(sites)
   const boardReport = getPortalBoardReport(sites)
   const governanceRituals = getPortalGovernanceRituals(sites)
+  const actionRegister = getPortalActionRegister(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
@@ -689,6 +691,43 @@ export default async function ClientAppPage() {
                 <InfoLine label="Responsable" value={ritual.owner} />
                 <InfoLine label="Entrada" value={ritual.input} />
                 <InfoLine label="Salida" value={ritual.output} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bandeja de acciones</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Lo que queda abierto hasta que alguien lo cierre</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada accion nace de un riesgo, decision o compromiso real: responsable, plazo, siguiente paso y criterio
+              de cierre quedan visibles para operar sin perseguir informacion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {actionRegister.length} acciones priorizadas
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {actionRegister.slice(0, 6).map((action) => (
+            <div key={action.id} className={`rounded-[24px] border p-5 ${getScoreTone(action.tone)}`}>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{action.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{action.title}</h3>
+                </div>
+                <Badge className={getScoreTone(action.tone)}>{action.status}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{action.why}</p>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <InfoLine label="Responsable" value={action.owner} />
+                <InfoLine label="Plazo" value={action.due} />
+                <InfoLine label="Siguiente paso" value={action.nextStep} />
+                <InfoLine label="Criterio de cierre" value={action.successCriteria} />
               </div>
             </div>
           ))}
