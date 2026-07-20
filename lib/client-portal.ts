@@ -201,6 +201,16 @@ export interface PortalServiceCommitment {
   rank: number
 }
 
+export interface PortalExecutiveBrief {
+  title: string
+  periodLabel: string
+  verdict: string
+  narrative: string
+  highlights: string[]
+  focus: string[]
+  tone: 'ok' | 'warning' | 'critical'
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1365,6 +1375,73 @@ export function getPortalServiceCommitments(sites: PortalSiteSummary[]): PortalS
   return commitments
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
+}
+
+export function getPortalExecutiveBrief(sites: PortalSiteSummary[]): PortalExecutiveBrief {
+  const now = new Date()
+  const periodLabel = new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric' }).format(now)
+
+  if (sites.length === 0) {
+    return {
+      title: 'Informe ejecutivo',
+      periodLabel,
+      verdict: 'Operacion pendiente de activacion',
+      narrative: 'Todavia no hay sitios publicados para entregar una lectura ejecutiva de seguridad.',
+      highlights: ['Sin sitios visibles', 'Sin inventario publicado', 'Sin evidencia operacional'],
+      focus: ['Completar activacion inicial', 'Asignar responsables', 'Publicar primera lectura de seguridad'],
+      tone: 'warning',
+    }
+  }
+
+  const totals = getPortalDashboardTotals(sites)
+  const score = getPortalOperationalScore(sites)
+  const criticalSites = sites.filter((site) =>
+    site.report.criticalEventsToday > 0 ||
+    site.report.overdueConfirmations > 0 ||
+    site.incidents.some((incident) => isOpenPortalIncident(incident) && incident.severity === 'critical')
+  )
+  const attentionSites = sites.filter((site) =>
+    site.alertCount > 0 ||
+    site.gatewayHealth.offline + site.gatewayHealth.degraded > 0 ||
+    getPortalSensorRisk(site.devices).attention + getPortalSensorRisk(site.devices).critical > 0
+  )
+  const evidenceReady = sites.reduce((total, site) =>
+    total + site.incidents.filter((incident) => incident.evidence.length > 0 || incident.relatedEvents.length > 0).length,
+    0
+  )
+  const tone: PortalExecutiveBrief['tone'] = criticalSites.length > 0 || totals.overdueConfirmations > 0
+    ? 'critical'
+    : attentionSites.length > 0 || score.tone === 'warning'
+      ? 'warning'
+      : 'ok'
+  const verdict = tone === 'critical'
+    ? 'Hay temas criticos que requieren cierre'
+    : tone === 'warning'
+      ? 'Operacion controlada con puntos de atencion'
+      : 'Operacion sana y trazable'
+  const primaryRisk = criticalSites[0] || attentionSites[0]
+
+  return {
+    title: 'Informe ejecutivo',
+    periodLabel,
+    verdict,
+    narrative: primaryRisk
+      ? `${primaryRisk.label} concentra la principal lectura de atencion. El portal mantiene visibilidad sobre ${totals.sites} sitio${totals.sites === 1 ? '' : 's'}, ${totals.devices} equipo${totals.devices === 1 ? '' : 's'} y ${totals.openIncidents} incidente${totals.openIncidents === 1 ? '' : 's'} abierto${totals.openIncidents === 1 ? '' : 's'}.`
+      : `La operacion mantiene una lectura estable sobre ${totals.sites} sitio${totals.sites === 1 ? '' : 's'} y ${totals.devices} equipo${totals.devices === 1 ? '' : 's'}, con trazabilidad para eventos, evidencia y respuesta.`,
+    highlights: [
+      `${score.score}/100 de salud operativa`,
+      `${totals.eventsToday} evento${totals.eventsToday === 1 ? '' : 's'} visible${totals.eventsToday === 1 ? '' : 's'} hoy`,
+      `${totals.resolvedThisMonth} incidente${totals.resolvedThisMonth === 1 ? '' : 's'} resuelto${totals.resolvedThisMonth === 1 ? '' : 's'} este mes`,
+      `${evidenceReady} caso${evidenceReady === 1 ? '' : 's'} con evidencia o senales asociadas`,
+    ],
+    focus: [
+      totals.overdueConfirmations > 0 ? 'Cerrar confirmaciones vencidas antes del cambio de turno.' : 'Mantener confirmacion de avisos dentro del tiempo esperado.',
+      totals.openIncidents > 0 ? 'Revisar responsable y proxima accion de incidentes abiertos.' : 'Mantener bitacora limpia sin incidentes abiertos.',
+      totals.offlineGateways > 0 ? 'Restituir continuidad en conexiones con revision.' : 'Conservar lectura continua de zonas prioritarias.',
+      evidenceReady < totals.incidentsThisMonth ? 'Completar evidencia de cierres mensuales.' : 'Usar evidencia disponible para aprendizaje operativo.',
+    ],
+    tone,
+  }
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

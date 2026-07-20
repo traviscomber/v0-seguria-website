@@ -23,6 +23,7 @@ import {
   getPortalCoverageZones,
   getPortalDailyPriorities,
   getPortalDeviceBuckets,
+  getPortalExecutiveBrief,
   getPortalOperationalScore,
   getPortalSensorRisk,
   getPortalServiceCommitments,
@@ -100,6 +101,7 @@ export default async function PropertyPage({
   const dailyPriorities = getPortalDailyPriorities([site])
   const coverageZones = getPortalCoverageZones(site)
   const serviceCommitments = getPortalServiceCommitments([site])
+  const executiveBrief = getPortalExecutiveBrief([site])
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -231,6 +233,42 @@ export default async function PropertyPage({
                 <p className="text-sm leading-6 text-white/64">{driver}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(executiveBrief.tone)}`}>
+        <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{executiveBrief.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white">{executiveBrief.verdict}</h2>
+            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{executiveBrief.periodLabel}</p>
+            <p className="mt-5 text-base leading-8 text-white/70">{executiveBrief.narrative}</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Indicadores para gerencia</p>
+              <div className="mt-4 space-y-3">
+                {executiveBrief.highlights.map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm leading-6 text-white/70">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Foco recomendado</p>
+              <div className="mt-4 space-y-3">
+                {executiveBrief.focus.map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm leading-6 text-white/70">
+                    <ArrowLeft className="mt-0.5 h-4 w-4 shrink-0 rotate-180 text-[#9DD2F2]" strokeWidth={1.8} />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
