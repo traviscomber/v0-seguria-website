@@ -197,18 +197,18 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
   if (key.includes('huilo')) {
     return {
       key: 'hotel',
-      eyebrow: 'Operacion hotelera protegida',
-      headline: 'Huespedes tranquilos, equipos atentos y cada acceso bajo control.',
-      summary: 'SegurIA ordena accesos, areas comunes, perimetro y eventos criticos para que la operacion hotelera responda sin ruido.',
-      focusAreas: ['Accesos de huespedes', 'Areas comunes', 'Perimetro y estacionamientos', 'Continuidad operativa'],
+      eyebrow: 'Reserva y hoteleria protegida',
+      headline: 'Entre bosque, lodges y senderos, la operacion se cuida sin perder calma.',
+      summary: 'SegurIA acompana una operacion extendida en la selva valdiviana: hoteles, accesos, excursiones, termas, estacionamientos y zonas comunes con una lectura simple para el equipo.',
+      focusAreas: ['Llegadas y recepcion', 'Lodges y areas comunes', 'Senderos, excursiones y termas', 'Perimetro bosque-estacionamientos'],
       metricLabels: {
-        camera: 'Vistas',
+        camera: 'Vistas clave',
         sensor: 'Sensores',
         alert: 'Avisos',
-        access: 'Accesos',
+        access: 'Puntos de acceso',
       },
-      recommendedStableAction: 'Mantener supervision de accesos y areas comunes durante la operacion diaria.',
-      recommendedAttentionAction: 'Priorizar accesos, huespedes y zonas comunes antes de cerrar el turno.',
+      recommendedStableAction: 'Mantener supervision de recepcion, lodges, senderos activos y zonas de descanso durante la jornada.',
+      recommendedAttentionAction: 'Priorizar llegadas, zonas comunes, rutas outdoor y estacionamientos antes de cerrar el turno.',
     }
   }
 
