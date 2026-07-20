@@ -26,6 +26,7 @@ import {
   getPortalDecisionPackets,
   getPortalDeviceBuckets,
   getPortalExecutiveBrief,
+  getPortalGovernanceRituals,
   getPortalImprovementActions,
   getPortalOperationalScore,
   getPortalOperationalFlow,
@@ -105,6 +106,7 @@ export default async function PropertyPage({
   const operationalScore = getPortalOperationalScore([site])
   const operationalFlow = getPortalOperationalFlow([site])
   const boardReport = getPortalBoardReport([site])
+  const governanceRituals = getPortalGovernanceRituals([site])
   const dailyPriorities = getPortalDailyPriorities([site])
   const coverageZones = getPortalCoverageZones(site)
   const serviceCommitments = getPortalServiceCommitments([site])
@@ -366,6 +368,44 @@ export default async function PropertyPage({
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Gobierno operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La rutina de control de {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada revision tiene pregunta, entrada, salida y responsable. Asi la seguridad queda gobernada, no solo
+              observada.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            cadencia del sitio
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
+          {governanceRituals.slice(0, 5).map((ritual) => (
+            <div key={ritual.id} className={`rounded-[24px] border p-5 ${getScoreTone(ritual.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{ritual.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{ritual.title}</h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
+                  {ritual.cadence}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/68">{ritual.question}</p>
+              <div className="mt-5 grid gap-3">
+                <InfoTile label="Responsable" value={ritual.owner} icon={ShieldAlert} />
+                <InfoTile label="Entrada" value={ritual.input} icon={FileText} />
+                <InfoTile label="Salida" value={ritual.output} icon={CheckCircle2} />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

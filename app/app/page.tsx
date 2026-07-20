@@ -15,6 +15,7 @@ import {
   getPortalDashboardTotals,
   getPortalDecisionPackets,
   getPortalExecutiveBrief,
+  getPortalGovernanceRituals,
   getPortalImprovementActions,
   getPortalOperationalScore,
   getPortalOperationalFlow,
@@ -258,6 +259,7 @@ export default async function ClientAppPage() {
   const operationalScore = getPortalOperationalScore(sites)
   const operationalFlow = getPortalOperationalFlow(sites)
   const boardReport = getPortalBoardReport(sites)
+  const governanceRituals = getPortalGovernanceRituals(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
@@ -652,6 +654,44 @@ export default async function ClientAppPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Gobierno operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La rutina que mantiene el sistema profesional</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              El portal no termina en mirar pantallas: ordena revisiones diarias, control semanal, mesa de decision,
+              aprendizaje mensual y excepciones con responsable claro.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            cadencia / responsable / salida
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
+          {governanceRituals.slice(0, 5).map((ritual) => (
+            <div key={ritual.id} className={`rounded-[24px] border p-5 ${getScoreTone(ritual.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{ritual.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{ritual.title}</h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
+                  {ritual.cadence}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/68">{ritual.question}</p>
+              <div className="mt-5 grid gap-3">
+                <InfoLine label="Responsable" value={ritual.owner} />
+                <InfoLine label="Entrada" value={ritual.input} />
+                <InfoLine label="Salida" value={ritual.output} />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

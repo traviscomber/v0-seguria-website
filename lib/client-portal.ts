@@ -278,6 +278,19 @@ export interface PortalBoardReport {
   tone: 'ok' | 'warning' | 'critical'
 }
 
+export interface PortalGovernanceRitual {
+  id: string
+  siteLabel: string
+  cadence: string
+  title: string
+  owner: string
+  question: string
+  input: string
+  output: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2039,6 +2052,116 @@ export function getPortalBoardReport(sites: PortalSiteSummary[]): PortalBoardRep
     ],
     tone,
   }
+}
+
+export function getPortalGovernanceRituals(sites: PortalSiteSummary[]): PortalGovernanceRitual[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-governance',
+      siteLabel: 'Sin sitio',
+      cadence: 'Inicio',
+      title: 'Preparar primera revision',
+      owner: 'Equipo SegurIA',
+      question: 'Que debe ver el cliente para confiar en la operacion?',
+      input: 'Sitio, zonas, inventario y responsables iniciales.',
+      output: 'Primera lectura ejecutiva lista para operar.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const rituals = sites.flatMap((site) => {
+    const score = getPortalOperationalScore([site])
+    const decisions = getPortalDecisionPackets([site])
+    const improvements = getPortalImprovementActions([site])
+    const windows = getPortalSensitiveWindows([site])
+    const commitments = getPortalServiceCommitments([site])
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalIncidents = openIncidents.filter((incident) => incident.severity === 'critical')
+    const overdue = site.report.overdueConfirmations
+    const weakCommitment = commitments.find((commitment) => commitment.tone !== 'ok')
+    const sensitiveWindow = windows.find((window) => window.tone !== 'ok')
+    const decision = decisions[0]
+    const improvement = improvements[0]
+    const operationsOwner = site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio'
+    const continuityOwner = site.profile.escalationMatrix[1]?.owner || 'Operacion'
+
+    const siteRituals: PortalGovernanceRitual[] = [
+      {
+        id: `${site.propertyId}-daily-brief`,
+        siteLabel: site.label,
+        cadence: 'Diario',
+        title: 'Apertura de operacion',
+        owner: operationsOwner,
+        question: 'Que cambio desde la ultima revision?',
+        input: `${site.report.eventsToday} evento${site.report.eventsToday === 1 ? '' : 's'} hoy, ${openIncidents.length} incidente${openIncidents.length === 1 ? '' : 's'} abierto${openIncidents.length === 1 ? '' : 's'}.`,
+        output: openIncidents.length > 0 ? 'Responsable y siguiente accion asignados.' : 'Rutina normal confirmada.',
+        tone: criticalIncidents.length > 0 ? 'critical' : openIncidents.length > 0 ? 'warning' : 'ok',
+        rank: criticalIncidents.length > 0 ? 100 : openIncidents.length > 0 ? 76 : 20,
+      },
+      {
+        id: `${site.propertyId}-weekly-control`,
+        siteLabel: site.label,
+        cadence: 'Semanal',
+        title: 'Control de servicio',
+        owner: continuityOwner,
+        question: 'Estamos respondiendo con evidencia y dentro del tiempo esperado?',
+        input: weakCommitment ? `${weakCommitment.label}: ${weakCommitment.current}.` : 'Compromisos sin brechas visibles.',
+        output: weakCommitment ? weakCommitment.action : 'Mantener compromisos y revisar excepciones puntuales.',
+        tone: weakCommitment?.tone || 'ok',
+        rank: weakCommitment?.tone === 'critical' ? 94 : weakCommitment?.tone === 'warning' ? 72 : 18,
+      },
+      {
+        id: `${site.propertyId}-decision-review`,
+        siteLabel: site.label,
+        cadence: 'Reunion',
+        title: 'Mesa de decision',
+        owner: decision?.owner || 'Administrador del cliente',
+        question: 'Que decision no debe quedar abierta?',
+        input: decision?.evidence || 'Lectura de estado, cobertura y evidencia disponible.',
+        output: decision?.outcome || 'Decision registrada con responsable y criterio.',
+        tone: decision?.tone || score.tone,
+        rank: decision?.rank || 50,
+      },
+      {
+        id: `${site.propertyId}-monthly-learning`,
+        siteLabel: site.label,
+        cadence: 'Mensual',
+        title: 'Aprendizaje y ajuste',
+        owner: 'Administrador del cliente',
+        question: 'Que patron se repite y que se puede simplificar?',
+        input: improvement?.why || `Salud operativa ${score.score}/100.`,
+        output: improvement?.expectedImpact || 'Reglas mas claras, menos ruido y mejor respuesta.',
+        tone: improvement?.tone || score.tone,
+        rank: improvement?.rank ? improvement.rank - 4 : 44,
+      },
+    ]
+
+    if (overdue > 0 || sensitiveWindow) {
+      siteRituals.push({
+        id: `${site.propertyId}-exception-review`,
+        siteLabel: site.label,
+        cadence: 'Excepcion',
+        title: overdue > 0 ? 'Cierre de confirmaciones vencidas' : 'Revision de horario sensible',
+        owner: operationsOwner,
+        question: overdue > 0 ? 'Que aviso sigue sin confirmacion?' : 'Que franja requiere mas criterio?',
+        input: overdue > 0
+          ? `${overdue} confirmacion${overdue === 1 ? '' : 'es'} vencida${overdue === 1 ? '' : 's'}.`
+          : `${sensitiveWindow?.label || 'Horario sensible'} concentra senales operativas.`,
+        output: overdue > 0
+          ? 'Aviso cerrado, escalado o documentado antes del cambio de turno.'
+          : sensitiveWindow?.action || 'Turno ajustado con evidencia y responsable.',
+        tone: overdue > 0 ? 'critical' : sensitiveWindow?.tone || 'warning',
+        rank: overdue > 0 ? 98 : 74,
+      })
+    }
+
+    return siteRituals
+  })
+
+  return rituals
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 10)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {
