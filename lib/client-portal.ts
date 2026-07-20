@@ -414,6 +414,24 @@ export interface PortalOperationalForecast {
   }[]
 }
 
+export interface PortalMeetingPack {
+  title: string
+  subtitle: string
+  opening: string
+  decision: string
+  evidence: string
+  commitment: string
+  close: string
+  tone: 'ok' | 'warning' | 'critical'
+  agenda: {
+    label: string
+    detail: string
+    owner: string
+    outcome: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2032,6 +2050,90 @@ export function getPortalOperationalForecast(sites: PortalSiteSummary[]): Portal
         reading: `${urgentActions} accion${urgentActions === 1 ? '' : 'es'} critica${urgentActions === 1 ? '' : 's'}, ${plannedActions} en seguimiento.`,
         action: bestMove,
         tone: urgentActions > 0 ? 'critical' : plannedActions > 0 ? 'warning' : 'ok',
+      },
+    ],
+  }
+}
+
+export function getPortalMeetingPack(sites: PortalSiteSummary[]): PortalMeetingPack {
+  if (sites.length === 0) {
+    return {
+      title: 'Paquete de reunion',
+      subtitle: 'Sin operacion publicada',
+      opening: 'Todavia no hay sitios visibles para preparar una reunion operativa.',
+      decision: 'Activar la primera operacion cliente.',
+      evidence: 'Sin evidencia publicada.',
+      commitment: 'Definir responsables, sitio inicial e inventario minimo.',
+      close: 'La primera reunion debe terminar con una lectura operativa visible.',
+      tone: 'warning',
+      agenda: [{
+        label: 'Activacion',
+        detail: 'Publicar sitio e inventario inicial.',
+        owner: 'Equipo SegurIA',
+        outcome: 'Portal con primera lectura cliente.',
+        tone: 'warning',
+      }],
+    }
+  }
+
+  const executive = getPortalExecutiveBrief(sites)
+  const board = getPortalBoardReport(sites)
+  const forecast = getPortalOperationalForecast(sites)
+  const decisions = getPortalWeeklyDecisionAgenda(sites)
+  const actions = getPortalActionRegister(sites)
+  const traceability = getPortalTraceabilityLedger(sites)
+  const commitments = getPortalServiceCommitments(sites)
+  const primaryDecision = decisions[0]
+  const primaryAction = actions[0]
+  const primaryEvidence = traceability[0]
+  const primaryCommitment = commitments[0]
+  const tone: PortalMeetingPack['tone'] = executive.tone === 'critical' || board.tone === 'critical' || forecast.tone === 'critical'
+    ? 'critical'
+    : executive.tone === 'warning' || board.tone === 'warning' || forecast.tone === 'warning'
+      ? 'warning'
+      : 'ok'
+
+  return {
+    title: 'Paquete de reunion',
+    subtitle: `${board.periodLabel} - ${forecast.horizon}`,
+    opening: `${executive.verdict}. ${executive.narrative}`,
+    decision: primaryDecision?.decision || board.decision,
+    evidence: primaryEvidence
+      ? `${primaryEvidence.title}: ${primaryEvidence.evidence}`
+      : board.proofPoints[0] || 'Evidencia operativa disponible en el portal.',
+    commitment: primaryCommitment
+      ? `${primaryCommitment.label}: ${primaryCommitment.current}. ${primaryCommitment.action}`
+      : primaryAction?.successCriteria || 'Mantener rutina y trazabilidad visible.',
+    close: forecast.bestMove,
+    tone,
+    agenda: [
+      {
+        label: 'Estado',
+        detail: board.outcome,
+        owner: 'Administrador del cliente',
+        outcome: board.verdict,
+        tone: board.tone,
+      },
+      {
+        label: 'Decision',
+        detail: primaryDecision?.customerValue || primaryDecision?.evidence || board.decision,
+        owner: primaryDecision?.owner || primaryAction?.owner || 'Responsable del sitio',
+        outcome: primaryDecision?.expectedOutcome || primaryAction?.successCriteria || board.decision,
+        tone: primaryDecision?.tone || primaryAction?.tone || board.tone,
+      },
+      {
+        label: 'Evidencia',
+        detail: primaryEvidence?.evidence || 'Revisar evidencia y senales asociadas antes de cerrar decisiones.',
+        owner: primaryAction?.owner || 'Responsable del sitio',
+        outcome: primaryEvidence?.decisionLink || 'Decision explicable y trazable.',
+        tone: primaryEvidence?.tone || 'ok',
+      },
+      {
+        label: 'Compromiso',
+        detail: primaryCommitment?.summary || primaryAction?.why || 'Mantener compromisos operativos visibles.',
+        owner: primaryAction?.owner || 'Administrador del cliente',
+        outcome: primaryCommitment?.target || primaryAction?.successCriteria || 'Servicio medible y accionable.',
+        tone: primaryCommitment?.tone || primaryAction?.tone || 'ok',
       },
     ],
   }

@@ -19,6 +19,7 @@ import {
   getPortalGovernanceRituals,
   getPortalImprovementActions,
   getPortalLeadershipBrief,
+  getPortalMeetingPack,
   getPortalMaturityScorecard,
   getPortalOperationalScore,
   getPortalOperationalFlow,
@@ -267,6 +268,7 @@ export default async function ClientAppPage() {
   const report = getPortalPortfolioReport(sites)
   const operationalScore = getPortalOperationalScore(sites)
   const operationalForecast = getPortalOperationalForecast(sites)
+  const meetingPack = getPortalMeetingPack(sites)
   const maturityScorecard = getPortalMaturityScorecard(sites)
   const operationalFlow = getPortalOperationalFlow(sites)
   const boardReport = getPortalBoardReport(sites)
@@ -673,6 +675,41 @@ export default async function ClientAppPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(meetingPack.tone)}`}>
+        <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{meetingPack.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white">La reunion ya parte ordenada</h2>
+            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{meetingPack.subtitle}</p>
+            <p className="mt-5 text-base leading-8 text-white/70">{meetingPack.opening}</p>
+            <div className="mt-5 grid gap-3">
+              <InfoLine label="Decision central" value={meetingPack.decision} />
+              <InfoLine label="Evidencia para mostrar" value={meetingPack.evidence} />
+              <InfoLine label="Cierre esperado" value={meetingPack.close} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {meetingPack.agenda.map((item) => (
+              <div key={item.label} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-3 text-xl font-light text-white">{item.outcome}</h3>
+                  </div>
+                  <Badge className={getScoreTone(item.tone)}>{item.owner}</Badge>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-white/64">{item.detail}</p>
+              </div>
+            ))}
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5 lg:col-span-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Compromiso de cierre</p>
+              <p className="mt-3 text-sm leading-7 text-white/70">{meetingPack.commitment}</p>
+            </div>
           </div>
         </div>
       </section>
