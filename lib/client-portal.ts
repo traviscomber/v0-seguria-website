@@ -59,6 +59,16 @@ export interface PortalSiteProfile {
     moment: string
     detail: string
   }[]
+  escalationMatrix: {
+    label: string
+    trigger: string
+    owner: string
+    response: string
+  }[]
+  evidencePackage: {
+    label: string
+    detail: string
+  }[]
   responsePlan: string[]
   metricLabels: {
     camera: string
@@ -239,6 +249,16 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'Escalar con criterio', moment: 'alerta', detail: 'Cruzar evento, evidencia y ubicacion antes de activar mantencion, recepcion o seguridad.' },
         { label: 'Cerrar con historia', moment: 'cierre', detail: 'Dejar incidente, evidencia y aprendizaje listos para el siguiente turno.' },
       ],
+      escalationMatrix: [
+        { label: 'Movimiento fuera de rutina', trigger: 'Zona comun, sendero o estacionamiento cambia fuera de horario.', owner: 'Recepcion / seguridad', response: 'Validar evidencia y registrar si corresponde seguimiento.' },
+        { label: 'Acceso sensible', trigger: 'Proveedor, porton o puerta queda fuera del flujo esperado.', owner: 'Recepcion / administracion', response: 'Confirmar autorizacion y dejar evento respaldado.' },
+        { label: 'Continuidad del servicio', trigger: 'Equipo clave o vista critica queda con revision.', owner: 'Mantencion', response: 'Priorizar restitucion antes del siguiente bloque de ocupacion.' },
+      ],
+      evidencePackage: [
+        { label: 'Evento', detail: 'Hora, lugar y tipo de senal que origino la revision.' },
+        { label: 'Captura', detail: 'Imagen o evidencia visual vinculada al momento relevante.' },
+        { label: 'Decision', detail: 'Responsable, accion tomada y motivo de cierre.' },
+      ],
       responsePlan: [
         'Priorizar recepcion, accesos y estacionamientos durante cambios de turno.',
         'Cruzar eventos con evidencia visual antes de escalar una alerta.',
@@ -283,6 +303,16 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'Responder sin correr', moment: 'alerta', detail: 'Validar senal con camara, ubicacion y horario antes de movilizar al equipo.' },
         { label: 'Cerrar con causa', moment: 'cierre', detail: 'Registrar evidencia, causa probable y accion preventiva para la siguiente jornada.' },
       ],
+      escalationMatrix: [
+        { label: 'Acceso fuera de horario', trigger: 'Porton, bodega o zona de insumos registra movimiento no esperado.', owner: 'Encargado de campo', response: 'Validar con camara y decidir visita, llamado o registro simple.' },
+        { label: 'Riesgo de continuidad', trigger: 'Sala de frio, riego o punto critico muestra falla o silencio.', owner: 'Administrador / operador', response: 'Confirmar estado y priorizar accion antes de afectar faena.' },
+        { label: 'Movimiento nocturno', trigger: 'Actividad en praderas, bodegas o perimetro durante ventana sensible.', owner: 'Equipo de turno', response: 'Cruzar ubicacion, hora y evidencia antes de movilizar recursos.' },
+      ],
+      evidencePackage: [
+        { label: 'Lugar', detail: 'Sector exacto del campo, porton, sala, bodega o pradera involucrada.' },
+        { label: 'Respaldo', detail: 'Captura, evento y horario unidos para evitar interpretaciones incompletas.' },
+        { label: 'Cierre', detail: 'Causa probable, responsable y accion preventiva para la siguiente jornada.' },
+      ],
       responsePlan: [
         'Revisar primero accesos, portones y movimiento nocturno.',
         'Confirmar continuidad de sala de frio, riego y bodegas sensibles.',
@@ -325,6 +355,16 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
       { label: 'Monitorear cambios', moment: 'durante', detail: 'Distinguir rutina, excepcion y riesgo con contexto de sitio.' },
       { label: 'Escalar alerta', moment: 'alerta', detail: 'Usar evidencia y responsable antes de convertir un aviso en incidente.' },
       { label: 'Cerrar aprendizaje', moment: 'cierre', detail: 'Registrar resultado para mejorar reglas, tiempos y respuesta.' },
+    ],
+    escalationMatrix: [
+      { label: 'Alerta critica', trigger: 'Evento de prioridad alta o incidente abierto.', owner: 'Responsable del sitio', response: 'Confirmar evidencia, asignar accion y registrar seguimiento.' },
+      { label: 'Conexion con revision', trigger: 'Equipo o enlace relevante deja de reportar.', owner: 'Operacion', response: 'Revisar continuidad y restaurar visibilidad.' },
+      { label: 'Actividad sensible', trigger: 'Movimiento fuera de horario o zona restringida.', owner: 'Equipo de turno', response: 'Validar contexto antes de escalar.' },
+    ],
+    evidencePackage: [
+      { label: 'Senal', detail: 'Evento, sensor o aviso que inicio la revision.' },
+      { label: 'Contexto', detail: 'Lugar, hora, equipo y evidencia asociada.' },
+      { label: 'Cierre', detail: 'Decision, responsable y aprendizaje operativo.' },
     ],
     responsePlan: [
       'Revisar primero alertas criticas y conexiones con atencion.',

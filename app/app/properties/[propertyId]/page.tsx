@@ -349,6 +349,55 @@ export default async function PropertyPage({
         </Card>
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+        <Card className="border-white/10 bg-white/5 shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Criterios de escalamiento</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">
+              Reglas simples para decidir cuando mirar, cuando avisar y cuando cerrar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            {site.profile.escalationMatrix.map((item) => (
+              <div key={`${item.label}-${item.owner}`} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-[#9DD2F2]">{item.label}</p>
+                <p className="mt-3 text-sm leading-6 text-white/62">{item.trigger}</p>
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/35">Responsable</p>
+                  <p className="mt-1 text-sm text-white">{item.owner}</p>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-white/55">{item.response}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] shadow-none">
+          <CardHeader>
+            <CardTitle className="text-lg font-normal text-white">Paquete de cierre</CardTitle>
+            <CardDescription className="text-white/55">
+              Lo minimo que debe quedar respaldado para explicar una decision.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {site.profile.evidencePackage.map((item, index) => (
+              <div key={`${item.label}-${index}`} className="flex gap-3 rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#4DA3D9]/25 bg-[#4DA3D9]/10 text-xs text-[#9DD2F2]">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="text-sm text-white">{item.label}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/55">{item.detail}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </section>
+
       <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.13),transparent_30%),rgba(255,255,255,0.04)] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
