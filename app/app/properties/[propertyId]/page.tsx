@@ -42,6 +42,7 @@ import {
   getPortalShiftHandoff,
   getPortalSensitiveWindows,
   getPortalSiteForUser,
+  getPortalSiteHealthRanking,
   getPortalTraceabilityLedger,
   getPortalTrustCenter,
   getPortalWeeklyDecisionAgenda,
@@ -136,6 +137,7 @@ export default async function PropertyPage({
   const improvementActions = getPortalImprovementActions([site])
   const decisionPackets = getPortalDecisionPackets([site])
   const responsePlaybook = getPortalResponsePlaybook([site])
+  const siteHealth = getPortalSiteHealthRanking([site])[0]
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -391,6 +393,36 @@ export default async function PropertyPage({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(siteHealth.tone)}`}>
+        <div className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Salud del sitio</p>
+            <h2 className="mt-3 text-3xl font-light text-white">{site.label} en una sola lectura</h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{siteHealth.summary}</p>
+            <div className="mt-5 rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/38">Score operativo</p>
+              <p className="mt-2 text-5xl font-light text-white">{siteHealth.score}</p>
+              <p className="mt-2 text-sm uppercase tracking-[0.14em] opacity-70">{siteHealth.status}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Punto fuerte</p>
+              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.strongestPoint}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Punto de atencion</p>
+              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.attentionPoint}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Siguiente movimiento</p>
+              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.nextMove}</p>
+            </div>
           </div>
         </div>
       </section>

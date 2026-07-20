@@ -446,6 +446,22 @@ export interface PortalResponsePlaybookItem {
   rank: number
 }
 
+export interface PortalSiteHealthRankingItem {
+  id: string
+  propertyId: string
+  siteLabel: string
+  organizationName: string
+  position: number
+  score: number
+  status: string
+  summary: string
+  strongestPoint: string
+  attentionPoint: string
+  nextMove: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2247,6 +2263,85 @@ export function getPortalResponsePlaybook(sites: PortalSiteSummary[]): PortalRes
 
   return playbook
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
+}
+
+export function getPortalSiteHealthRanking(sites: PortalSiteSummary[]): PortalSiteHealthRankingItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-site-health',
+      propertyId: 'empty-site-health',
+      siteLabel: 'Sin sitio',
+      organizationName: 'Sin empresa',
+      position: 1,
+      score: 0,
+      status: 'Sin lectura',
+      summary: 'Aun no hay operaciones visibles para comparar salud por sitio.',
+      strongestPoint: 'Primero se debe publicar una operacion protegida.',
+      attentionPoint: 'Falta inventario, actividad y responsables visibles.',
+      nextMove: 'Crear el primer sitio y asignar responsables de atencion.',
+      tone: 'warning',
+      rank: 0,
+    }]
+  }
+
+  return sites
+    .map((site) => {
+      const score = getPortalOperationalScore([site])
+      const coverage = getPortalCoverageZones(site)
+      const actionRegister = getPortalActionRegister([site])
+      const forecast = getPortalOperationalForecast([site])
+      const maturity = getPortalMaturityScorecard([site])
+      const openIncidents = site.incidents.filter(isOpenPortalIncident)
+      const coveredZones = coverage.filter((zone) => zone.tone === 'ok').length
+      const weakZones = coverage.filter((zone) => zone.tone !== 'ok').length
+      const urgentActions = actionRegister.filter((item) => item.tone === 'critical').length
+      const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+      const signalCount = site.cameraCount + site.sensorCount + site.accessCount
+      const strongestPoint = coveredZones > 0
+        ? `${coveredZones} zona${coveredZones === 1 ? '' : 's'} con visibilidad suficiente para operar con contexto.`
+        : signalCount > 0
+          ? `${signalCount} punto${signalCount === 1 ? '' : 's'} de lectura ayudan a ordenar la operacion diaria.`
+          : 'Inventario inicial pendiente de completar.'
+      const attentionPoint = urgentActions > 0
+        ? `${urgentActions} accion${urgentActions === 1 ? '' : 'es'} critica${urgentActions === 1 ? '' : 's'} necesita${urgentActions === 1 ? '' : 'n'} cierre visible.`
+        : weakZones > 0
+          ? `${weakZones} zona${weakZones === 1 ? '' : 's'} requiere${weakZones === 1 ? '' : 'n'} mejor cobertura o criterio de respuesta.`
+          : gatewayRisk > 0
+            ? 'Hay continuidad operativa que conviene revisar antes del cierre.'
+            : 'Sin brecha critica visible en la lectura actual.'
+      const nextMove = actionRegister[0]?.nextStep
+        || forecast.bestMove
+        || maturity[0]?.nextStep
+        || site.profile.recommendedStableAction
+      const tone: PortalSiteHealthRankingItem['tone'] = score.tone === 'critical' || urgentActions > 0
+        ? 'critical'
+        : score.tone === 'warning' || weakZones > 0 || gatewayRisk > 0
+          ? 'warning'
+          : 'ok'
+      const rank = score.score - urgentActions * 8 - weakZones * 4 - gatewayRisk * 6 - openIncidents.length * 5
+
+      return {
+        id: `${site.propertyId}-site-health`,
+        propertyId: site.propertyId,
+        siteLabel: site.label,
+        organizationName: site.organizationName,
+        position: 0,
+        score: score.score,
+        status: score.label,
+        summary: score.summary,
+        strongestPoint,
+        attentionPoint,
+        nextMove,
+        tone,
+        rank,
+      }
+    })
+    .sort((left, right) => right.rank - left.rank || right.score - left.score || left.siteLabel.localeCompare(right.siteLabel))
+    .map((item, index) => ({
+      ...item,
+      position: index + 1,
+    }))
     .slice(0, 8)
 }
 

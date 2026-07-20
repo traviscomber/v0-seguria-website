@@ -31,6 +31,7 @@ import {
   getPortalServiceCommitments,
   getPortalShiftHandoff,
   getPortalSensitiveWindows,
+  getPortalSiteHealthRanking,
   getPortalTraceabilityLedger,
   getPortalTrustCenter,
   getPortalWeeklyDecisionAgenda,
@@ -289,6 +290,7 @@ export default async function ClientAppPage() {
   const improvementActions = getPortalImprovementActions(sites)
   const decisionPackets = getPortalDecisionPackets(sites)
   const responsePlaybook = getPortalResponsePlaybook(sites)
+  const siteHealthRanking = getPortalSiteHealthRanking(sites)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -1347,6 +1349,54 @@ export default async function ClientAppPage() {
               </div>
               <p className="mt-4 text-sm leading-6 text-white/64">{commitment.summary}</p>
               <p className="mt-3 text-sm leading-6 text-white/74">{commitment.action}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_82%_0%,rgba(77,163,217,0.16),transparent_32%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Salud por sitio</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que operacion esta mejor y cual necesita foco</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Una comparacion simple para decidir donde mirar primero: salud actual, fortaleza visible, punto de atencion
+              y siguiente movimiento recomendado.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {siteHealthRanking.length} sitios comparados
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {siteHealthRanking.map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">#{item.position} / {item.organizationName}</p>
+                  <h3 className="mt-3 text-2xl font-light text-white">{item.siteLabel}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/64">{item.summary}</p>
+                </div>
+                <div className="min-w-24 rounded-2xl border border-white/10 bg-[#071524]/50 p-4 text-center">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">Salud</p>
+                  <p className="mt-1 text-3xl font-light text-white">{item.score}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.12em] opacity-70">{item.status}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                <InfoLine label="Punto fuerte" value={item.strongestPoint} />
+                <InfoLine label="Punto de atencion" value={item.attentionPoint} />
+                <InfoLine label="Siguiente movimiento" value={item.nextMove} />
+              </div>
+
+              <Button asChild variant="outline" className="mt-5 w-fit rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">
+                <Link href={`/app/properties/${item.propertyId}`}>
+                  Ver sitio
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           ))}
         </div>
