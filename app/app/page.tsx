@@ -14,6 +14,7 @@ import {
   getPortalCoverageZones,
   getPortalDailyPriorities,
   getPortalDashboardTotals,
+  getPortalDecisionRoom,
   getPortalDecisionPackets,
   getPortalExecutiveBrief,
   getPortalGovernanceRituals,
@@ -285,6 +286,7 @@ export default async function ClientAppPage() {
   const executiveBrief = getPortalExecutiveBrief(sites)
   const leadershipBrief = getPortalLeadershipBrief(sites)
   const trustCenter = getPortalTrustCenter(sites)
+  const decisionRoom = getPortalDecisionRoom(sites)
   const shiftHandoff = getPortalShiftHandoff(sites)
   const sensitiveWindows = getPortalSensitiveWindows(sites)
   const improvementActions = getPortalImprovementActions(sites)
@@ -619,6 +621,55 @@ export default async function ClientAppPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(decisionRoom.tone)}`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(157,210,242,0.18),transparent_30%),radial-gradient(circle_at_100%_15%,rgba(255,255,255,0.08),transparent_24%)]" />
+        <div className="relative grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{decisionRoom.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white md:text-4xl">{decisionRoom.headline}</h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{decisionRoom.brief}</p>
+            <div className="mt-6 grid gap-3">
+              <InfoLine label="Decision ahora" value={decisionRoom.decisionNow} />
+              <InfoLine label="Por que importa" value={decisionRoom.reason} />
+              <InfoLine label="Evidencia para mostrar" value={decisionRoom.evidence} />
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {decisionRoom.lanes.map((lane) => (
+                <div key={lane.label} className={`rounded-[24px] border p-5 ${getScoreTone(lane.tone)}`}>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{lane.label}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{lane.value}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/64">{lane.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-[26px] border border-white/10 bg-[#071524]/55 p-5">
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/38">{decisionRoom.siteLabel}</p>
+                  <h3 className="mt-2 text-2xl font-light text-white">{decisionRoom.status}</h3>
+                </div>
+                <Badge className={getScoreTone(decisionRoom.tone)}>{decisionRoom.owner}</Badge>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {decisionRoom.sequence.map((step, index) => (
+                  <div key={step.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#9DD2F2]">0{index + 1} / {step.label}</p>
+                    <p className="mt-2 text-sm leading-6 text-white/70">{step.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-white/68">
+                Cierre esperado: resultado visible antes de {decisionRoom.deadline}.
+              </p>
+            </div>
           </div>
         </div>
       </section>

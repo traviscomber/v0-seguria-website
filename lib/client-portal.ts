@@ -462,6 +462,30 @@ export interface PortalSiteHealthRankingItem {
   rank: number
 }
 
+export interface PortalDecisionRoom {
+  title: string
+  headline: string
+  brief: string
+  decisionNow: string
+  reason: string
+  evidence: string
+  owner: string
+  deadline: string
+  siteLabel: string
+  status: string
+  tone: 'ok' | 'warning' | 'critical'
+  lanes: {
+    label: string
+    value: string
+    detail: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+  sequence: {
+    label: string
+    detail: string
+  }[]
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2343,6 +2367,113 @@ export function getPortalSiteHealthRanking(sites: PortalSiteSummary[]): PortalSi
       position: index + 1,
     }))
     .slice(0, 8)
+}
+
+export function getPortalDecisionRoom(sites: PortalSiteSummary[]): PortalDecisionRoom {
+  if (sites.length === 0) {
+    return {
+      title: 'Sala de decisiones',
+      headline: 'Primero necesitamos una operacion visible.',
+      brief: 'La lectura ejecutiva aparece cuando existe al menos un sitio con inventario, actividad y responsables.',
+      decisionNow: 'Publicar el primer sitio protegido.',
+      reason: 'Sin un sitio asignado no hay evidencia suficiente para priorizar decisiones.',
+      evidence: 'Inventario y eventos iniciales pendientes.',
+      owner: 'Equipo SegurIA',
+      deadline: 'Inicio del proyecto',
+      siteLabel: 'Sin sitio',
+      status: 'Sin lectura',
+      tone: 'warning',
+      lanes: [
+        {
+          label: 'Prioridad',
+          value: 'Publicar',
+          detail: 'Crear el primer sitio y asignar responsables.',
+          tone: 'warning',
+        },
+        {
+          label: 'Evidencia',
+          value: 'Pendiente',
+          detail: 'Faltan senales, eventos y cierre operativo.',
+          tone: 'warning',
+        },
+        {
+          label: 'Cierre',
+          value: 'Inicial',
+          detail: 'Dejar la primera lectura lista para el cliente.',
+          tone: 'warning',
+        },
+      ],
+      sequence: [
+        { label: 'Mirar', detail: 'Completar inventario y sitio.' },
+        { label: 'Decidir', detail: 'Definir responsable y criterio de atencion.' },
+        { label: 'Cerrar', detail: 'Publicar la primera lectura ejecutiva.' },
+      ],
+    }
+  }
+
+  const ranking = getPortalSiteHealthRanking(sites)
+  const agenda = getPortalWeeklyDecisionAgenda(sites)
+  const risk = getPortalRiskMap(sites)
+  const forecast = getPortalOperationalForecast(sites)
+  const playbook = getPortalResponsePlaybook(sites)
+  const mainSite = ranking[0]
+  const mainDecision = agenda[0]
+  const mainRisk = risk[0]
+  const mainPlaybook = playbook[0]
+  const tone: PortalDecisionRoom['tone'] = mainDecision?.tone === 'critical' || mainSite?.tone === 'critical'
+    ? 'critical'
+    : mainDecision?.tone === 'warning' || mainSite?.tone === 'warning' || forecast.tone === 'warning'
+      ? 'warning'
+      : 'ok'
+  const headline = tone === 'critical'
+    ? 'Hay una decision que no conviene postergar.'
+    : tone === 'warning'
+      ? 'La semana necesita foco, no mas ruido.'
+      : 'La operacion esta lista para mejorar con calma.'
+  const decisionNow = mainDecision?.decision || forecast.bestMove || mainSite.nextMove
+  const reason = mainDecision?.customerValue || mainRisk?.exposure || forecast.summary
+  const evidence = mainDecision?.evidence || mainRisk?.protection || mainSite.strongestPoint
+  const owner = mainDecision?.owner || mainRisk?.owner || mainPlaybook?.owner || 'Administrador del cliente'
+  const deadline = mainDecision?.deadline || 'Proximo cierre operativo'
+
+  return {
+    title: 'Sala de decisiones',
+    headline,
+    brief: 'Una lectura ejecutiva para partir la reunion con contexto: que sitio mirar, que decision tomar, que evidencia mostrar y que cierre pedir.',
+    decisionNow,
+    reason,
+    evidence,
+    owner,
+    deadline,
+    siteLabel: mainDecision?.siteLabel || mainSite.siteLabel,
+    status: mainSite.status,
+    tone,
+    lanes: [
+      {
+        label: 'Sitio foco',
+        value: mainSite.siteLabel,
+        detail: mainSite.attentionPoint,
+        tone: mainSite.tone,
+      },
+      {
+        label: 'Riesgo a mirar',
+        value: mainRisk?.zone || forecast.primaryRisk,
+        detail: mainRisk?.action || forecast.bestMove,
+        tone: mainRisk?.tone || forecast.tone,
+      },
+      {
+        label: 'Respuesta',
+        value: mainPlaybook?.level || 'Rutina',
+        detail: mainPlaybook?.firstMove || mainSite.nextMove,
+        tone: mainPlaybook?.tone || mainSite.tone,
+      },
+    ],
+    sequence: [
+      { label: 'Mirar', detail: evidence },
+      { label: 'Decidir', detail: decisionNow },
+      { label: 'Cerrar', detail: `${owner} debe dejar resultado visible antes de ${deadline}.` },
+    ],
+  }
 }
 
 function getWindowSlot(date: Date) {
