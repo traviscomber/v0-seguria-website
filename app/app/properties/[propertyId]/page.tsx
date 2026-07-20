@@ -119,6 +119,9 @@ export default async function PropertyPage({
                 <p className="max-w-3xl text-base leading-7 text-white/65 md:text-lg">
                   {site.profile.headline}
                 </p>
+                <p className="max-w-3xl text-sm leading-7 text-white/55 md:text-base">
+                  {site.profile.operatingPromise}
+                </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -159,6 +162,9 @@ export default async function PropertyPage({
                   <h2 className="text-lg font-normal text-white">Resumen rapido</h2>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-white/55">{site.profile.summary}</p>
+                <p className="mt-3 rounded-2xl border border-[#4DA3D9]/20 bg-[#4DA3D9]/10 p-4 text-sm leading-6 text-cyan-50/78">
+                  {site.profile.integrationPromise}
+                </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <MiniMetric label="Dispositivos" value={site.deviceCount} />
                   <MiniMetric label="Activos" value={activeCount} />
@@ -169,6 +175,16 @@ export default async function PropertyPage({
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-4">
+        {site.profile.commandCenter.map((item) => (
+          <div key={`${item.label}-${item.value}`} className="rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(77,163,217,0.13),transparent_34%),rgba(255,255,255,0.045)] p-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-white/38">{item.label}</p>
+            <h2 className="mt-3 text-2xl font-light text-white">{item.value}</h2>
+            <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
+          </div>
+        ))}
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
@@ -403,12 +419,7 @@ export default async function PropertyPage({
               )}
 
               <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  site.profile.focusAreas[0] ? `Confirmar ${site.profile.focusAreas[0].toLowerCase()}.` : 'Confirmar equipos visibles para el cliente.',
-                  site.profile.focusAreas[1] ? `Revisar ${site.profile.focusAreas[1].toLowerCase()}.` : 'Revisar alertas antes de la siguiente visita.',
-                  'Subir documentos y evidencia del sitio.',
-                  'Compartir acceso al equipo correspondiente.',
-                ].map((step) => (
+                {site.profile.responsePlan.map((step) => (
                   <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
                     <span>{step}</span>
@@ -465,15 +476,15 @@ export default async function PropertyPage({
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Lectura del sitio</CardTitle>
             <CardDescription className="text-white/55">
-              Lo que el cliente entiende en segundos.
+              Lo que esta operacion necesita entender en segundos.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {[
               site.profile.summary,
-              `${site.profile.metricLabels.camera}, ${site.profile.metricLabels.sensor.toLowerCase()} y ${site.profile.metricLabels.access.toLowerCase()} agrupados.`,
-              'Alertas y documentos sin ruido.',
-              'Soporte con contexto real del sitio.',
+              site.profile.integrationPromise,
+              `${site.profile.metricLabels.camera}, ${site.profile.metricLabels.sensor.toLowerCase()} y ${site.profile.metricLabels.access.toLowerCase()} agrupados con evidencia.`,
+              'Alertas, incidentes y documentos convertidos en decisiones simples.',
             ].map((text) => (
               <div key={text} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />

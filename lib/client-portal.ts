@@ -41,7 +41,15 @@ export interface PortalSiteProfile {
   eyebrow: string
   headline: string
   summary: string
+  operatingPromise: string
+  integrationPromise: string
   focusAreas: string[]
+  commandCenter: {
+    label: string
+    value: string
+    detail: string
+  }[]
+  responsePlan: string[]
   metricLabels: {
     camera: string
     sensor: string
@@ -200,7 +208,21 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
       eyebrow: 'Reserva y hoteleria protegida',
       headline: 'Entre bosque, lodges y senderos, la operacion se cuida sin perder calma.',
       summary: 'SegurIA acompana una operacion extendida en la selva valdiviana: hoteles, accesos, excursiones, termas, estacionamientos y zonas comunes con una lectura simple para el equipo.',
+      operatingPromise: 'La seguridad se vuelve parte de la hospitalidad: discreta para el huesped, clara para recepcion, util para mantencion y precisa cuando algo cambia.',
+      integrationPromise: 'Conectamos camaras, accesos, sensores y registros que el hotel ya usa para ordenar la operacion sin obligar a partir desde cero.',
       focusAreas: ['Llegadas y recepcion', 'Lodges y areas comunes', 'Senderos, excursiones y termas', 'Perimetro bosque-estacionamientos'],
+      commandCenter: [
+        { label: 'Recepcion', value: 'llegadas claras', detail: 'Accesos, proveedores y horarios sensibles aparecen con contexto antes de convertirse en ruido.' },
+        { label: 'Huesped', value: 'calma visible', detail: 'La vigilancia acompana sin invadir: zonas comunes, senderos y termas se leen con criterio operativo.' },
+        { label: 'Equipo', value: 'turnos atentos', detail: 'Cada aviso indica donde mirar, que cambio y quien debe actuar primero.' },
+        { label: 'Evidencia', value: 'sin busqueda larga', detail: 'Eventos, capturas y documentos quedan unidos para revisar rapidamente lo que importa.' },
+      ],
+      responsePlan: [
+        'Priorizar recepcion, accesos y estacionamientos durante cambios de turno.',
+        'Cruzar eventos con evidencia visual antes de escalar una alerta.',
+        'Separar actividad normal del huesped de movimientos fuera de horario.',
+        'Cerrar cada incidente con responsable, evidencia y aprendizaje para el siguiente turno.',
+      ],
       metricLabels: {
         camera: 'Vistas clave',
         sensor: 'Sensores',
@@ -216,9 +238,23 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
     return {
       key: 'dairy_field',
       eyebrow: 'Campo lechero protegido',
-      headline: 'Santa Elena cuida leche, praderas y faena: cada señal debe llegar antes del problema.',
+      headline: 'Santa Elena cuida leche, praderas y faena: cada senal debe llegar antes del problema.',
       summary: 'SegurIA acompana una operacion lechera del eje Reumen-Futrono, con foco en accesos, riego, alfalfa, praderas, sala de frio, bodegas y continuidad de la entrega.',
+      operatingPromise: 'La seguridad deja de mirar solo portones: acompana la continuidad del campo, protege puntos criticos y ayuda a decidir antes de que una falla cueste produccion.',
+      integrationPromise: 'Aprovechamos camaras, sensores, controles y redes existentes para darles una capa de inteligencia operativa, alertas utiles y evidencia ordenada.',
       focusAreas: ['Accesos y portones', 'Riego, alfalfa y praderas', 'Sala de frio y leche', 'Bodegas, insumos y movimiento nocturno'],
+      commandCenter: [
+        { label: 'Campo', value: 'faena visible', detail: 'Praderas, riego, bodegas y accesos se leen como una sola operacion, no como equipos aislados.' },
+        { label: 'Frio', value: 'continuidad cuidada', detail: 'Los puntos sensibles tienen prioridad para reducir sorpresas en sala de frio y entrega.' },
+        { label: 'Noche', value: 'movimiento claro', detail: 'Avisos fuera de horario separan rutina, animales, visitas y excepciones que requieren revision.' },
+        { label: 'Evidencia', value: 'decisiones simples', detail: 'Cada alerta queda asociada a lugar, hora, equipo y material de respaldo.' },
+      ],
+      responsePlan: [
+        'Revisar primero accesos, portones y movimiento nocturno.',
+        'Confirmar continuidad de sala de frio, riego y bodegas sensibles.',
+        'Cruzar senales con camaras antes de movilizar al equipo.',
+        'Cerrar incidentes con causa probable, evidencia y accion preventiva.',
+      ],
       metricLabels: {
         camera: 'Puntos de vista',
         sensor: 'Sensores de campo',
@@ -235,7 +271,21 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
     eyebrow: 'Operacion protegida',
     headline: 'Tu seguridad, clara y lista para decidir.',
     summary: 'SegurIA reune camaras, sensores, accesos y eventos importantes para responder con contexto.',
+    operatingPromise: 'Una operacion segura no depende de mirar pantallas todo el dia: depende de entender que cambio, donde paso y que hacer despues.',
+    integrationPromise: 'Conectamos los sistemas existentes y los ordenamos en una experiencia unica para mejorar respuesta, evidencia y continuidad.',
     focusAreas: ['Perimetro', 'Accesos', 'Espacios sensibles', 'Continuidad operativa'],
+    commandCenter: [
+      { label: 'Visibilidad', value: 'todo en contexto', detail: 'Sitios, equipos, eventos e incidentes aparecen en una misma lectura.' },
+      { label: 'Prioridad', value: 'menos ruido', detail: 'Las alertas se agrupan por impacto para evitar decisiones a ciegas.' },
+      { label: 'Respuesta', value: 'accion clara', detail: 'Cada senal viene con siguiente paso y evidencia disponible.' },
+      { label: 'Continuidad', value: 'operacion estable', detail: 'La plataforma ayuda a detectar cortes, fallas y excepciones antes de que escalen.' },
+    ],
+    responsePlan: [
+      'Revisar primero alertas criticas y conexiones con atencion.',
+      'Confirmar evidencia antes de escalar una excepcion.',
+      'Asignar responsable y registrar cierre del incidente.',
+      'Usar el historial para ajustar reglas y reducir ruido operativo.',
+    ],
     metricLabels: {
       camera: 'Camaras',
       sensor: 'Sensores',

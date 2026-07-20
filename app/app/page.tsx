@@ -294,26 +294,40 @@ export default async function ClientAppPage() {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
     summary: 'Una sola pantalla para revisar camaras, espacios vigilados y alertas que necesitan atencion.',
+    operatingPromise: 'La seguridad se vuelve una operacion simple: ves que cambio, entiendes por que importa y decides sin perseguir pantallas.',
+    integrationPromise: 'Conectamos los sistemas existentes y los ordenamos en una vista clara de estado, evidencia y respuesta.',
     focusAreas: ['Cobertura', 'Continuidad', 'Respuesta'],
+    commandCenter: [
+      { label: 'Visibilidad', value: 'todo en contexto', detail: 'Sitios, equipos, eventos e incidentes aparecen en una misma lectura.' },
+      { label: 'Prioridad', value: 'menos ruido', detail: 'Las alertas se agrupan por impacto para evitar decisiones a ciegas.' },
+      { label: 'Respuesta', value: 'accion clara', detail: 'Cada senal viene con siguiente paso y evidencia disponible.' },
+      { label: 'Continuidad', value: 'operacion estable', detail: 'La plataforma ayuda a detectar cortes, fallas y excepciones antes de que escalen.' },
+    ],
+    responsePlan: [
+      'Revisar primero alertas criticas y conexiones con atencion.',
+      'Confirmar evidencia antes de escalar una excepcion.',
+      'Asignar responsable y registrar cierre del incidente.',
+      'Usar el historial para ajustar reglas y reducir ruido operativo.',
+    ],
     metricLabels: { camera: 'Camaras', sensor: 'Sensores', alert: 'Alertas', access: 'Accesos' },
     recommendedStableAction: 'Mantener supervision normal.',
     recommendedAttentionAction: 'Revisar los avisos activos y confirmar recepcion si corresponde.',
   }
   const profileCards = [
     {
-      label: primaryProfile.focusAreas[0] || 'Cobertura',
-      value: 'Vista centralizada',
-      description: primaryProfile.summary,
+      label: primaryProfile.commandCenter[0]?.label || primaryProfile.focusAreas[0] || 'Cobertura',
+      value: primaryProfile.commandCenter[0]?.value || 'Vista centralizada',
+      description: primaryProfile.commandCenter[0]?.detail || primaryProfile.summary,
     },
     {
-      label: primaryProfile.focusAreas[1] || 'Continuidad',
-      value: 'Supervision activa',
-      description: continuityHasRisk ? primaryProfile.recommendedAttentionAction : primaryProfile.recommendedStableAction,
+      label: primaryProfile.commandCenter[1]?.label || primaryProfile.focusAreas[1] || 'Continuidad',
+      value: primaryProfile.commandCenter[1]?.value || 'Supervision activa',
+      description: primaryProfile.commandCenter[1]?.detail || (continuityHasRisk ? primaryProfile.recommendedAttentionAction : primaryProfile.recommendedStableAction),
     },
     {
-      label: primaryProfile.focusAreas[2] || 'Respuesta',
-      value: 'Alertas con contexto',
-      description: 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
+      label: primaryProfile.commandCenter[2]?.label || primaryProfile.focusAreas[2] || 'Respuesta',
+      value: primaryProfile.commandCenter[2]?.value || 'Alertas con contexto',
+      description: primaryProfile.commandCenter[2]?.detail || 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
     },
   ]
 
@@ -427,14 +441,46 @@ export default async function ClientAppPage() {
             </div>
 
             <div className="rounded-[24px] border border-[#4DA3D9]/20 bg-[#0B1D30] p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Lectura del portal</p>
-              <h2 className="mt-2 text-xl font-light text-white">Una sola experiencia para el cliente</h2>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Operacion integral</p>
+              <h2 className="mt-2 text-xl font-light text-white">Mejoramos lo que ya existe</h2>
               <p className="mt-2 text-sm leading-6 text-white/60">
-                El cliente ve una vista clara y no necesita entender la complejidad tecnica. Si existe una excepcion, la
-                resolvemos como tal en el panel interno.
+                {primaryProfile.integrationPromise}
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+        <Card className="border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] shadow-none">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
+              <CardTitle className="text-lg font-normal text-white">Centro de mando cliente</CardTitle>
+            </div>
+            <CardDescription className="text-white/55">
+              Una lectura ejecutiva para operar seguridad, continuidad y evidencia sin ruido.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="rounded-2xl border border-white/10 bg-[#0B1D30] p-5 text-sm leading-7 text-white/68">
+              {primaryProfile.operatingPromise}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoLine label="Estado" value={continuityHasRisk ? 'Hay puntos para revisar antes del cierre.' : 'Operacion visible, conectada y sin incidentes abiertos.'} />
+              <InfoLine label="Accion" value={continuityHasRisk ? primaryProfile.recommendedAttentionAction : primaryProfile.recommendedStableAction} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {primaryProfile.commandCenter.map((item) => (
+            <div key={`${item.label}-${item.value}`} className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/38">{item.label}</p>
+              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
+            </div>
+          ))}
         </div>
       </section>
 
