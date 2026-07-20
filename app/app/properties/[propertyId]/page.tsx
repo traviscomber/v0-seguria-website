@@ -24,6 +24,7 @@ import {
   getPortalDailyPriorities,
   getPortalDeviceBuckets,
   getPortalExecutiveBrief,
+  getPortalImprovementActions,
   getPortalOperationalScore,
   getPortalSensorRisk,
   getPortalServiceCommitments,
@@ -104,6 +105,7 @@ export default async function PropertyPage({
   const serviceCommitments = getPortalServiceCommitments([site])
   const executiveBrief = getPortalExecutiveBrief([site])
   const sensitiveWindows = getPortalSensitiveWindows([site])
+  const improvementActions = getPortalImprovementActions([site])
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -317,6 +319,52 @@ export default async function PropertyPage({
               </div>
               <p className="mt-4 text-sm leading-6 text-white/64">{window.summary}</p>
               <p className="mt-3 text-sm leading-6 text-white/74">{window.action}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_88%_0%,rgba(77,163,217,0.16),transparent_30%),rgba(255,255,255,0.045)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Plan de mejora</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Como mejorar la operacion de {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Acciones priorizadas para cerrar brechas, mejorar evidencia y reducir ruido operativo sin cambiar la
+              forma en que el cliente entiende su seguridad.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            proxima mejora
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {improvementActions.slice(0, 4).map((action, index) => (
+            <div key={action.id} className={`rounded-[24px] border p-5 ${getScoreTone(action.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{action.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{action.title}</h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
+                  0{index + 1}
+                </span>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Por que</p>
+                  <p className="mt-2 text-sm leading-6 text-white/70">{action.why}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Siguiente paso</p>
+                  <p className="mt-2 text-sm leading-6 text-white/70">{action.nextStep}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Impacto</p>
+                  <p className="mt-2 text-sm leading-6 text-white/70">{action.expectedImpact}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>

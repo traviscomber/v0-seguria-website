@@ -225,6 +225,17 @@ export interface PortalSensitiveWindow {
   rank: number
 }
 
+export interface PortalImprovementAction {
+  id: string
+  siteLabel: string
+  title: string
+  why: string
+  nextStep: string
+  expectedImpact: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1541,6 +1552,132 @@ export function getPortalSensitiveWindows(sites: PortalSiteSummary[]): PortalSen
   })
 
   return windows
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
+}
+
+export function getPortalImprovementActions(sites: PortalSiteSummary[]): PortalImprovementAction[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-improvement',
+      siteLabel: 'Sin sitio',
+      title: 'Completar base operativa',
+      why: 'Sin sitios ni equipos publicados no es posible medir cobertura, respuesta o evidencia.',
+      nextStep: 'Activar el primer sitio, cargar inventario y asignar responsables.',
+      expectedImpact: 'Primer tablero ejecutivo util para el cliente.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const actions = sites.flatMap((site) => {
+    const score = getPortalOperationalScore([site])
+    const coverage = getPortalCoverageZones(site)
+    const commitments = getPortalServiceCommitments([site])
+    const windows = getPortalSensitiveWindows([site])
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const blindZones = coverage.filter((zone) => zone.tone === 'critical')
+    const partialZones = coverage.filter((zone) => zone.tone === 'warning')
+    const serviceRisks = commitments.filter((commitment) => commitment.tone !== 'ok')
+    const sensitiveRisks = windows.filter((window) => window.tone !== 'ok')
+    const evidenceGaps = openIncidents.filter((incident) => incident.evidence.length === 0)
+    const items: PortalImprovementAction[] = []
+
+    if (score.score < 86) {
+      items.push({
+        id: `${site.propertyId}-score`,
+        siteLabel: site.label,
+        title: 'Subir salud operativa',
+        why: `El sitio marca ${score.score}/100 y muestra ${score.label.toLowerCase()}.`,
+        nextStep: score.drivers.slice(0, 2).join(' y ') || site.profile.recommendedAttentionAction,
+        expectedImpact: 'Mejor lectura ejecutiva y menos dudas al iniciar turno.',
+        tone: score.tone === 'critical' ? 'critical' : 'warning',
+        rank: score.tone === 'critical' ? 100 : 82,
+      })
+    }
+
+    if (blindZones.length > 0) {
+      items.push({
+        id: `${site.propertyId}-blind-zones`,
+        siteLabel: site.label,
+        title: 'Cerrar puntos ciegos',
+        why: `${blindZones.length} zona${blindZones.length === 1 ? '' : 's'} no tiene${blindZones.length === 1 ? '' : 'n'} lectura visible suficiente.`,
+        nextStep: `Priorizar ${blindZones[0].name} y asignar vista, senal o revision operativa.`,
+        expectedImpact: 'Menos areas sin contexto cuando ocurre una alerta.',
+        tone: 'critical',
+        rank: 96,
+      })
+    }
+
+    if (partialZones.length > 0) {
+      items.push({
+        id: `${site.propertyId}-partial-zones`,
+        siteLabel: site.label,
+        title: 'Reforzar cobertura parcial',
+        why: `${partialZones.length} zona${partialZones.length === 1 ? '' : 's'} aparece${partialZones.length === 1 ? '' : 'n'} con cobertura incompleta o avisos.`,
+        nextStep: `Revisar ${partialZones[0].name} y completar senal complementaria o actualizacion reciente.`,
+        expectedImpact: 'Mejor explicacion de eventos y menos revision manual.',
+        tone: 'warning',
+        rank: 76,
+      })
+    }
+
+    if (serviceRisks.length > 0) {
+      items.push({
+        id: `${site.propertyId}-service-risk`,
+        siteLabel: site.label,
+        title: 'Mejorar cumplimiento operativo',
+        why: `${serviceRisks[0].label} requiere atencion: ${serviceRisks[0].current}.`,
+        nextStep: serviceRisks[0].action,
+        expectedImpact: 'Respuesta mas medible y cierres con menos friccion.',
+        tone: serviceRisks.some((item) => item.tone === 'critical') ? 'critical' : 'warning',
+        rank: serviceRisks.some((item) => item.tone === 'critical') ? 92 : 74,
+      })
+    }
+
+    if (sensitiveRisks.length > 0) {
+      items.push({
+        id: `${site.propertyId}-time-window`,
+        siteLabel: site.label,
+        title: 'Ajustar turnos sensibles',
+        why: `${sensitiveRisks[0].label} concentra senales entre ${sensitiveRisks[0].range}.`,
+        nextStep: sensitiveRisks[0].action,
+        expectedImpact: 'Mas criterio en horarios con actividad y menos alarmas fuera de contexto.',
+        tone: sensitiveRisks.some((item) => item.tone === 'critical') ? 'critical' : 'warning',
+        rank: sensitiveRisks.some((item) => item.tone === 'critical') ? 88 : 68,
+      })
+    }
+
+    if (evidenceGaps.length > 0) {
+      items.push({
+        id: `${site.propertyId}-evidence-gaps`,
+        siteLabel: site.label,
+        title: 'Completar evidencia pendiente',
+        why: `${evidenceGaps.length} incidente${evidenceGaps.length === 1 ? '' : 's'} abierto${evidenceGaps.length === 1 ? '' : 's'} no muestra${evidenceGaps.length === 1 ? '' : 'n'} respaldo asociado.`,
+        nextStep: 'Adjuntar captura, senal relacionada o causa documentada antes de cerrar.',
+        expectedImpact: 'Decisiones mas faciles de auditar y explicar.',
+        tone: 'warning',
+        rank: 72,
+      })
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: `${site.propertyId}-healthy-optimization`,
+        siteLabel: site.label,
+        title: 'Mantener mejora continua',
+        why: 'La operacion no muestra brechas relevantes en la lectura actual.',
+        nextStep: 'Revisar patrones del mes y ajustar reglas para reducir ruido operativo.',
+        expectedImpact: 'Servicio consistente sin aumentar complejidad para el cliente.',
+        tone: 'ok',
+        rank: 20,
+      })
+    }
+
+    return items
+  })
+
+  return actions
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
 }
