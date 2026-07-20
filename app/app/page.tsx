@@ -12,6 +12,7 @@ import {
   getPortalCoverageZones,
   getPortalDailyPriorities,
   getPortalDashboardTotals,
+  getPortalDecisionPackets,
   getPortalExecutiveBrief,
   getPortalImprovementActions,
   getPortalOperationalScore,
@@ -259,6 +260,7 @@ export default async function ClientAppPage() {
   const executiveBrief = getPortalExecutiveBrief(sites)
   const sensitiveWindows = getPortalSensitiveWindows(sites)
   const improvementActions = getPortalImprovementActions(sites)
+  const decisionPackets = getPortalDecisionPackets(sites)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -650,6 +652,37 @@ export default async function ClientAppPage() {
                   <p className="text-xs uppercase tracking-[0.16em] text-white/38">Impacto</p>
                   <p className="mt-2 text-sm leading-6 text-white/70">{action.expectedImpact}</p>
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Paquete de decision</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Lo que debe decidirse con evidencia</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada paquete resume decision, responsable, evidencia minima, momento recomendado e impacto esperado para
+              reuniones operativas o gerenciales.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            decision / evidencia / responsable
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {decisionPackets.slice(0, 4).map((packet) => (
+            <div key={packet.id} className={`rounded-[24px] border p-5 ${getScoreTone(packet.tone)}`}>
+              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{packet.siteLabel}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{packet.decision}</h3>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <InfoLine label="Responsable" value={packet.owner} />
+                <InfoLine label="Momento" value={packet.timing} />
+                <InfoLine label="Evidencia minima" value={packet.evidence} />
+                <InfoLine label="Resultado esperado" value={packet.outcome} />
               </div>
             </div>
           ))}

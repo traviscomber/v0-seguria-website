@@ -236,6 +236,18 @@ export interface PortalImprovementAction {
   rank: number
 }
 
+export interface PortalDecisionPacket {
+  id: string
+  siteLabel: string
+  decision: string
+  owner: string
+  evidence: string
+  timing: string
+  outcome: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1678,6 +1690,123 @@ export function getPortalImprovementActions(sites: PortalSiteSummary[]): PortalI
   })
 
   return actions
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
+}
+
+export function getPortalDecisionPackets(sites: PortalSiteSummary[]): PortalDecisionPacket[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-decision',
+      siteLabel: 'Sin sitio',
+      decision: 'Activar primera lectura cliente',
+      owner: 'Equipo SegurIA',
+      evidence: 'Sitio, inventario inicial y responsables asignados.',
+      timing: 'Antes de la primera reunion operativa.',
+      outcome: 'Portal util para decidir con datos reales.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const packets = sites.flatMap((site) => {
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalIncident = openIncidents.find((incident) => incident.severity === 'critical')
+    const improvement = getPortalImprovementActions([site])[0]
+    const coverage = getPortalCoverageZones(site)
+    const blindZone = coverage.find((zone) => zone.tone === 'critical')
+    const overdue = site.report.overdueConfirmations
+    const evidenceGap = openIncidents.find((incident) => incident.evidence.length === 0)
+    const packetsForSite: PortalDecisionPacket[] = []
+
+    if (criticalIncident) {
+      packetsForSite.push({
+        id: `${site.propertyId}-critical-incident-decision`,
+        siteLabel: site.label,
+        decision: 'Definir cierre o escalamiento del incidente critico',
+        owner: site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio',
+        evidence: criticalIncident.evidence.length > 0 ? 'Captura, senales asociadas y bitacora del incidente.' : 'Senales asociadas, horario y causa documentada.',
+        timing: 'Antes del cierre del turno actual.',
+        outcome: 'Incidente con responsable, causa y proxima accion clara.',
+        tone: 'critical',
+        rank: 100,
+      })
+    }
+
+    if (overdue > 0) {
+      packetsForSite.push({
+        id: `${site.propertyId}-sla-decision`,
+        siteLabel: site.label,
+        decision: 'Resolver confirmaciones vencidas',
+        owner: 'Responsable de turno',
+        evidence: `${overdue} aviso${overdue === 1 ? '' : 's'} fuera del tiempo esperado de respuesta.`,
+        timing: 'Antes de transferir turno o cerrar jornada.',
+        outcome: 'Avisos confirmados, escalados o cerrados con trazabilidad.',
+        tone: 'critical',
+        rank: 96,
+      })
+    }
+
+    if (blindZone) {
+      packetsForSite.push({
+        id: `${site.propertyId}-blind-zone-decision`,
+        siteLabel: site.label,
+        decision: `Cubrir ${blindZone.name}`,
+        owner: site.profile.escalationMatrix[1]?.owner || 'Operacion',
+        evidence: 'Lectura de cobertura muestra zona sin vista o senal suficiente.',
+        timing: 'Planificar en la proxima revision de sitio.',
+        outcome: 'Menos puntos sin contexto y mejor respuesta ante alertas.',
+        tone: 'critical',
+        rank: 92,
+      })
+    }
+
+    if (evidenceGap) {
+      packetsForSite.push({
+        id: `${site.propertyId}-evidence-decision`,
+        siteLabel: site.label,
+        decision: 'Completar respaldo del incidente abierto',
+        owner: site.profile.escalationMatrix[2]?.owner || 'Equipo de turno',
+        evidence: evidenceGap.relatedEvents.length > 0 ? 'Senales asociadas disponibles, falta respaldo visual o cierre documentado.' : 'Incidente abierto sin evidencia publicada.',
+        timing: 'Antes de declarar el cierre operativo.',
+        outcome: 'Decision auditable sin reconstruir la historia despues.',
+        tone: 'warning',
+        rank: 78,
+      })
+    }
+
+    if (improvement) {
+      packetsForSite.push({
+        id: `${site.propertyId}-improvement-decision`,
+        siteLabel: site.label,
+        decision: improvement.title,
+        owner: 'Administrador del cliente',
+        evidence: improvement.why,
+        timing: 'Revisar en la proxima reunion de operacion.',
+        outcome: improvement.expectedImpact,
+        tone: improvement.tone,
+        rank: improvement.rank - 8,
+      })
+    }
+
+    if (packetsForSite.length === 0) {
+      packetsForSite.push({
+        id: `${site.propertyId}-healthy-decision`,
+        siteLabel: site.label,
+        decision: 'Mantener rutina y revisar aprendizaje mensual',
+        owner: 'Administrador del cliente',
+        evidence: 'Sin incidentes abiertos, sin confirmaciones vencidas y sin brechas criticas visibles.',
+        timing: 'En la revision mensual de seguridad.',
+        outcome: 'Operar con consistencia y reducir ruido sin nuevas cargas.',
+        tone: 'ok',
+        rank: 20,
+      })
+    }
+
+    return packetsForSite
+  })
+
+  return packets
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
 }
