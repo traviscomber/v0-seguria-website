@@ -318,6 +318,19 @@ export interface PortalTraceabilityItem {
   rank: number
 }
 
+export interface PortalRiskMapItem {
+  id: string
+  siteLabel: string
+  zone: string
+  window: string
+  exposure: string
+  protection: string
+  action: string
+  owner: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2498,6 +2511,81 @@ export function getPortalTraceabilityLedger(sites: PortalSiteSummary[]): PortalT
   return ledger
     .sort((left, right) => right.rank - left.rank || right.occurredAt.getTime() - left.occurredAt.getTime())
     .slice(0, 10)
+}
+
+export function getPortalRiskMap(sites: PortalSiteSummary[]): PortalRiskMapItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-risk-map',
+      siteLabel: 'Sin sitio',
+      zone: 'Sin zona',
+      window: 'Pendiente',
+      exposure: 'Sin lectura operacional disponible.',
+      protection: 'Falta publicar sitio e inventario base.',
+      action: 'Activar el primer sitio protegido.',
+      owner: 'Equipo SegurIA',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const mapItems = sites.flatMap((site) => {
+    const coverage = getPortalCoverageZones(site)
+    const windows = getPortalSensitiveWindows([site])
+    const actions = getPortalActionRegister([site])
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalOpen = openIncidents.some((incident) => incident.severity === 'critical')
+    const primaryAction = actions[0]
+    const strongestWindow = windows[0]
+    const fallbackZone = coverage[0]
+    const items = coverage.slice(0, 4).map((zone, index) => {
+      const window = windows[index] || strongestWindow
+      const action = actions[index] || primaryAction
+      const rank =
+        (zone.tone === 'critical' ? 60 : zone.tone === 'warning' ? 34 : 10) +
+        (window?.tone === 'critical' ? 28 : window?.tone === 'warning' ? 14 : 0) +
+        (action?.tone === 'critical' ? 22 : action?.tone === 'warning' ? 10 : 0)
+      const tone: PortalRiskMapItem['tone'] = zone.tone === 'critical' || window?.tone === 'critical' || action?.tone === 'critical' || criticalOpen
+        ? 'critical'
+        : zone.tone === 'warning' || window?.tone === 'warning' || action?.tone === 'warning'
+          ? 'warning'
+          : 'ok'
+
+      return {
+        id: `${site.propertyId}-risk-map-${zone.id}`,
+        siteLabel: site.label,
+        zone: zone.name,
+        window: window ? `${window.label} (${window.range})` : 'Sin franja sensible',
+        exposure: zone.summary,
+        protection: `${zone.cameraCount} vista${zone.cameraCount === 1 ? '' : 's'}, ${zone.sensorCount} senal${zone.sensorCount === 1 ? '' : 'es'}, score ${zone.score}/100.`,
+        action: action?.nextStep || zone.action,
+        owner: action?.owner || site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio',
+        tone,
+        rank,
+      }
+    })
+
+    if (items.length === 0 && fallbackZone) return []
+
+    return items.length > 0
+      ? items
+      : [{
+          id: `${site.propertyId}-risk-map-stable`,
+          siteLabel: site.label,
+          zone: site.profile.focusAreas[0] || site.label,
+          window: strongestWindow ? `${strongestWindow.label} (${strongestWindow.range})` : 'Rutina normal',
+          exposure: 'No hay zonas criticas visibles en esta lectura.',
+          protection: `${site.cameraCount} vista${site.cameraCount === 1 ? '' : 's'} y ${site.sensorCount} senal${site.sensorCount === 1 ? '' : 'es'} publicadas.`,
+          action: site.profile.recommendedStableAction,
+          owner: 'Administrador del cliente',
+          tone: 'ok' as const,
+          rank: 10,
+        }]
+  })
+
+  return mapItems
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

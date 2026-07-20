@@ -21,6 +21,7 @@ import {
   getPortalOperationalScore,
   getPortalOperationalFlow,
   getPortalPortfolioReport,
+  getPortalRiskMap,
   getPortalSensorRisk,
   getPortalServiceCommitments,
   getPortalSensitiveWindows,
@@ -264,6 +265,7 @@ export default async function ClientAppPage() {
   const governanceRituals = getPortalGovernanceRituals(sites)
   const actionRegister = getPortalActionRegister(sites)
   const traceabilityLedger = getPortalTraceabilityLedger(sites)
+  const riskMap = getPortalRiskMap(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
@@ -766,6 +768,42 @@ export default async function ClientAppPage() {
                 <InfoLine label="Evidencia" value={item.evidence} />
                 <InfoLine label="Accion vinculada" value={item.decisionLink} />
                 <InfoLine label="Fecha" value={formatDate(item.occurredAt)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Mapa de riesgo operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Donde mirar, cuando mirar y que hacer</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Zonas, horarios sensibles y acciones activas se cruzan para mostrar los puntos donde la operacion exige
+              mas criterio.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            zona / horario / accion
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {riskMap.slice(0, 4).map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{item.zone}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.window}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{item.exposure}</p>
+              <div className="mt-5 grid gap-3">
+                <InfoLine label="Proteccion" value={item.protection} />
+                <InfoLine label="Responsable" value={item.owner} />
+                <InfoLine label="Accion" value={item.action} />
               </div>
             </div>
           ))}
