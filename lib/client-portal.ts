@@ -174,6 +174,21 @@ export interface PortalDailyPriority {
   rank: number
 }
 
+export interface PortalCoverageZone {
+  id: string
+  siteLabel: string
+  name: string
+  cameraCount: number
+  sensorCount: number
+  alertCount: number
+  score: number
+  statusLabel: string
+  summary: string
+  action: string
+  tone: 'ok' | 'warning' | 'critical'
+  updatedAt?: Date
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1149,6 +1164,87 @@ export function getPortalDailyPriorities(sites: PortalSiteSummary[]): PortalDail
   return priorities
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 6)
+}
+
+export function getPortalCoverageZones(site: PortalSiteSummary): PortalCoverageZone[] {
+  const zones = site.spaces.length > 0
+    ? site.spaces
+    : site.profile.focusAreas.map((area, index) => ({
+        id: `${site.propertyId}-focus-${index}`,
+        name: area,
+        cameraCount: index === 0 ? site.cameraCount : 0,
+        sensorCount: index === 0 ? site.sensorCount : 0,
+        alertCount: index === 0 ? site.alertCount : 0,
+        lastUpdatedAt: site.lastUpdatedAt,
+      }))
+
+  return zones.map((zone) => {
+    const hasCamera = zone.cameraCount > 0
+    const hasSensor = zone.sensorCount > 0
+    const hasAlert = zone.alertCount > 0
+    const updatedAt = zone.lastUpdatedAt
+    const isFresh = updatedAt ? Date.now() - updatedAt.getTime() <= 24 * 60 * 60 * 1000 : false
+    const score = Math.max(0, Math.min(100,
+      (hasCamera ? 38 : 0) +
+      (hasSensor ? 34 : 0) +
+      (isFresh ? 18 : 0) +
+      (!hasAlert ? 10 : -18)
+    ))
+
+    if (!hasCamera && !hasSensor) {
+      return {
+        id: `${site.propertyId}-${zone.id}`,
+        siteLabel: site.label,
+        name: zone.name,
+        cameraCount: zone.cameraCount,
+        sensorCount: zone.sensorCount,
+        alertCount: zone.alertCount,
+        score,
+        statusLabel: 'Punto ciego',
+        summary: 'No hay lectura visible asociada a esta zona.',
+        action: 'Asignar una vista, sensor o revision operativa para cubrir este punto.',
+        tone: 'critical' as const,
+        updatedAt,
+      }
+    }
+
+    if (hasAlert || score < 70) {
+      return {
+        id: `${site.propertyId}-${zone.id}`,
+        siteLabel: site.label,
+        name: zone.name,
+        cameraCount: zone.cameraCount,
+        sensorCount: zone.sensorCount,
+        alertCount: zone.alertCount,
+        score,
+        statusLabel: hasAlert ? 'Con atencion' : 'Cobertura parcial',
+        summary: hasAlert
+          ? 'La zona tiene cobertura, pero aparece con avisos que conviene revisar.'
+          : 'La zona esta visible, aunque falta reforzar lectura o recencia.',
+        action: hasAlert ? site.profile.recommendedAttentionAction : 'Revisar si falta una senal complementaria o una actualizacion reciente.',
+        tone: 'warning' as const,
+        updatedAt,
+      }
+    }
+
+    return {
+      id: `${site.propertyId}-${zone.id}`,
+      siteLabel: site.label,
+      name: zone.name,
+      cameraCount: zone.cameraCount,
+      sensorCount: zone.sensorCount,
+      alertCount: zone.alertCount,
+      score,
+      statusLabel: 'Cubierta',
+      summary: 'La zona cuenta con lectura visible y sin avisos abiertos.',
+      action: site.profile.recommendedStableAction,
+      tone: 'ok' as const,
+      updatedAt,
+    }
+  }).sort((left, right) => {
+    const toneRank = { critical: 3, warning: 2, ok: 1 }
+    return toneRank[right.tone] - toneRank[left.tone] || left.score - right.score || left.name.localeCompare(right.name)
+  })
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

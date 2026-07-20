@@ -9,6 +9,7 @@ import {
   getAccessiblePortalSites,
   getPortalActivityFeed,
   getPortalAlertDevices,
+  getPortalCoverageZones,
   getPortalDailyPriorities,
   getPortalDashboardTotals,
   getPortalOperationalScore,
@@ -249,6 +250,7 @@ export default async function ClientAppPage() {
   const report = getPortalPortfolioReport(sites)
   const operationalScore = getPortalOperationalScore(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
+  const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -549,6 +551,58 @@ export default async function ClientAppPage() {
                 <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion recomendada</p>
                 <p className="mt-2 text-sm leading-6 text-white/72">{priority.action}</p>
               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_82%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Cobertura operativa</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Zonas visibles, parciales y puntos ciegos</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Una lectura por zonas para saber donde hay respaldo suficiente, donde falta contexto y que espacio
+              necesita atencion antes de que una alerta llegue tarde.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            camaras / sensores / avisos
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {coverageZones.map((zone) => (
+            <div key={zone.id} className={`rounded-[24px] border p-5 ${getScoreTone(zone.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{zone.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{zone.name}</h3>
+                </div>
+                <Badge className={getScoreTone(zone.tone)}>{zone.statusLabel}</Badge>
+              </div>
+              <div className="mt-5 grid grid-cols-4 gap-2 text-center">
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Score</p>
+                  <p className="mt-1 text-lg font-light text-white">{zone.score}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Vistas</p>
+                  <p className="mt-1 text-lg font-light text-white">{zone.cameraCount}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Senales</p>
+                  <p className="mt-1 text-lg font-light text-white">{zone.sensorCount}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Avisos</p>
+                  <p className="mt-1 text-lg font-light text-white">{zone.alertCount}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{zone.summary}</p>
+              <p className="mt-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-4 text-sm leading-6 text-white/70">
+                {zone.action}
+              </p>
             </div>
           ))}
         </div>
