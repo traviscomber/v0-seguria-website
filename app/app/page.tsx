@@ -10,6 +10,7 @@ import {
   getPortalActivityFeed,
   getPortalAlertDevices,
   getPortalDashboardTotals,
+  getPortalOperationalScore,
   getPortalPortfolioReport,
   getPortalSensorRisk,
   isOpenPortalIncident,
@@ -47,6 +48,12 @@ function getContinuityTone(hasRisk: boolean) {
   return hasRisk
     ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
     : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
+}
+
+function getScoreTone(tone: 'ok' | 'warning' | 'critical') {
+  if (tone === 'critical') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+  if (tone === 'warning') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+  return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
 }
 
 function getCameraFrameTint(index: number) {
@@ -239,6 +246,7 @@ export default async function ClientAppPage() {
   const sites = await getAccessiblePortalSites(session.user)
   const totals = getPortalDashboardTotals(sites)
   const report = getPortalPortfolioReport(sites)
+  const operationalScore = getPortalOperationalScore(sites)
   const alerts = getPortalAlertDevices(sites)
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
@@ -469,6 +477,40 @@ export default async function ClientAppPage() {
                 {primaryProfile.integrationPromise}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
+        <div className={`rounded-[28px] border p-6 shadow-none md:p-7 ${getScoreTone(operationalScore.tone)}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] opacity-70">Indice operativo</p>
+              <h2 className="mt-3 text-5xl font-light text-white">{operationalScore.score}</h2>
+              <p className="mt-1 text-sm text-white/55">sobre 100</p>
+            </div>
+            <Badge className={getScoreTone(operationalScore.tone)}>{operationalScore.label}</Badge>
+          </div>
+          <p className="mt-6 text-sm leading-7 text-white/66">{operationalScore.summary}</p>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-7">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Lectura ejecutiva</p>
+              <h2 className="mt-2 text-2xl font-light text-white">Que explica el estado de hoy</h2>
+            </div>
+            <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+              visible / medible / accionable
+            </Badge>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {operationalScore.drivers.map((driver) => (
+              <div key={driver} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                <p className="text-sm leading-6 text-white/64">{driver}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
