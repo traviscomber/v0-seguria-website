@@ -432,6 +432,20 @@ export interface PortalMeetingPack {
   }[]
 }
 
+export interface PortalResponsePlaybookItem {
+  id: string
+  siteLabel: string
+  level: string
+  trigger: string
+  firstMove: string
+  verify: string
+  escalate: string
+  close: string
+  owner: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2137,6 +2151,103 @@ export function getPortalMeetingPack(sites: PortalSiteSummary[]): PortalMeetingP
       },
     ],
   }
+}
+
+export function getPortalResponsePlaybook(sites: PortalSiteSummary[]): PortalResponsePlaybookItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-response-playbook',
+      siteLabel: 'Sin sitio',
+      level: 'Inicial',
+      trigger: 'Operacion aun no publicada.',
+      firstMove: 'Activar sitio e inventario inicial.',
+      verify: 'Confirmar responsables y criterio de atencion.',
+      escalate: 'Escalar al equipo SegurIA si falta informacion base.',
+      close: 'Dejar primer estado visible para el cliente.',
+      owner: 'Equipo SegurIA',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const playbook = sites.flatMap((site) => {
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalIncident = openIncidents.find((incident) => incident.severity === 'critical')
+    const warningIncident = openIncidents.find((incident) => incident.severity === 'warning')
+    const criticalEvent = site.events.find((event) => event.severity === 'critical')
+    const warningEvent = site.events.find((event) => event.severity === 'warning')
+    const actions = getPortalActionRegister([site])
+    const primaryAction = actions[0]
+    const escalation = site.profile.escalationMatrix
+    const baseOwner = escalation[0]?.owner || 'Responsable del sitio'
+    const continuityOwner = escalation[1]?.owner || baseOwner
+    const teamOwner = escalation[2]?.owner || baseOwner
+
+    const items: PortalResponsePlaybookItem[] = [
+      {
+        id: `${site.propertyId}-playbook-critical`,
+        siteLabel: site.label,
+        level: 'Critico',
+        trigger: criticalIncident?.title || criticalEvent?.title || escalation[0]?.trigger || 'Incidente critico o senal de alto impacto.',
+        firstMove: criticalIncident?.evidence.length
+          ? 'Abrir evidencia principal, confirmar alcance y asignar respuesta.'
+          : 'Confirmar senal, lugar y responsable antes de cerrar o escalar.',
+        verify: criticalIncident?.description || primaryAction?.why || 'Validar hora, zona, evidencia disponible y equipos relacionados.',
+        escalate: escalation[0]?.response || site.profile.recommendedAttentionAction,
+        close: 'Registrar causa, accion ejecutada, evidencia y aprendizaje antes de bajar criticidad.',
+        owner: baseOwner,
+        tone: criticalIncident || criticalEvent ? 'critical' : 'warning',
+        rank: criticalIncident || criticalEvent ? 100 : 70,
+      },
+      {
+        id: `${site.propertyId}-playbook-attention`,
+        siteLabel: site.label,
+        level: 'Atencion',
+        trigger: warningIncident?.title || warningEvent?.title || escalation[2]?.trigger || 'Actividad sensible, aviso repetido o zona con contexto parcial.',
+        firstMove: 'Revisar la zona, comparar con actividad esperada y evitar escalar sin contexto.',
+        verify: warningIncident?.description || 'Confirmar si hay patron, horario sensible o evidencia asociada.',
+        escalate: escalation[2]?.response || 'Asignar seguimiento al equipo de turno y documentar excepcion.',
+        close: 'Cerrar como normal, seguimiento o incidente con motivo visible.',
+        owner: teamOwner,
+        tone: warningIncident || warningEvent ? 'warning' : 'ok',
+        rank: warningIncident || warningEvent ? 72 : 26,
+      },
+      {
+        id: `${site.propertyId}-playbook-continuity`,
+        siteLabel: site.label,
+        level: 'Continuidad',
+        trigger: site.gatewayHealth.offline + site.gatewayHealth.degraded > 0
+          ? `${site.gatewayHealth.offline + site.gatewayHealth.degraded} conexion con revision.`
+          : escalation[1]?.trigger || 'Equipo o enlace deja de reportar.',
+        firstMove: 'Revisar recencia de lectura y equipos que sostienen visibilidad.',
+        verify: 'Confirmar si la operacion sigue visible o requiere ronda/manual de respaldo.',
+        escalate: escalation[1]?.response || 'Restaurar visibilidad antes de sumar nuevas reglas.',
+        close: 'Dejar lectura restituida o contingencia documentada.',
+        owner: continuityOwner,
+        tone: site.gatewayHealth.offline + site.gatewayHealth.degraded > 0 ? 'warning' : 'ok',
+        rank: site.gatewayHealth.offline + site.gatewayHealth.degraded > 0 ? 68 : 18,
+      },
+      {
+        id: `${site.propertyId}-playbook-stable`,
+        siteLabel: site.label,
+        level: 'Rutina',
+        trigger: 'Operacion sin excepcion critica abierta.',
+        firstMove: site.profile.recommendedStableAction,
+        verify: site.profile.responsePlan[0] || 'Revisar estado, zonas y avisos relevantes.',
+        escalate: site.profile.responsePlan[1] || 'Confirmar evidencia antes de escalar.',
+        close: site.profile.responsePlan[3] || 'Usar historial para reducir ruido operativo.',
+        owner: 'Administrador del cliente',
+        tone: 'ok',
+        rank: 8,
+      },
+    ]
+
+    return items
+  })
+
+  return playbook
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 function getWindowSlot(date: Date) {
