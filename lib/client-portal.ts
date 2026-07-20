@@ -215,18 +215,18 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
   if (key.includes('santa elena')) {
     return {
       key: 'dairy_field',
-      eyebrow: 'Campo lechero protegido',
-      headline: 'El campo avisa a tiempo: accesos, animales, frio y faena en una sola lectura.',
-      summary: 'SegurIA ayuda a cuidar potreros, sala de frio, bodegas, accesos y continuidad de la operacion lechera.',
-      focusAreas: ['Accesos y portones', 'Sala de frio', 'Bodegas e insumos', 'Potreros y movimiento nocturno'],
+      eyebrow: 'Campo lechero COLUN protegido',
+      headline: 'Santa Elena cuida leche, praderas y faena: cada señal debe llegar antes del problema.',
+      summary: 'SegurIA acompana una operacion lechera del eje Reumen-Futrono, con foco en accesos, riego, alfalfa, praderas, sala de frio, bodegas y continuidad de la entrega.',
+      focusAreas: ['Accesos y portones', 'Riego, alfalfa y praderas', 'Sala de frio y leche', 'Bodegas, insumos y movimiento nocturno'],
       metricLabels: {
         camera: 'Puntos de vista',
         sensor: 'Sensores de campo',
         alert: 'Avisos',
         access: 'Portones',
       },
-      recommendedStableAction: 'Mantener supervision normal de accesos, sala de frio y movimiento nocturno.',
-      recommendedAttentionAction: 'Revisar primero accesos, frio, bodegas y senales fuera de horario.',
+      recommendedStableAction: 'Mantener supervision de portones, sala de frio, riego y movimiento nocturno antes de cada jornada.',
+      recommendedAttentionAction: 'Revisar primero accesos, cadena de frio, riego, bodegas y senales fuera de horario.',
     }
   }
 
