@@ -248,6 +248,19 @@ export interface PortalDecisionPacket {
   rank: number
 }
 
+export interface PortalOperationalFlowStep {
+  id: string
+  siteLabel: string
+  stage: string
+  title: string
+  metric: string
+  reading: string
+  action: string
+  proof: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1809,6 +1822,113 @@ export function getPortalDecisionPackets(sites: PortalSiteSummary[]): PortalDeci
   return packets
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
+}
+
+export function getPortalOperationalFlow(sites: PortalSiteSummary[]): PortalOperationalFlowStep[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-operational-flow',
+      siteLabel: 'Sin sitio',
+      stage: 'Preparar',
+      title: 'Activar primera operacion',
+      metric: '0 sitios',
+      reading: 'Todavia no hay senales para construir una rutina cliente.',
+      action: 'Crear sitio, publicar inventario y asignar responsables antes de operar.',
+      proof: 'Sitio, zonas, equipos y responsables visibles.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const steps = sites.flatMap((site) => {
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const criticalIncidents = openIncidents.filter((incident) => incident.severity === 'critical')
+    const evidenceCount = openIncidents.reduce((total, incident) => total + incident.evidence.length, 0)
+    const unresolvedEvidence = openIncidents.filter((incident) => incident.evidence.length === 0)
+    const recentSignals = site.events.filter((event) => event.severity !== 'info').length
+    const connectionRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+    const score = getPortalOperationalScore([site])
+    const coverage = getPortalCoverageZones(site)
+    const weakZones = coverage.filter((zone) => zone.tone !== 'ok')
+    const stepsForSite: PortalOperationalFlowStep[] = [
+      {
+        id: `${site.propertyId}-flow-detect`,
+        siteLabel: site.label,
+        stage: 'Detectar',
+        title: 'Senales que importan',
+        metric: `${recentSignals} senal${recentSignals === 1 ? '' : 'es'}`,
+        reading: recentSignals > 0
+          ? 'La operacion distingue avisos relevantes de actividad normal para evitar ruido.'
+          : 'No hay senales relevantes abiertas en la lectura actual.',
+        action: recentSignals > 0 ? 'Revisar primero las senales con severidad y zona definida.' : 'Mantener rutina y conservar la lectura disponible.',
+        proof: 'Evento, zona, horario y severidad en una misma lectura.',
+        tone: criticalIncidents.length > 0 ? 'critical' : recentSignals > 0 ? 'warning' : 'ok',
+        rank: criticalIncidents.length > 0 ? 100 : recentSignals > 0 ? 74 : 20,
+      },
+      {
+        id: `${site.propertyId}-flow-verify`,
+        siteLabel: site.label,
+        stage: 'Verificar',
+        title: 'Contexto antes de escalar',
+        metric: `${evidenceCount} respaldo${evidenceCount === 1 ? '' : 's'}`,
+        reading: unresolvedEvidence.length > 0
+          ? `${unresolvedEvidence.length} incidente${unresolvedEvidence.length === 1 ? '' : 's'} necesita${unresolvedEvidence.length === 1 ? '' : 'n'} respaldo antes de cierre.`
+          : 'Los incidentes abiertos tienen contexto suficiente o no hay incidentes pendientes.',
+        action: unresolvedEvidence.length > 0 ? 'Completar captura, senal relacionada o causa documentada.' : 'Usar evidencia disponible para decidir sin reconstruir la historia.',
+        proof: 'Captura, senal asociada, responsable y nota de cierre.',
+        tone: unresolvedEvidence.length > 0 ? 'warning' : 'ok',
+        rank: unresolvedEvidence.length > 0 ? 82 : 18,
+      },
+      {
+        id: `${site.propertyId}-flow-respond`,
+        siteLabel: site.label,
+        stage: 'Responder',
+        title: 'Accion con responsable',
+        metric: `${openIncidents.length} abierto${openIncidents.length === 1 ? '' : 's'}`,
+        reading: openIncidents.length > 0
+          ? 'Hay situaciones en seguimiento que requieren responsable y proximo paso.'
+          : 'No hay incidentes abiertos que obliguen a escalar.',
+        action: openIncidents.length > 0 ? site.profile.escalationMatrix[0]?.response || site.profile.recommendedAttentionAction : site.profile.recommendedStableAction,
+        proof: 'Responsable, estado, confirmacion y siguiente accion registrada.',
+        tone: criticalIncidents.length > 0 ? 'critical' : openIncidents.length > 0 ? 'warning' : 'ok',
+        rank: criticalIncidents.length > 0 ? 98 : openIncidents.length > 0 ? 78 : 16,
+      },
+      {
+        id: `${site.propertyId}-flow-close`,
+        siteLabel: site.label,
+        stage: 'Cerrar',
+        title: 'Aprendizaje de operacion',
+        metric: `${site.report.resolvedThisMonth}/${site.report.incidentsThisMonth}`,
+        reading: site.report.incidentsThisMonth > 0
+          ? 'El cierre mensual muestra cuanto queda explicado y cuanto vuelve como patron.'
+          : 'Aun no hay incidentes del mes para comparar cierres y aprendizaje.',
+        action: weakZones.length > 0 ? `Revisar ${weakZones[0].name} antes de la proxima reunion.` : 'Mantener revision mensual de patrones, reglas y tiempos.',
+        proof: 'Incidente cerrado, causa, evidencia y ajuste recomendado.',
+        tone: score.tone,
+        rank: score.tone === 'critical' ? 94 : score.tone === 'warning' ? 70 : 14,
+      },
+      {
+        id: `${site.propertyId}-flow-continuity`,
+        siteLabel: site.label,
+        stage: 'Continuidad',
+        title: 'Operacion siempre visible',
+        metric: `${site.gatewayHealth.online}/${site.gatewayHealth.total || 0}`,
+        reading: connectionRisk > 0
+          ? `${connectionRisk} conexion${connectionRisk === 1 ? '' : 'es'} requiere${connectionRisk === 1 ? '' : 'n'} revision para no perder visibilidad.`
+          : 'Las conexiones reportan sin brechas relevantes en la lectura actual.',
+        action: connectionRisk > 0 ? 'Priorizar continuidad antes de sumar nuevas reglas o alertas.' : 'Mantener supervision y validar recencia en la rutina diaria.',
+        proof: 'Ultima conexion, estado de sitio y equipos con lectura reciente.',
+        tone: connectionRisk > 0 ? 'warning' : 'ok',
+        rank: connectionRisk > 0 ? 84 : 12,
+      },
+    ]
+
+    return stepsForSite
+  })
+
+  return steps
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 10)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {
