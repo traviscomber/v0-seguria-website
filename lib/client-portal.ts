@@ -215,7 +215,7 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
   if (key.includes('santa elena')) {
     return {
       key: 'dairy_field',
-      eyebrow: 'Campo lechero COLUN protegido',
+      eyebrow: 'Campo lechero protegido',
       headline: 'Santa Elena cuida leche, praderas y faena: cada señal debe llegar antes del problema.',
       summary: 'SegurIA acompana una operacion lechera del eje Reumen-Futrono, con foco en accesos, riego, alfalfa, praderas, sala de frio, bodegas y continuidad de la entrega.',
       focusAreas: ['Accesos y portones', 'Riego, alfalfa y praderas', 'Sala de frio y leche', 'Bodegas, insumos y movimiento nocturno'],
