@@ -261,6 +261,23 @@ export interface PortalOperationalFlowStep {
   rank: number
 }
 
+export interface PortalBoardReport {
+  title: string
+  periodLabel: string
+  verdict: string
+  outcome: string
+  risk: string
+  decision: string
+  proofPoints: string[]
+  metrics: {
+    label: string
+    value: string
+    detail: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+  tone: 'ok' | 'warning' | 'critical'
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1929,6 +1946,99 @@ export function getPortalOperationalFlow(sites: PortalSiteSummary[]): PortalOper
   return steps
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 10)
+}
+
+export function getPortalBoardReport(sites: PortalSiteSummary[]): PortalBoardReport {
+  const report = getPortalPortfolioReport(sites)
+  const score = getPortalOperationalScore(sites)
+  const commitments = getPortalServiceCommitments(sites)
+  const priorities = getPortalDailyPriorities(sites)
+  const decisions = getPortalDecisionPackets(sites)
+  const criticalCommitments = commitments.filter((commitment) => commitment.tone === 'critical')
+  const warningCommitments = commitments.filter((commitment) => commitment.tone === 'warning')
+  const openIncidents = sites.flatMap((site) => site.incidents.filter(isOpenPortalIncident))
+  const criticalIncidents = openIncidents.filter((incident) => incident.severity === 'critical')
+  const evidenceCount = openIncidents.reduce((total, incident) => total + incident.evidence.length, 0)
+  const connectionRisk = sites.reduce((total, site) => total + site.gatewayHealth.offline + site.gatewayHealth.degraded, 0)
+  const firstPriority = priorities[0]
+  const firstDecision = decisions[0]
+  const tone: PortalBoardReport['tone'] = criticalIncidents.length > 0 || criticalCommitments.length > 0
+    ? 'critical'
+    : score.tone === 'warning' || warningCommitments.length > 0 || connectionRisk > 0
+      ? 'warning'
+      : 'ok'
+
+  if (sites.length === 0) {
+    return {
+      title: 'Reporte de direccion',
+      periodLabel: 'Sin operacion publicada',
+      verdict: 'Falta activar la primera lectura cliente.',
+      outcome: 'El portal necesita sitio, inventario y responsables para entregar una lectura profesional.',
+      risk: 'Sin datos operativos no hay evidencia suficiente para priorizar decisiones.',
+      decision: 'Activar el primer sitio y publicar inventario base.',
+      proofPoints: [
+        'Sitio y empresa visibles para el cliente.',
+        'Equipos agrupados por zona y responsabilidad.',
+        'Primer flujo de decision operativo disponible.',
+      ],
+      metrics: [
+        { label: 'Sitios', value: '0', detail: 'Sin sitios visibles.', tone: 'warning' },
+        { label: 'Equipos', value: '0', detail: 'Inventario pendiente.', tone: 'warning' },
+        { label: 'Evidencia', value: '0', detail: 'Sin respaldo publicado.', tone: 'warning' },
+      ],
+      tone: 'warning',
+    }
+  }
+
+  return {
+    title: 'Reporte de direccion',
+    periodLabel: 'Lectura diaria y mensual',
+    verdict: tone === 'critical'
+      ? 'Hay decisiones que requieren cierre ejecutivo.'
+      : tone === 'warning'
+        ? 'La operacion esta visible, con puntos concretos para mejorar.'
+        : 'La operacion esta ordenada y bajo control.',
+    outcome: score.summary,
+    risk: criticalIncidents.length > 0
+      ? `${criticalIncidents.length} incidente${criticalIncidents.length === 1 ? '' : 's'} critico${criticalIncidents.length === 1 ? '' : 's'} requiere${criticalIncidents.length === 1 ? '' : 'n'} seguimiento.`
+      : connectionRisk > 0
+        ? `${connectionRisk} conexion${connectionRisk === 1 ? '' : 'es'} necesita${connectionRisk === 1 ? '' : 'n'} revision para sostener visibilidad.`
+        : firstPriority?.detail || 'Sin riesgos criticos abiertos en la lectura actual.',
+    decision: firstDecision?.decision || 'Mantener rutina y revisar aprendizaje mensual',
+    proofPoints: [
+      `${report.eventsToday} evento${report.eventsToday === 1 ? '' : 's'} revisado${report.eventsToday === 1 ? '' : 's'} hoy.`,
+      `${openIncidents.length} incidente${openIncidents.length === 1 ? '' : 's'} abierto${openIncidents.length === 1 ? '' : 's'} y ${report.resolvedThisMonth} cierre${report.resolvedThisMonth === 1 ? '' : 's'} del mes.`,
+      `${evidenceCount} respaldo${evidenceCount === 1 ? '' : 's'} asociado${evidenceCount === 1 ? '' : 's'} a incidentes abiertos.`,
+      firstDecision?.outcome || 'Operacion consistente y decisiones explicables.',
+    ],
+    metrics: [
+      {
+        label: 'Salud',
+        value: `${score.score}/100`,
+        detail: score.label,
+        tone: score.tone,
+      },
+      {
+        label: 'Sitios',
+        value: sites.length.toString(),
+        detail: `${sites.reduce((total, site) => total + site.deviceCount, 0)} equipos visibles.`,
+        tone: connectionRisk > 0 ? 'warning' : 'ok',
+      },
+      {
+        label: 'SLA',
+        value: report.overdueConfirmations.toString(),
+        detail: report.overdueConfirmations > 0 ? 'Confirmaciones vencidas.' : 'Sin vencimientos pendientes.',
+        tone: report.overdueConfirmations > 0 ? 'critical' : 'ok',
+      },
+      {
+        label: 'Cierre',
+        value: `${report.resolvedThisMonth}/${report.incidentsThisMonth}`,
+        detail: report.incidentsThisMonth > 0 ? 'Incidentes resueltos este mes.' : 'Sin incidentes mensuales.',
+        tone: report.incidentsThisMonth > report.resolvedThisMonth ? 'warning' : 'ok',
+      },
+    ],
+    tone,
+  }
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

@@ -9,6 +9,7 @@ import {
   getAccessiblePortalSites,
   getPortalActivityFeed,
   getPortalAlertDevices,
+  getPortalBoardReport,
   getPortalCoverageZones,
   getPortalDailyPriorities,
   getPortalDashboardTotals,
@@ -256,6 +257,7 @@ export default async function ClientAppPage() {
   const report = getPortalPortfolioReport(sites)
   const operationalScore = getPortalOperationalScore(sites)
   const operationalFlow = getPortalOperationalFlow(sites)
+  const boardReport = getPortalBoardReport(sites)
   const dailyPriorities = getPortalDailyPriorities(sites)
   const coverageZones = sites.flatMap((site) => getPortalCoverageZones(site)).slice(0, 6)
   const serviceCommitments = getPortalServiceCommitments(sites)
@@ -612,6 +614,44 @@ export default async function ClientAppPage() {
               <p className="mt-3 text-xs leading-5 text-white/45">{step.proof}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(boardReport.tone)}`}>
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{boardReport.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white">{boardReport.verdict}</h2>
+            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{boardReport.periodLabel}</p>
+            <p className="mt-5 text-base leading-8 text-white/70">{boardReport.outcome}</p>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <InfoLine label="Riesgo principal" value={boardReport.risk} />
+              <InfoLine label="Decision sugerida" value={boardReport.decision} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {boardReport.metrics.map((metric) => (
+                <div key={metric.label} className={`rounded-2xl border p-4 ${getScoreTone(metric.tone)}`}>
+                  <p className="text-xs uppercase tracking-[0.16em] opacity-70">{metric.label}</p>
+                  <p className="mt-2 text-2xl font-light text-white">{metric.value}</p>
+                  <p className="mt-2 text-xs leading-5 text-white/55">{metric.detail}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Evidencia para reunion</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {boardReport.proofPoints.map((point) => (
+                  <div key={point} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                    <p className="text-sm leading-6 text-white/66">{point}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
