@@ -342,6 +342,20 @@ export interface PortalMaturityScorecardItem {
   rank: number
 }
 
+export interface PortalWeeklyDecisionAgendaItem {
+  id: string
+  siteLabel: string
+  decision: string
+  priorityLabel: string
+  evidence: string
+  owner: string
+  deadline: string
+  expectedOutcome: string
+  customerValue: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2729,6 +2743,96 @@ export function getPortalMaturityScorecard(sites: PortalSiteSummary[]): PortalMa
   }))
 
   return items.sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label))
+}
+
+export function getPortalWeeklyDecisionAgenda(sites: PortalSiteSummary[]): PortalWeeklyDecisionAgendaItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-weekly-agenda',
+      siteLabel: 'Sin sitio',
+      decision: 'Activar una primera agenda de seguridad',
+      priorityLabel: 'Inicio',
+      evidence: 'No hay sitios publicados para construir una agenda semanal.',
+      owner: 'Equipo SegurIA',
+      deadline: 'Antes del inicio operativo',
+      expectedOutcome: 'Cliente con prioridades, responsables y primera rutina visible.',
+      customerValue: 'La seguridad deja de depender de conversaciones sueltas y parte con un orden claro.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const agenda = sites.flatMap((site) => {
+    const actions = getPortalActionRegister([site])
+    const riskMap = getPortalRiskMap([site])
+    const maturity = getPortalMaturityScorecard([site])
+    const board = getPortalBoardReport([site])
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const primaryAction = actions[0]
+    const primaryRisk = riskMap[0]
+    const weakestPillar = maturity[0]
+    const owner = primaryAction?.owner || site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio'
+    const decisionTone: PortalWeeklyDecisionAgendaItem['tone'] =
+      primaryAction?.tone === 'critical' || board.tone === 'critical'
+        ? 'critical'
+        : primaryAction?.tone === 'warning' || board.tone === 'warning'
+          ? 'warning'
+          : 'ok'
+
+    const items: PortalWeeklyDecisionAgendaItem[] = [{
+      id: `${site.propertyId}-weekly-primary`,
+      siteLabel: site.label,
+      decision: primaryAction?.title || board.decision,
+      priorityLabel: decisionTone === 'critical' ? 'Resolver hoy' : decisionTone === 'warning' ? 'Prioridad semanal' : 'Mantener',
+      evidence: primaryAction?.why || board.risk,
+      owner,
+      deadline: primaryAction?.due || 'Revision semanal',
+      expectedOutcome: primaryAction?.successCriteria || board.outcome,
+      customerValue: openIncidents.length > 0
+        ? 'Menos incertidumbre: cada incidente queda con respuesta, evidencia y cierre claro.'
+        : 'Mas calma diaria: la operacion sabe que mirar primero y cuando escalar.',
+      tone: decisionTone,
+      rank: (primaryAction?.rank || 50) + (openIncidents.length > 0 ? 12 : 0),
+    }]
+
+    if (weakestPillar) {
+      items.push({
+        id: `${site.propertyId}-weekly-maturity-${weakestPillar.id}`,
+        siteLabel: site.label,
+        decision: `Subir madurez en ${weakestPillar.label.toLowerCase()}`,
+        priorityLabel: weakestPillar.level,
+        evidence: weakestPillar.reading,
+        owner: 'Administrador del cliente',
+        deadline: weakestPillar.tone === 'critical' ? 'Esta semana' : 'Proxima revision',
+        expectedOutcome: weakestPillar.nextStep,
+        customerValue: 'La seguridad se vuelve mas profesional sin pedirle al cliente perseguir datos ni pantallas.',
+        tone: weakestPillar.tone,
+        rank: weakestPillar.rank + 8,
+      })
+    }
+
+    if (primaryRisk) {
+      items.push({
+        id: `${site.propertyId}-weekly-risk-${primaryRisk.id}`,
+        siteLabel: site.label,
+        decision: `Acordar criterio para ${primaryRisk.zone}`,
+        priorityLabel: primaryRisk.window,
+        evidence: primaryRisk.exposure,
+        owner: primaryRisk.owner,
+        deadline: primaryRisk.tone === 'critical' ? 'Antes del proximo turno sensible' : 'Mesa semanal',
+        expectedOutcome: primaryRisk.action,
+        customerValue: 'El equipo sabe cuando mirar, que validar y como responder antes de que el problema crezca.',
+        tone: primaryRisk.tone,
+        rank: primaryRisk.rank + 6,
+      })
+    }
+
+    return items
+  })
+
+  return agenda
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 export function getPortalAlertDevices(sites: PortalSiteSummary[]) {

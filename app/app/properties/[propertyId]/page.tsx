@@ -38,6 +38,7 @@ import {
   getPortalSensitiveWindows,
   getPortalSiteForUser,
   getPortalTraceabilityLedger,
+  getPortalWeeklyDecisionAgenda,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
 
@@ -114,6 +115,7 @@ export default async function PropertyPage({
   const governanceRituals = getPortalGovernanceRituals([site])
   const actionRegister = getPortalActionRegister([site])
   const traceabilityLedger = getPortalTraceabilityLedger([site])
+  const weeklyDecisionAgenda = getPortalWeeklyDecisionAgenda([site])
   const riskMap = getPortalRiskMap([site])
   const dailyPriorities = getPortalDailyPriorities([site])
   const coverageZones = getPortalCoverageZones(site)
@@ -483,6 +485,43 @@ export default async function PropertyPage({
                 <InfoTile label="Plazo" value={action.due} icon={Siren} />
                 <InfoTile label="Siguiente paso" value={action.nextStep} icon={FileText} />
                 <InfoTile label="Criterio de cierre" value={action.successCriteria} icon={CheckCircle2} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.18),transparent_30%),radial-gradient(circle_at_92%_12%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Agenda semanal</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Decisiones que mejoran {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Una pauta breve para cerrar la semana con criterio: decision, evidencia, responsable, plazo y beneficio
+              visible para la operacion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            reunion semanal
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {weeklyDecisionAgenda.slice(0, 4).map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{item.decision}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.priorityLabel}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{item.customerValue}</p>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <InfoTile label="Evidencia" value={item.evidence} icon={FileText} />
+                <InfoTile label="Responsable" value={item.owner} icon={ShieldAlert} />
+                <InfoTile label="Plazo" value={item.deadline} icon={Siren} />
+                <InfoTile label="Resultado esperado" value={item.expectedOutcome} icon={CheckCircle2} />
               </div>
             </div>
           ))}
