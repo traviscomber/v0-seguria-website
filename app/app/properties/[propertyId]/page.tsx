@@ -213,6 +213,35 @@ export default async function PropertyPage({
         </div>
       </section>
 
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_28%),rgba(255,255,255,0.04)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bitacora de turno</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Una forma simple de operar {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Cada turno queda guiado por una secuencia clara: abrir la operacion, observar cambios, responder con
+              evidencia y cerrar con aprendizaje.
+            </p>
+          </div>
+          <Badge className={openIncidents.length > 0 || site.alertCount > 0 ? 'border-amber-400/25 bg-amber-400/10 text-amber-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
+            {openIncidents.length > 0 || site.alertCount > 0 ? 'turno con atencion' : 'turno estable'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          {site.profile.shiftFlow.map((step, index) => (
+            <div key={`${step.label}-${step.moment}`} className="relative rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
+              <span className="absolute right-4 top-4 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/38">
+                0{index + 1}
+              </span>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">{step.moment}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{step.label}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/58">{step.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>

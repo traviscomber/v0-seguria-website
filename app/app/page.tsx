@@ -309,6 +309,12 @@ export default async function ClientAppPage() {
       { label: 'SLA', value: 'tiempos visibles', detail: 'Confirmacion, resolucion y alertas pendientes quedan medibles.' },
       { label: 'Auditoria', value: 'historia completa', detail: 'Eventos, evidencia e incidentes quedan ordenados para revisar y mejorar.' },
     ],
+    shiftFlow: [
+      { label: 'Abrir operacion', moment: 'inicio', detail: 'Revisar estado, alertas y conexiones antes de iniciar la jornada.' },
+      { label: 'Monitorear cambios', moment: 'durante', detail: 'Distinguir rutina, excepcion y riesgo con contexto de sitio.' },
+      { label: 'Escalar alerta', moment: 'alerta', detail: 'Usar evidencia y responsable antes de convertir un aviso en incidente.' },
+      { label: 'Cerrar aprendizaje', moment: 'cierre', detail: 'Registrar resultado para mejorar reglas, tiempos y respuesta.' },
+    ],
     responsePlan: [
       'Revisar primero alertas criticas y conexiones con atencion.',
       'Confirmar evidencia antes de escalar una excepcion.',
@@ -518,6 +524,35 @@ export default async function ClientAppPage() {
       </section>
 
       <ClientNotificationCenter />
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_28%),rgba(255,255,255,0.04)] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Rutina de operacion</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Del primer vistazo al cierre con evidencia</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              La plataforma ordena la jornada en pasos simples: abrir, observar, escalar y cerrar. Asi el cliente sabe
+              que hacer antes, durante y despues de cada alerta.
+            </p>
+          </div>
+          <Badge className={continuityHasRisk ? 'border-amber-400/25 bg-amber-400/10 text-amber-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
+            {continuityHasRisk ? 'priorizar revision' : 'rutina estable'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          {primaryProfile.shiftFlow.map((step, index) => (
+            <div key={`${step.label}-${step.moment}`} className="relative rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
+              <span className="absolute right-4 top-4 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/38">
+                0{index + 1}
+              </span>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">{step.moment}</p>
+              <h3 className="mt-3 text-xl font-light text-white">{step.label}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/58">{step.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">

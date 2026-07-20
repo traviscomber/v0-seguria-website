@@ -54,6 +54,11 @@ export interface PortalSiteProfile {
     value: string
     detail: string
   }[]
+  shiftFlow: {
+    label: string
+    moment: string
+    detail: string
+  }[]
   responsePlan: string[]
   metricLabels: {
     camera: string
@@ -228,6 +233,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'SLA', value: 'respuesta medible', detail: 'Los tiempos de confirmacion y resolucion quedan visibles para mejorar cada guardia.' },
         { label: 'Auditoria', value: 'historial ordenado', detail: 'Incidentes, evidencia y cierres quedan trazables para revisar despues sin reconstruir la historia.' },
       ],
+      shiftFlow: [
+        { label: 'Abrir turno', moment: 'inicio', detail: 'Revisar llegadas, accesos activos, zonas comunes y avisos pendientes antes de recibir flujo de huespedes.' },
+        { label: 'Observar cambios', moment: 'durante', detail: 'Separar actividad normal de huespedes y proveedores de movimientos fuera de rutina.' },
+        { label: 'Escalar con criterio', moment: 'alerta', detail: 'Cruzar evento, evidencia y ubicacion antes de activar mantencion, recepcion o seguridad.' },
+        { label: 'Cerrar con historia', moment: 'cierre', detail: 'Dejar incidente, evidencia y aprendizaje listos para el siguiente turno.' },
+      ],
       responsePlan: [
         'Priorizar recepcion, accesos y estacionamientos durante cambios de turno.',
         'Cruzar eventos con evidencia visual antes de escalar una alerta.',
@@ -266,6 +277,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
         { label: 'SLA', value: 'avisos medibles', detail: 'Confirmaciones, demoras y cierres permiten controlar respuesta sin depender de memoria.' },
         { label: 'Auditoria', value: 'evidencia rural', detail: 'Cada excepcion queda unida a horario, ubicacion y respaldo visual para cerrar con criterio.' },
       ],
+      shiftFlow: [
+        { label: 'Abrir jornada', moment: 'inicio', detail: 'Revisar portones, sala de frio, riego, bodegas y ultimos movimientos nocturnos.' },
+        { label: 'Cuidar continuidad', moment: 'durante', detail: 'Mirar primero los puntos que pueden detener faena o afectar leche, praderas e insumos.' },
+        { label: 'Responder sin correr', moment: 'alerta', detail: 'Validar senal con camara, ubicacion y horario antes de movilizar al equipo.' },
+        { label: 'Cerrar con causa', moment: 'cierre', detail: 'Registrar evidencia, causa probable y accion preventiva para la siguiente jornada.' },
+      ],
       responsePlan: [
         'Revisar primero accesos, portones y movimiento nocturno.',
         'Confirmar continuidad de sala de frio, riego y bodegas sensibles.',
@@ -302,6 +319,12 @@ function getPortalSiteProfile(organizationName: string, propertyName: string): P
       { label: 'Roles', value: 'responsables claros', detail: 'Cada accion se puede leer por equipo, sitio y prioridad.' },
       { label: 'SLA', value: 'tiempos visibles', detail: 'Confirmacion, resolucion y alertas pendientes quedan medibles.' },
       { label: 'Auditoria', value: 'historia completa', detail: 'Eventos, evidencia e incidentes quedan ordenados para revisar y mejorar.' },
+    ],
+    shiftFlow: [
+      { label: 'Abrir operacion', moment: 'inicio', detail: 'Revisar estado, alertas y conexiones antes de iniciar la jornada.' },
+      { label: 'Monitorear cambios', moment: 'durante', detail: 'Distinguir rutina, excepcion y riesgo con contexto de sitio.' },
+      { label: 'Escalar alerta', moment: 'alerta', detail: 'Usar evidencia y responsable antes de convertir un aviso en incidente.' },
+      { label: 'Cerrar aprendizaje', moment: 'cierre', detail: 'Registrar resultado para mejorar reglas, tiempos y respuesta.' },
     ],
     responsePlan: [
       'Revisar primero alertas criticas y conexiones con atencion.',
