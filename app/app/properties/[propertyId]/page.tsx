@@ -36,6 +36,7 @@ import {
   getPortalRiskMap,
   getPortalSensorRisk,
   getPortalServiceCommitments,
+  getPortalShiftHandoff,
   getPortalSensitiveWindows,
   getPortalSiteForUser,
   getPortalTraceabilityLedger,
@@ -125,6 +126,7 @@ export default async function PropertyPage({
   const executiveBrief = getPortalExecutiveBrief([site])
   const leadershipBrief = getPortalLeadershipBrief([site])
   const trustCenter = getPortalTrustCenter([site])
+  const shiftHandoff = getPortalShiftHandoff([site])
   const sensitiveWindows = getPortalSensitiveWindows([site])
   const improvementActions = getPortalImprovementActions([site])
   const decisionPackets = getPortalDecisionPackets([site])
@@ -781,6 +783,50 @@ export default async function PropertyPage({
                 <InfoTile label="Momento" value={packet.timing} icon={Siren} />
                 <InfoTile label="Evidencia minima" value={packet.evidence} icon={FileText} />
                 <InfoTile label="Resultado esperado" value={packet.outcome} icon={CheckCircle2} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Traspaso de turno</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que debe saber el equipo de {site.label}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Apertura, seguimiento, alerta y cierre quedan convertidos en una pauta simple para que el siguiente
+              responsable no parta desde cero.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            continuidad del turno
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {shiftHandoff.slice(0, 4).map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.moment}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{item.summary}</p>
+              <div className="mt-5 space-y-2">
+                {item.checklist.map((check) => (
+                  <div key={check} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-3 text-sm leading-6 text-white/68">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
+                    <span>{check}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 grid gap-3">
+                <InfoTile label="Ventana sensible" value={item.riskWindow} icon={Siren} />
+                <InfoTile label="Responsable" value={item.owner} icon={ShieldAlert} />
+                <InfoTile label="Salida esperada" value={item.output} icon={CheckCircle2} />
               </div>
             </div>
           ))}

@@ -383,6 +383,20 @@ export interface PortalTrustCenterItem {
   rank: number
 }
 
+export interface PortalShiftHandoffItem {
+  id: string
+  siteLabel: string
+  moment: string
+  title: string
+  summary: string
+  checklist: string[]
+  riskWindow: string
+  owner: string
+  output: string
+  tone: 'ok' | 'warning' | 'critical'
+  rank: number
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1679,7 +1693,7 @@ export function getPortalLeadershipBrief(sites: PortalSiteSummary[]): PortalLead
         label: 'Claridad',
         value: `${score.score}/100`,
         detail: score.summary,
-        proof: `${score.drivers.slice(0, 2).join(' · ') || 'Lectura operativa disponible'}`,
+        proof: `${score.drivers.slice(0, 2).join(' - ') || 'Lectura operativa disponible'}`,
         tone: score.tone,
       },
       {
@@ -1800,7 +1814,7 @@ export function getPortalTrustCenter(sites: PortalSiteSummary[]): PortalTrustCen
       label: 'Mejora continua',
       value: `${score.score}/100`,
       promise: 'El portal no se limita a mostrar equipos: propone mejoras para reducir riesgo y ruido.',
-      proof: score.drivers.slice(0, 2).join(' · ') || 'Lectura operativa disponible.',
+      proof: score.drivers.slice(0, 2).join(' - ') || 'Lectura operativa disponible.',
       customerMeaning: 'Cada revision semanal puede terminar con una mejora concreta, no solo con una lista de eventos.',
       tone: score.tone,
       rank: score.tone === 'critical' ? 88 : score.tone === 'warning' ? 54 : 16,
@@ -1808,6 +1822,82 @@ export function getPortalTrustCenter(sites: PortalSiteSummary[]): PortalTrustCen
   ]
 
   return items.sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label))
+}
+
+export function getPortalShiftHandoff(sites: PortalSiteSummary[]): PortalShiftHandoffItem[] {
+  if (sites.length === 0) {
+    return [{
+      id: 'empty-shift-handoff',
+      siteLabel: 'Sin sitio',
+      moment: 'inicio',
+      title: 'Preparar primer traspaso',
+      summary: 'Aun no hay una operacion publicada para ordenar apertura, seguimiento y cierre.',
+      checklist: ['Activar sitio', 'Asignar responsable', 'Publicar inventario minimo'],
+      riskWindow: 'Pendiente',
+      owner: 'Equipo SegurIA',
+      output: 'Primer turno con estado, responsable y criterio de cierre.',
+      tone: 'warning',
+      rank: 90,
+    }]
+  }
+
+  const handoff = sites.flatMap((site) => {
+    const windows = getPortalSensitiveWindows([site])
+    const actions = getPortalActionRegister([site])
+    const coverage = getPortalCoverageZones(site)
+    const openIncidents = site.incidents.filter(isOpenPortalIncident)
+    const strongestWindow = windows[0]
+    const primaryAction = actions[0]
+    const weakZone = coverage.find((zone) => zone.tone !== 'ok') || coverage[0]
+    const connectionRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
+    const operationsOwner = site.profile.escalationMatrix[0]?.owner || 'Responsable del sitio'
+    const continuityOwner = site.profile.escalationMatrix[1]?.owner || operationsOwner
+
+    return site.profile.shiftFlow.map((step, index) => {
+      const isStart = index === 0
+      const isAlert = step.moment.toLowerCase().includes('alerta') || step.label.toLowerCase().includes('escalar')
+      const isClose = step.label.toLowerCase().includes('cerrar') || step.moment.toLowerCase().includes('cierre')
+      const tone: PortalShiftHandoffItem['tone'] =
+        openIncidents.length > 0 && (isAlert || isClose)
+          ? 'critical'
+          : (connectionRisk > 0 && isStart) || primaryAction?.tone === 'warning' || strongestWindow?.tone === 'warning'
+            ? 'warning'
+            : 'ok'
+      const checklist = [
+        isStart
+          ? `Verificar estado de ${site.label} y conexiones visibles.`
+          : step.detail,
+        isAlert
+          ? primaryAction?.nextStep || site.profile.recommendedAttentionAction
+          : weakZone?.action || site.profile.recommendedStableAction,
+        isClose
+          ? 'Dejar evidencia, responsable y aprendizaje antes del cambio de turno.'
+          : strongestWindow?.action || 'Mantener seguimiento segun rutina normal.',
+      ]
+
+      return {
+        id: `${site.propertyId}-shift-${index}`,
+        siteLabel: site.label,
+        moment: step.moment,
+        title: step.label,
+        summary: step.detail,
+        checklist,
+        riskWindow: strongestWindow ? `${strongestWindow.label} (${strongestWindow.range})` : 'Rutina normal',
+        owner: isStart && connectionRisk > 0 ? continuityOwner : operationsOwner,
+        output: isClose
+          ? 'Turno cerrado con historia clara, evidencia y siguiente mejora.'
+          : isAlert
+            ? 'Excepcion validada con contexto antes de escalar.'
+            : 'Turno con lectura comun y foco operativo compartido.',
+        tone,
+        rank: (tone === 'critical' ? 90 : tone === 'warning' ? 56 : 18) + (4 - index),
+      }
+    })
+  })
+
+  return handoff
+    .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
+    .slice(0, 8)
 }
 
 function getWindowSlot(date: Date) {
