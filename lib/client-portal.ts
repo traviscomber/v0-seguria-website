@@ -397,6 +397,23 @@ export interface PortalShiftHandoffItem {
   rank: number
 }
 
+export interface PortalOperationalForecast {
+  title: string
+  horizon: string
+  direction: string
+  summary: string
+  primaryRisk: string
+  bestMove: string
+  tone: 'ok' | 'warning' | 'critical'
+  signals: {
+    label: string
+    value: string
+    reading: string
+    action: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -1898,6 +1915,126 @@ export function getPortalShiftHandoff(sites: PortalSiteSummary[]): PortalShiftHa
   return handoff
     .sort((left, right) => right.rank - left.rank || left.siteLabel.localeCompare(right.siteLabel))
     .slice(0, 8)
+}
+
+export function getPortalOperationalForecast(sites: PortalSiteSummary[]): PortalOperationalForecast {
+  if (sites.length === 0) {
+    return {
+      title: 'Pronostico operativo',
+      horizon: 'Proximos 7 dias',
+      direction: 'Sin base',
+      summary: 'Aun no hay sitios publicados para proyectar tendencia de seguridad.',
+      primaryRisk: 'Falta una primera lectura operativa.',
+      bestMove: 'Activar sitio, inventario y responsables iniciales.',
+      tone: 'warning',
+      signals: [{
+        label: 'Base de lectura',
+        value: 'pendiente',
+        reading: 'No hay datos suficientes para anticipar riesgo.',
+        action: 'Publicar la primera operacion cliente.',
+        tone: 'warning',
+      }],
+    }
+  }
+
+  const totals = getPortalDashboardTotals(sites)
+  const report = getPortalPortfolioReport(sites)
+  const score = getPortalOperationalScore(sites)
+  const maturity = getPortalMaturityScorecard(sites)
+  const actions = getPortalActionRegister(sites)
+  const traceability = getPortalTraceabilityLedger(sites)
+  const coverage = sites.flatMap((site) => getPortalCoverageZones(site))
+  const evidenceReady = traceability.filter((item) => item.tone !== 'critical').length
+  const weakCoverage = coverage.filter((zone) => zone.tone !== 'ok').length
+  const urgentActions = actions.filter((action) => action.tone === 'critical').length
+  const plannedActions = actions.filter((action) => action.tone === 'warning').length
+  const weakestMaturity = maturity[0]
+  const pressure =
+    totals.openIncidents * 18 +
+    totals.overdueConfirmations * 16 +
+    totals.offlineGateways * 12 +
+    totals.criticalEventsToday * 10 +
+    weakCoverage * 8 +
+    urgentActions * 10 -
+    evidenceReady * 3 -
+    totals.resolvedThisMonth * 2
+  const tone: PortalOperationalForecast['tone'] = pressure >= 42 || score.tone === 'critical'
+    ? 'critical'
+    : pressure >= 18 || score.tone === 'warning'
+      ? 'warning'
+      : 'ok'
+  const direction = tone === 'critical'
+    ? 'Riesgo subiendo'
+    : tone === 'warning'
+      ? 'Estable con presion'
+      : 'Mejorando'
+  const primaryRisk = totals.openIncidents > 0
+    ? `${totals.openIncidents} incidente${totals.openIncidents === 1 ? '' : 's'} puede${totals.openIncidents === 1 ? '' : 'n'} arrastrar la semana si no queda${totals.openIncidents === 1 ? '' : 'n'} cerrado${totals.openIncidents === 1 ? '' : 's'}.`
+    : totals.offlineGateways > 0
+      ? 'La continuidad visible es el punto que mas puede degradar la operacion.'
+      : weakCoverage > 0
+        ? 'La cobertura parcial puede transformar senales menores en revisiones lentas.'
+        : 'No hay riesgo principal abierto en esta lectura.'
+  const bestMove = actions[0]?.nextStep || weakestMaturity?.nextStep || 'Mantener rutina y revisar oportunidades de mejora.'
+
+  return {
+    title: 'Pronostico operativo',
+    horizon: 'Proximos 7 dias',
+    direction,
+    summary: tone === 'critical'
+      ? 'La semana necesita cierres concretos para evitar acumulacion de ruido, excepciones y decisiones tardias.'
+      : tone === 'warning'
+        ? 'La operacion se mantiene legible, pero hay senales que conviene ordenar antes de que se acumulen.'
+        : 'La operacion llega a la semana con buena lectura, evidencia disponible y mejoras manejables.',
+    primaryRisk,
+    bestMove,
+    tone,
+    signals: [
+      {
+        label: 'Presion operativa',
+        value: `${Math.max(0, pressure)}`,
+        reading: `${totals.openIncidents} incidente${totals.openIncidents === 1 ? '' : 's'}, ${totals.overdueConfirmations} confirmacion${totals.overdueConfirmations === 1 ? '' : 'es'} vencida${totals.overdueConfirmations === 1 ? '' : 's'}.`,
+        action: totals.openIncidents > 0 || totals.overdueConfirmations > 0
+          ? 'Cerrar pendientes antes de abrir nuevas mejoras.'
+          : 'Mantener control de avisos y cierres.',
+        tone: totals.openIncidents > 0 || totals.overdueConfirmations > 0 ? 'critical' : 'ok',
+      },
+      {
+        label: 'Continuidad',
+        value: totals.offlineGateways > 0 ? `${totals.offlineGateways} en revision` : 'estable',
+        reading: `${totals.onlineGateways} conexion${totals.onlineGateways === 1 ? '' : 'es'} activa${totals.onlineGateways === 1 ? '' : 's'}.`,
+        action: totals.offlineGateways > 0
+          ? 'Recuperar lectura de sitio antes de depender de supervision manual.'
+          : 'Mantener revision normal de recencia.',
+        tone: totals.offlineGateways > 0 ? 'warning' : 'ok',
+      },
+      {
+        label: 'Cobertura',
+        value: `${weakCoverage}`,
+        reading: `${coverage.length - weakCoverage} zona${coverage.length - weakCoverage === 1 ? '' : 's'} con lectura suficiente, ${weakCoverage} con mejora posible.`,
+        action: weakCoverage > 0
+          ? 'Cerrar zonas parciales antes de sumar nuevas reglas.'
+          : 'Mantener cobertura y revisar patrones.',
+        tone: weakCoverage > 0 ? 'warning' : 'ok',
+      },
+      {
+        label: 'Evidencia',
+        value: `${evidenceReady}`,
+        reading: `${traceability.length} registro${traceability.length === 1 ? '' : 's'} trazable${traceability.length === 1 ? '' : 's'} para explicar decisiones.`,
+        action: evidenceReady > 0
+          ? 'Usar evidencia para ajustar reglas y reducir ruido.'
+          : 'Completar respaldo antes de cerrar excepciones.',
+        tone: evidenceReady > 0 ? 'ok' : 'warning',
+      },
+      {
+        label: 'Mejora',
+        value: `${urgentActions + plannedActions}`,
+        reading: `${urgentActions} accion${urgentActions === 1 ? '' : 'es'} critica${urgentActions === 1 ? '' : 's'}, ${plannedActions} en seguimiento.`,
+        action: bestMove,
+        tone: urgentActions > 0 ? 'critical' : plannedActions > 0 ? 'warning' : 'ok',
+      },
+    ],
+  }
 }
 
 function getWindowSlot(date: Date) {

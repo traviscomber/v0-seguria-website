@@ -33,6 +33,7 @@ import {
   getPortalMaturityScorecard,
   getPortalOperationalScore,
   getPortalOperationalFlow,
+  getPortalOperationalForecast,
   getPortalRiskMap,
   getPortalSensorRisk,
   getPortalServiceCommitments,
@@ -112,6 +113,7 @@ export default async function PropertyPage({
   const openIncidents = site.incidents.filter(isOpenPortalIncident)
   const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
   const operationalScore = getPortalOperationalScore([site])
+  const operationalForecast = getPortalOperationalForecast([site])
   const maturityScorecard = getPortalMaturityScorecard([site])
   const operationalFlow = getPortalOperationalFlow([site])
   const boardReport = getPortalBoardReport([site])
@@ -357,6 +359,35 @@ export default async function PropertyPage({
               <p className="mt-3 text-xs leading-5 text-white/45">{item.proof}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(operationalForecast.tone)}`}>
+        <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{operationalForecast.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white">{operationalForecast.direction}</h2>
+            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{operationalForecast.horizon}</p>
+            <p className="mt-5 text-base leading-8 text-white/70">{operationalForecast.summary}</p>
+            <div className="mt-5 grid gap-3">
+              <InfoTile label="Riesgo principal" value={operationalForecast.primaryRisk} icon={ShieldAlert} />
+              <InfoTile label="Mejor movimiento" value={operationalForecast.bestMove} icon={CheckCircle2} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {operationalForecast.signals.map((signal) => (
+              <div key={signal.label} className={`rounded-[24px] border p-5 ${getScoreTone(signal.tone)}`}>
+                <p className="text-xs uppercase tracking-[0.18em] opacity-70">{signal.label}</p>
+                <h3 className="mt-3 text-2xl font-light text-white">{signal.value}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/64">{signal.reading}</p>
+                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion</p>
+                  <p className="mt-2 text-sm leading-6 text-white/70">{signal.action}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
