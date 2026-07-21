@@ -12,6 +12,7 @@ const requiredHomeTerms = [
   'Resumen para direccion',
   'Comparador operativo',
   'Lectura por rol',
+  'Minuta ejecutiva',
   'Completitud operativa',
   'Roadmap cliente',
   'Mapa de responsables',

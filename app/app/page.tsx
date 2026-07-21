@@ -626,6 +626,36 @@ export default async function ClientAppPage() {
       tone: actionRegister[0]?.tone || boardReport.tone,
     },
   ] as const
+  const executiveMinutes = [
+    {
+      label: 'Tema',
+      value: boardReport.verdict,
+      detail: boardReport.outcome,
+      proof: boardReport.periodLabel,
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Decision',
+      value: boardReport.decision,
+      detail: boardReport.risk,
+      proof: boardReport.proofPoints[0] || meetingPack.evidence,
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Indicador',
+      value: `${report.resolvedThisMonth}/${report.incidentsThisMonth}`,
+      detail: report.incidentsThisMonth > 0 ? 'Cierres del mes frente a incidentes registrados.' : 'Sin incidentes mensuales que requieran cierre.',
+      proof: report.overdueConfirmations > 0 ? `${report.overdueConfirmations} confirmaciones vencidas.` : 'Sin vencimientos pendientes.',
+      tone: report.overdueConfirmations > 0 ? 'critical' : boardReport.tone,
+    },
+    {
+      label: 'Acuerdo',
+      value: meetingPack.close,
+      detail: meetingPack.commitment,
+      proof: meetingPack.evidence,
+      tone: meetingPack.tone,
+    },
+  ] as const
   const maturityAverage = Math.round(
     maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length)
   )
@@ -1127,6 +1157,31 @@ export default async function ClientAppPage() {
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {executiveDecisionSummary.map((item) => (
+            <article key={item.label} className={`flex min-h-full flex-col rounded-[22px] border p-4 ${getScoreTone(item.tone)}`}>
+              <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+              <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-5 md:p-6 ${getScoreTone(boardReport.tone)}`}>
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] opacity-70">Minuta ejecutiva</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Un resumen listo para comite, reunion o seguimiento</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              La lectura queda preparada en cuatro piezas: tema, decision, indicador y acuerdo. Sirve para alinear al
+              equipo sin volver a revisar toda la operacion.
+            </p>
+          </div>
+          <Badge className={getScoreTone(boardReport.tone)}>{boardReport.periodLabel}</Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {executiveMinutes.map((item) => (
             <article key={item.label} className={`flex min-h-full flex-col rounded-[22px] border p-4 ${getScoreTone(item.tone)}`}>
               <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
               <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
