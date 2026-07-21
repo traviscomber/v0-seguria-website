@@ -500,6 +500,45 @@ export default async function ClientAppPage() {
       tone: governanceRituals.some((ritual) => ritual.tone === 'critical') ? 'critical' : governanceRituals.some((ritual) => ritual.tone === 'warning') ? 'warning' : 'ok',
     },
   ] as const
+  const serviceGaps = serviceCommitments.filter((commitment) => commitment.tone !== 'ok')
+  const servicePassport = [
+    {
+      label: 'Alcance visible',
+      value: `${totals.organizations} empresas / ${totals.sites} sitios`,
+      detail: 'El cliente ve que operacion esta incluida, donde mirar y que espacios quedan bajo seguimiento.',
+      proof: visibleAssurance[0]?.proof || `${totals.devices} equipos visibles en el portal.`,
+      action: 'Revisar cobertura por sitio',
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Compromisos medibles',
+      value: serviceGaps.length > 0 ? `${serviceGaps.length} por cerrar` : 'sin brechas visibles',
+      detail: serviceCommitments[0]?.summary || 'Confirmacion, cierre y continuidad quedan medidos para administrar el servicio.',
+      proof: serviceCommitments[0]?.target || 'Respuesta, evidencia y cierre se revisan con criterio comun.',
+      action: serviceCommitments[0]?.action || 'Mantener compromisos visibles en cada revision.',
+      href: '#acciones',
+      tone: serviceCommitments[0]?.tone || 'ok',
+    },
+    {
+      label: 'Evidencia defendible',
+      value: `${traceabilityLedger.length} registros`,
+      detail: traceabilityLedger[0]?.evidence || 'La historia operativa queda disponible para explicar eventos y decisiones.',
+      proof: traceabilityLedger[0]?.decisionLink || 'Cada cierre importante debe quedar conectado con una prueba clara.',
+      action: 'Abrir evidencia',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Proximo cierre',
+      value: actionRegister[0]?.title || meetingPack.close,
+      detail: actionRegister[0]?.why || meetingPack.commitment,
+      proof: actionRegister[0]?.successCriteria || boardReport.proofPoints[0] || meetingPack.evidence,
+      action: actionRegister[0]?.nextStep || meetingPack.close,
+      href: '#decisiones',
+      tone: actionRegister[0]?.tone || meetingPack.tone,
+    },
+  ] as const
   const businessValue = [
     {
       label: 'Menos incertidumbre',
@@ -1415,6 +1454,50 @@ export default async function ClientAppPage() {
                 <p className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/55 px-4 py-3 text-xs leading-5 text-white/55">
                   {item.proof}
                 </p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_8%_10%,rgba(77,163,217,0.16),transparent_30%),radial-gradient(circle_at_96%_0%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Ficha de servicio cliente</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white md:text-4xl">
+              Lo contratado debe poder leerse en una pagina, no perseguirse en conversaciones.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/58">
+              Esta ficha traduce la seguridad en cuatro certezas: alcance, compromiso, evidencia y siguiente cierre.
+              Sirve para que administracion sepa que esta bajo control, que falta y que debe quedar resuelto.
+            </p>
+            <div className="mt-6 rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">Lectura esperada</p>
+              <p className="mt-3 text-base leading-7 text-white/74">
+                El cliente no necesita interpretar la operacion completa: necesita saber si el servicio esta cubriendo,
+                si responde a tiempo y si cada decision queda explicada.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {servicePassport.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-2 text-2xl font-light leading-snug text-white">{item.value}</h3>
+                  </div>
+                  <ArrowRight className="mt-1 h-5 w-5 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+                </div>
+                <p className="mt-4 text-sm leading-6 text-white/68">{item.detail}</p>
+                <p className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/50 px-4 py-3 text-xs leading-5 text-white/55">
+                  {item.proof}
+                </p>
+                <p className="mt-auto pt-4 text-sm leading-6 text-white/76">{item.action}</p>
               </a>
             ))}
           </div>

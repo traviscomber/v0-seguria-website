@@ -14,6 +14,7 @@ const requiredHomeTerms = [
   'Lectura por rol',
   'Minuta ejecutiva',
   'Agenda semanal cliente',
+  'Ficha de servicio cliente',
   'Completitud operativa',
   'Roadmap cliente',
   'Mapa de responsables',
