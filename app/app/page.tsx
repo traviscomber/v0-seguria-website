@@ -500,6 +500,32 @@ export default async function ClientAppPage() {
       tone: governanceRituals.some((ritual) => ritual.tone === 'critical') ? 'critical' : governanceRituals.some((ritual) => ritual.tone === 'warning') ? 'warning' : 'ok',
     },
   ] as const
+  const meetingBrief = [
+    {
+      label: 'Decision',
+      value: meetingPack.decision,
+      detail: 'Lo que debe quedar resuelto o escalado al cierre de la reunion.',
+      tone: meetingPack.tone,
+    },
+    {
+      label: 'Evidencia',
+      value: meetingPack.evidence,
+      detail: 'Material que explica la lectura sin recorrer todo el portal.',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Riesgo',
+      value: boardReport.risk,
+      detail: 'Punto que puede afectar continuidad, respuesta o confianza operativa.',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Cierre',
+      value: meetingPack.close,
+      detail: meetingPack.commitment,
+      tone: actionRegister[0]?.tone || boardReport.tone,
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -1138,6 +1164,32 @@ export default async function ClientAppPage() {
               <p className="mt-3 text-sm leading-7 text-white/70">{meetingPack.commitment}</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_92%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Paquete de reunion</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Una pagina mental para gerencia y administracion</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Este bloque resume lo que un cliente necesita llevar a una reunion: decision, evidencia, riesgo y cierre.
+              La operacion queda explicada sin perderse entre camaras, eventos o documentos.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            listo para revisar
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          {meetingBrief.map((item) => (
+            <div key={item.label} className={`flex min-h-full flex-col rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+              <h3 className="mt-3 text-xl font-light leading-snug text-white">{item.value}</h3>
+              <p className="mt-auto pt-5 text-sm leading-6 text-white/64">{item.detail}</p>
+            </div>
+          ))}
         </div>
       </section>
 

@@ -5,6 +5,7 @@ const requiredHomeTerms = [
   'Mirar primero',
   'Pedir apoyo',
   'Bitacora ejecutiva',
+  'Paquete de reunion',
   'Garantias visibles',
   'Ruta de trabajo del cliente',
   'Estandar profesional',
