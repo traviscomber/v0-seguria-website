@@ -1007,6 +1007,48 @@ export default async function ClientAppPage() {
       tone: dailyPriorities[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
     },
   ] as const
+  const clientAdoptionPath = [
+    {
+      label: 'Habito diario',
+      value: dailyPriorities[0]?.title || 'Abrir con contexto',
+      owner: actionRegister[0]?.owner || governanceRituals[0]?.owner || 'Operacion',
+      routine: governanceRituals[0]?.cadence || 'Diario',
+      evidence: `${activity.length} cambios recientes y ${dailyPriorities.length} prioridades listas.`,
+      next: dailyPriorities[0]?.action || actionRegister[0]?.nextStep || nextAction,
+      href: '#actividad',
+      tone: dailyPriorities[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Habito de administracion',
+      value: weeklyClientAgenda[0]?.value || meetingPack.decision,
+      owner: weeklyClientAgenda[0]?.owner || meetingPack.agenda[1]?.owner || 'Administracion',
+      routine: weeklyClientAgenda[0]?.deadline || 'Semanal',
+      evidence: weeklyClientAgenda[0]?.detail || meetingPack.evidence,
+      next: weeklyClientAgenda[0]?.output || meetingPack.close,
+      href: '#decisiones',
+      tone: weeklyClientAgenda[0]?.tone || meetingPack.tone,
+    },
+    {
+      label: 'Habito de evidencia',
+      value: traceabilityLedger[0]?.title || 'Revisar respaldo',
+      owner: traceabilityLedger[0]?.siteLabel || 'Equipo cliente',
+      routine: 'En cada cierre',
+      evidence: traceabilityLedger[0]?.evidence || `${traceabilityLedger.length} registros disponibles.`,
+      next: traceabilityLedger[0]?.decisionLink || 'Conservar prueba y decision antes de cerrar.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Habito de mejora',
+      value: improvementActions[0]?.title || maturityScorecard[0]?.label || 'Mejorar con foco',
+      owner: improvementActions[0]?.siteLabel || governanceRituals[1]?.owner || 'Equipo cliente',
+      routine: 'Ciclo de mejora',
+      evidence: improvementActions[0]?.expectedImpact || maturityScorecard[0]?.reading || 'La mejora queda ligada al resultado operativo.',
+      next: improvementActions[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Definir la siguiente mejora visible.',
+      href: '#acciones',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -1580,6 +1622,51 @@ export default async function ClientAppPage() {
                 <p className="mt-2 text-sm leading-6 text-white/72">{item.action}</p>
               </div>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.15),transparent_30%),radial-gradient(circle_at_92%_0%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.054),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Adopcion operativa cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Como convertir la seguridad en rutina de equipo</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Un portal profesional no sirve si nadie lo incorpora al trabajo diario. Esta vista muestra los habitos
+              que sostienen control, respuesta, evidencia y mejora continua dentro del equipo cliente.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            rutina / responsable / evidencia
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {clientAdoptionPath.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Responsable / ritmo</p>
+                  <p className="mt-2 text-xs leading-5 text-white/62">{item.owner} / {item.routine}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Evidencia</p>
+                  <p className="mt-2 text-xs leading-5 text-white/62">{item.evidence}</p>
+                </div>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.next}</p>
             </a>
           ))}
         </div>

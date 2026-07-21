@@ -13,6 +13,7 @@ const requiredHomeTerms = [
   'Resumen para direccion',
   'Comparador operativo',
   'Lectura por rol',
+  'Adopcion operativa cliente',
   'Minuta ejecutiva',
   'Agenda semanal cliente',
   'Ficha de servicio cliente',
