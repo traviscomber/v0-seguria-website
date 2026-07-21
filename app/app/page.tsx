@@ -562,6 +562,42 @@ export default async function ClientAppPage() {
       description: primaryProfile.commandCenter[2]?.detail || 'Cada aviso indica donde ocurrio y que conviene revisar primero.',
     },
   ]
+  const executiveLog = [
+    {
+      label: 'Lo que cambio',
+      title: activity[0]?.title || headline,
+      detail: activity[0]
+        ? activity[0].detail
+        : 'No hay cambios recientes relevantes para esta cuenta.',
+      meta: activity[0] ? formatDate(activity[0].at) : updatedLabel,
+      href: '#actividad',
+      tone: activity[0]?.status === 'critical' || activity[0]?.status === 'falla' ? 'critical' : 'ok',
+    },
+    {
+      label: 'Decision sugerida',
+      title: decisionRoom.decisionNow,
+      detail: decisionRoom.reason,
+      meta: decisionRoom.owner,
+      href: '#decisiones',
+      tone: decisionRoom.tone,
+    },
+    {
+      label: 'Accion abierta',
+      title: actionRegister[0]?.title || 'Mantener seguimiento normal',
+      detail: actionRegister[0]?.nextStep || nextAction,
+      meta: actionRegister[0]?.owner || 'Operacion',
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Prueba disponible',
+      title: traceabilityLedger[0]?.title || 'Evidencia y actividad listas',
+      detail: traceabilityLedger[0]?.decisionLink || 'El portal mantiene eventos, sitios y registros ordenados para revision.',
+      meta: traceabilityLedger[0]?.siteLabel || `${traceabilityLedger.length} registros`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+  ] as const
 
   return (
     <div className="space-y-8">
@@ -709,6 +745,42 @@ export default async function ClientAppPage() {
               </div>
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Bitacora ejecutiva</p>
+            <h2 className="mt-1 text-xl font-light text-white">Una lectura corta para decidir sin perder contexto</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              En una sola mirada: cambio, decision, accion y prueba. El cliente no necesita perseguir pantallas;
+              necesita entender que paso, por que importa y cual es el siguiente movimiento.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            actualizado con la operacion
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {executiveLog.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.title}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-[11px] uppercase tracking-[0.14em] text-white/42">{item.meta}</p>
             </a>
           ))}
         </div>
