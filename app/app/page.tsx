@@ -466,6 +466,40 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || boardReport.tone,
     },
   ] as const
+  const visibleAssurance = [
+    {
+      label: 'Acceso claro',
+      value: `${totals.organizations} empresas`,
+      detail: 'Cada usuario ve solo la operacion que corresponde a su cuenta y sus sitios.',
+      proof: trustCenter[0]?.customerMeaning || 'Roles, sitios y acciones se presentan con contexto de cliente.',
+      href: '#confianza',
+      tone: trustCenter[0]?.tone || 'ok',
+    },
+    {
+      label: 'Evidencia lista',
+      value: `${traceabilityLedger.length} registros`,
+      detail: 'Las senales relevantes quedan vinculadas a prueba, decision y cierre.',
+      proof: trustCenter[1]?.proof || 'La historia operativa queda preparada para explicar que paso y que se decidio.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || trustCenter[1]?.tone || 'ok',
+    },
+    {
+      label: 'Tiempos visibles',
+      value: formatDuration(report.averageConfirmationMinutes, 'min'),
+      detail: 'Confirmacion, pendientes y excepciones se vuelven medibles para administrar mejor.',
+      proof: report.overdueConfirmations > 0 ? `${report.overdueConfirmations} confirmaciones requieren atencion.` : 'Sin confirmaciones vencidas en la lectura actual.',
+      href: '#acciones',
+      tone: report.overdueConfirmations > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Responsables',
+      value: `${governanceRituals.length} rutinas`,
+      detail: 'La operacion muestra quien mira, que pregunta responde y que salida debe quedar.',
+      proof: trustCenter[2]?.promise || 'Responsables, criterios de cierre y reuniones quedan visibles para el cliente.',
+      href: '#decisiones',
+      tone: governanceRituals.some((ritual) => ritual.tone === 'critical') ? 'critical' : governanceRituals.some((ritual) => ritual.tone === 'warning') ? 'warning' : 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -646,6 +680,37 @@ export default async function ClientAppPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024)),radial-gradient(circle_at_8%_0%,rgba(77,163,217,0.14),transparent_28%)] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Garantias visibles</p>
+            <h2 className="mt-1 text-xl font-light text-white">Confianza operativa desde la primera lectura</h2>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            acceso / evidencia / tiempos / responsables
+          </Badge>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {visibleAssurance.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
+                </div>
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-white/45 transition group-hover:text-white" />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
         </div>
       </section>
 
@@ -909,7 +974,7 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_32%),radial-gradient(circle_at_86%_6%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+      <section id="confianza" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_32%),radial-gradient(circle_at_86%_6%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Centro de confianza</p>
