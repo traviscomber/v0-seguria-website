@@ -424,6 +424,48 @@ export default async function ClientAppPage() {
       tone: operationalScore.tone,
     },
   ] as const
+  const clientWorkPath = [
+    {
+      label: 'Abrir el dia',
+      value: `${dailyPriorities.length} prioridades`,
+      title: dailyPriorities[0]?.title || headline,
+      detail: dailyPriorities[0]?.detail || 'Revisar estado general, cambios recientes y espacios con atencion antes de iniciar la jornada.',
+      action: dailyPriorities[0]?.action || nextAction,
+      proof: `${activity.length} cambios recientes y ${spaces.length} espacios visibles para partir con contexto.`,
+      href: '#actividad',
+      tone: dailyPriorities[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Resolver lo urgente',
+      value: `${actionRegister.length} acciones`,
+      title: actionRegister[0]?.title || 'Mantener la operacion bajo control',
+      detail: actionRegister[0]?.why || decisionRoom.reason,
+      action: actionRegister[0]?.nextStep || nextAction,
+      proof: `${openIncidents.length} incidentes abiertos y ${alerts.length} avisos activos en seguimiento.`,
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || decisionRoom.tone,
+    },
+    {
+      label: 'Preparar la reunion',
+      value: meetingPack.title,
+      title: meetingPack.decision,
+      detail: meetingPack.opening,
+      action: meetingPack.close,
+      proof: meetingPack.evidence,
+      href: '#decisiones',
+      tone: meetingPack.tone,
+    },
+    {
+      label: 'Cerrar aprendizaje',
+      value: `${traceabilityLedger.length} registros`,
+      title: boardReport.decision,
+      detail: boardReport.outcome,
+      action: traceabilityLedger[0]?.decisionLink || boardReport.risk,
+      proof: `${boardReport.proofPoints.length} puntos de prueba y ${improvementActions.length} mejoras priorizadas.`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || boardReport.tone,
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -671,6 +713,52 @@ export default async function ClientAppPage() {
               </a>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_88%_0%,rgba(77,163,217,0.16),transparent_30%),radial-gradient(circle_at_8%_8%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Ruta de trabajo del cliente</p>
+            <h2 className="mt-3 max-w-4xl text-3xl font-light leading-tight text-white md:text-4xl">
+              El portal debe decir que mirar ahora, que resolver hoy y que llevar a la reunion.
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/58">
+              Esta ruta convierte la seguridad diaria en una secuencia facil: abrir con contexto, resolver lo urgente,
+              preparar decisiones y cerrar aprendizaje. La operacion deja de depender de memoria y queda lista para
+              equipos, administracion y direccion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            4 momentos operativos
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 xl:grid-cols-4">
+          {clientWorkPath.map((item, index) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">0{index + 1} / {item.label}</p>
+                  <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <h4 className="mt-5 text-base font-normal text-white">{item.title}</h4>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <div className="mt-auto pt-5">
+                <p className="rounded-2xl border border-white/10 bg-[#071524]/55 px-4 py-3 text-xs leading-5 text-white/56">
+                  <span className="block text-[10px] uppercase tracking-[0.16em] text-white/35">Siguiente paso</span>
+                  {item.action}
+                </p>
+                <p className="mt-3 text-xs leading-5 text-white/48">{item.proof}</p>
+              </div>
+            </a>
+          ))}
         </div>
       </section>
 
