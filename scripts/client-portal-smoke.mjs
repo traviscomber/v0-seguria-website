@@ -14,6 +14,7 @@ const requiredHomeTerms = [
   'Comparador operativo',
   'Lectura por rol',
   'Adopcion operativa cliente',
+  'Madurez ejecutiva cliente',
   'Minuta ejecutiva',
   'Agenda semanal cliente',
   'Ficha de servicio cliente',

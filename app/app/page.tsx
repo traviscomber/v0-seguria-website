@@ -1049,6 +1049,48 @@ export default async function ClientAppPage() {
       tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
     },
   ] as const
+  const executiveMaturity = [
+    {
+      label: 'Gobierno',
+      value: `${governanceRituals.length} rutinas`,
+      reading: governanceRituals[0]?.question || 'La operacion ya tiene preguntas recurrentes para decidir con calma.',
+      proof: governanceRituals[0]?.output || responsibilityMap[0]?.proof || 'Responsables, ritmo y salida esperada quedan visibles.',
+      next: governanceRituals[0]?.output || weeklyClientAgenda[0]?.output || meetingPack.close,
+      href: '#decisiones',
+      tone: governanceRituals.some((ritual) => ritual.tone === 'critical')
+        ? 'critical'
+        : governanceRituals.some((ritual) => ritual.tone === 'warning')
+          ? 'warning'
+          : 'ok',
+    },
+    {
+      label: 'Adopcion',
+      value: `${clientAdoptionPath.length} habitos`,
+      reading: clientAdoptionPath[0]?.value || 'El equipo sabe como partir el dia sin perseguir informacion.',
+      proof: clientAdoptionPath[0]?.evidence || `${activity.length} cambios recientes y prioridades listas.`,
+      next: clientAdoptionPath[0]?.next || nextAction,
+      href: '#actividad',
+      tone: clientAdoptionPath[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Auditoria',
+      value: `${traceabilityLedger.length} registros`,
+      reading: traceabilityLedger[0]?.decisionLink || 'La historia queda preparada para explicar que paso y por que se actuo.',
+      proof: traceabilityLedger[0]?.evidence || 'Evidencia disponible para revisar sin reconstruir la operacion.',
+      next: traceabilityLedger[0]?.decisionLink || 'Mantener prueba y criterio de cierre en cada excepcion.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Mejora',
+      value: `${maturityAverage}/100`,
+      reading: maturityScorecard[0]?.reading || 'La operacion avanza con una lectura simple de mejora continua.',
+      proof: improvementActions[0]?.expectedImpact || maturityScorecard[0]?.nextStep || 'La siguiente mejora queda ligada al resultado operativo.',
+      next: improvementActions[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Priorizar una mejora visible y medible.',
+      href: '#acciones',
+      tone: maturityScorecard[0]?.tone || operationalCompletenessTone,
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -1669,6 +1711,55 @@ export default async function ClientAppPage() {
               <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.next}</p>
             </a>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_8%,rgba(77,163,217,0.18),transparent_32%),radial-gradient(circle_at_88%_0%,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.022))] p-5 md:p-7">
+        <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+          <div className="flex min-h-full flex-col rounded-[26px] border border-white/10 bg-[#071524]/52 p-5 md:p-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Madurez ejecutiva cliente</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white">
+              La seguridad madura cuando se puede gobernar, auditar y repetir.
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-white/62">
+              Esta lectura resume si la operacion depende de perseguir informacion o si ya funciona como un sistema:
+              con habitos claros, responsables visibles, evidencia ordenada y mejoras que se sostienen.
+            </p>
+            <div className="mt-auto grid gap-3 pt-6 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">Lectura</p>
+                <p className="mt-2 text-lg font-light text-white">{operationalCompletenessTone === 'ok' ? 'operacion gobernable' : operationalCompletenessTone === 'warning' ? 'madurez en progreso' : 'requiere orden ejecutivo'}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">Indice</p>
+                <p className="mt-2 text-lg font-light text-white">{maturityAverage}/100</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {executiveMaturity.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
+                  </div>
+                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+                </div>
+                <p className="mt-4 text-sm leading-6 text-white/70">{item.reading}</p>
+                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Prueba visible</p>
+                  <p className="mt-2 text-xs leading-5 text-white/62">{item.proof}</p>
+                </div>
+                <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.next}</p>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
