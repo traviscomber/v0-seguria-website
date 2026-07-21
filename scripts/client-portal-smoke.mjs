@@ -4,6 +4,7 @@ const requiredHomeTerms = [
   'Operacion cliente',
   'Mirar primero',
   'Preparar reunion',
+  'Pedir apoyo',
   'Bitacora ejecutiva',
   'Paquete de reunion',
   'Garantias visibles',

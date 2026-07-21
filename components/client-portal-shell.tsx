@@ -32,6 +32,11 @@ const guidanceItems = [
     value: 'Decision, evidencia y cierre',
     href: '/app#reunion',
   },
+  {
+    label: 'Pedir apoyo',
+    value: 'Soporte con contexto',
+    href: '/contacto',
+  },
 ]
 
 export function ClientPortalShell({
@@ -155,7 +160,7 @@ export function ClientPortalShell({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {guidanceItems.map((item) => (
               <Link
                 key={item.href}
