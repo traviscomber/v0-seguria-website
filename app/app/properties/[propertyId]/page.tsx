@@ -147,6 +147,44 @@ export default async function PropertyPage({
     : sensorRisk.critical > 0 || gatewayRisk > 0
       ? site.profile.recommendedAttentionAction
       : site.profile.recommendedStableAction
+  const siteOperatingModel = [
+    {
+      label: 'Integrar',
+      value: `${site.deviceCount} equipos`,
+      title: 'Lo existente entra en una sola lectura',
+      detail: site.profile.integrationPromise,
+      proof: `${cameraCount} camaras, ${sensorCount} sensores y ${accessCount} accesos conectados al contexto del sitio.`,
+      href: '#equipos-documentos',
+      tone: site.alertCount > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Interpretar',
+      value: `${coverageZones.length} zonas`,
+      title: 'Cada senal tiene lugar, hora e impacto',
+      detail: 'El sitio deja de ser una lista de equipos y se convierte en una operacion comprensible por zonas, turnos y prioridad.',
+      proof: `${dailyPriorities.length} prioridades diarias y ${riskMap.length} lecturas de riesgo disponibles.`,
+      href: '#salud',
+      tone: operationalScore.tone,
+    },
+    {
+      label: 'Responder',
+      value: `${actionRegister.length} acciones`,
+      title: 'El aviso termina en responsable y siguiente paso',
+      detail: recommendedAction,
+      proof: `${openIncidents.length} incidentes abiertos y ${responsePlaybook.length} pautas de respuesta para el equipo.`,
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || liveOperation.tone,
+    },
+    {
+      label: 'Mejorar',
+      value: `${traceabilityLedger.length} registros`,
+      title: 'La evidencia queda lista para aprender',
+      detail: 'Cada cierre alimenta mejores reglas, menos ruido y decisiones mas faciles de explicar.',
+      proof: `${evidenceGallery.length} pruebas recientes y ${improvementActions.length} mejoras priorizadas.`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || siteHealth.tone,
+    },
+  ] as const
   const sectionIndex = [
     {
       href: '#operacion-viva',
@@ -285,6 +323,48 @@ export default async function PropertyPage({
             <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
           </div>
         ))}
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.18),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Modelo operativo del sitio</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white md:text-4xl">
+              {site.label} se gestiona como una operacion viva, no como una suma de pantallas.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/58">
+              La vista transforma equipos, eventos y documentos en una secuencia simple: integrar lo que ya existe,
+              interpretar lo que cambia, responder con responsable y mejorar con evidencia. Asi el cliente entiende
+              el estado del sitio sin depender de explicaciones tecnicas.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <InfoTile label="Lectura actual" value={liveOperation.headline} icon={Radar} />
+              <InfoTile label="Decision recomendada" value={recommendedAction} icon={CheckCircle2} />
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {siteOperatingModel.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`group rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
+                  </div>
+                  <Sparkles className="mt-1 h-5 w-5 text-white/45 transition group-hover:text-white" />
+                </div>
+                <h4 className="mt-4 text-base font-normal text-white">{item.title}</h4>
+                <p className="mt-3 text-sm leading-6 text-white/68">{item.detail}</p>
+                <p className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/55 px-4 py-3 text-xs leading-5 text-white/55">
+                  {item.proof}
+                </p>
+              </a>
+            ))}
+          </div>
+        </div>
       </section>
 
       <nav className="sticky top-4 z-20 rounded-[28px] border border-white/10 bg-[#071524]/88 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl">
