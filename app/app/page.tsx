@@ -539,6 +539,44 @@ export default async function ClientAppPage() {
       tone: actionRegister[0]?.tone || meetingPack.tone,
     },
   ] as const
+  const servicePromise = [
+    {
+      label: 'Que cuidamos',
+      value: `${totals.sites} sitios`,
+      statement: 'La cobertura queda expresada en sitios, espacios y equipos visibles para que el cliente sepa que parte de la operacion esta incluida.',
+      proof: `${spaces.length} espacios y ${totals.devices} equipos aparecen ordenados en el portal.`,
+      decision: 'Revisar cobertura antes de pedir nuevos puntos de control.',
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Como respondemos',
+      value: formatDuration(report.averageConfirmationMinutes, 'min'),
+      statement: 'La respuesta no se promete de memoria: se lee por confirmaciones, pendientes y excepciones que requieren seguimiento.',
+      proof: report.overdueConfirmations > 0 ? `${report.overdueConfirmations} confirmaciones requieren atencion.` : 'Sin confirmaciones vencidas en la lectura actual.',
+      decision: actionRegister[0]?.nextStep || nextAction,
+      href: '#acciones',
+      tone: report.overdueConfirmations > 0 ? 'warning' : actionRegister[0]?.tone || 'ok',
+    },
+    {
+      label: 'Que prueba queda',
+      value: `${traceabilityLedger.length} registros`,
+      statement: 'Cada evento importante debe poder explicarse con contexto, evidencia y salida esperada, sin reconstruir la historia despues.',
+      proof: traceabilityLedger[0]?.evidence || traceabilityLedger[0]?.decisionLink || 'La evidencia queda disponible para revisar.',
+      decision: traceabilityLedger[0]?.decisionLink || 'Conservar prueba y criterio antes de cerrar.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Que mejora sigue',
+      value: `${improvementActions.length} mejoras`,
+      statement: 'El servicio se vuelve mas profesional cuando cada semana deja una mejora priorizada, medible y entendible para el cliente.',
+      proof: improvementActions[0]?.expectedImpact || maturityScorecard[0]?.reading || 'La mejora queda ligada a continuidad, respuesta o cobertura.',
+      decision: improvementActions[0]?.nextStep || maturityScorecard[0]?.nextStep || meetingPack.close,
+      href: '#decisiones',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+    },
+  ] as const
   const businessValue = [
     {
       label: 'Menos incertidumbre',
@@ -1871,6 +1909,48 @@ export default async function ClientAppPage() {
               </a>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_9%_0%,rgba(77,163,217,0.18),transparent_30%),radial-gradient(circle_at_92%_10%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Promesa operativa cliente</p>
+            <h2 className="mt-3 max-w-4xl text-3xl font-light leading-tight text-white md:text-4xl">
+              La confianza se gana cuando el servicio se puede leer, exigir y demostrar.
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/58">
+              Un portal de clase mundial no solo muestra actividad: deja claro que se cuida, como se responde,
+              que evidencia queda y cual es el siguiente avance para mejorar la operacion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            cobertura / respuesta / evidencia / mejora
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          {servicePromise.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/68">{item.statement}</p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Prueba de servicio</p>
+                <p className="mt-2 text-xs leading-5 text-white/62">{item.proof}</p>
+              </div>
+              <p className="mt-auto pt-4 text-sm leading-6 text-white/76">{item.decision}</p>
+            </a>
+          ))}
         </div>
       </section>
 

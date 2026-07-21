@@ -18,6 +18,7 @@ const requiredHomeTerms = [
   'Minuta ejecutiva',
   'Agenda semanal cliente',
   'Ficha de servicio cliente',
+  'Promesa operativa cliente',
   'Completitud operativa',
   'Roadmap cliente',
   'Hitos proximos',
