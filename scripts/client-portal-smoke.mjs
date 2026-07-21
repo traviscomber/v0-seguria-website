@@ -8,6 +8,7 @@ const requiredHomeTerms = [
   'Bitacora ejecutiva',
   'Paquete de reunion',
   'Valor operativo',
+  'Criterios de clase mundial',
   'Completitud operativa',
   'Roadmap cliente',
   'Mapa de responsables',

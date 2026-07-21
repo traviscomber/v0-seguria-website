@@ -536,6 +536,40 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || 'ok',
     },
   ] as const
+  const worldClassCriteria = [
+    {
+      label: 'Visibilidad unificada',
+      value: `${totals.sites} sitios`,
+      detail: 'Todo lo importante se lee en una vista: sitios, equipos, eventos, acciones y evidencia.',
+      proof: `${totals.devices} equipos conectados a una lectura operativa comun.`,
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Ruido controlado',
+      value: `${dailyPriorities.length} prioridades`,
+      detail: 'El portal no obliga a mirar todo: separa rutina, atencion y riesgo para actuar con foco.',
+      proof: alerts.length > 0 ? `${alerts.length} avisos activos ordenados por impacto.` : 'Sin avisos activos que rompan la lectura diaria.',
+      href: '#acciones',
+      tone: alerts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Respuesta medible',
+      value: formatDuration(report.averageConfirmationMinutes, 'min'),
+      detail: 'Confirmaciones, pendientes y cierres dejan de ser percepcion y pasan a ser gestion visible.',
+      proof: `${actionRegister.length} acciones con responsable y criterio de cierre.`,
+      href: '#actividad',
+      tone: report.overdueConfirmations > 0 ? 'warning' : operationalScore.tone,
+    },
+    {
+      label: 'Auditoria viva',
+      value: `${traceabilityLedger.length} registros`,
+      detail: 'Cada evento relevante conserva prueba, decision y aprendizaje para explicar la operacion.',
+      proof: traceabilityLedger[0]?.decisionLink || 'La evidencia queda lista para revisar sin reconstruir la historia.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+  ] as const
   const meetingBrief = [
     {
       label: 'Decision',
@@ -964,6 +998,42 @@ export default async function ClientAppPage() {
                   <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
                 </div>
                 <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(77,163,217,0.14),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Criterios de clase mundial</p>
+            <h2 className="mt-2 text-2xl font-light text-white">El portal debe ordenar la operacion, bajar el ruido y dejar prueba</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Los mejores sistemas no abruman al cliente: consolidan lo importante, priorizan la respuesta y mantienen
+              una historia clara para administrar seguridad con confianza.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            estandar operativo
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {worldClassCriteria.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
+                </div>
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-white/45 transition group-hover:text-white" />
               </div>
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
