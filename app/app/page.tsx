@@ -526,6 +526,42 @@ export default async function ClientAppPage() {
       tone: actionRegister[0]?.tone || boardReport.tone,
     },
   ] as const
+  const maturityAverage = Math.round(
+    maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length)
+  )
+  const weakCommitments = serviceCommitments.filter((commitment) => commitment.tone !== 'ok')
+  const operationalCompletenessTone: 'ok' | 'warning' | 'critical' =
+    operationalScore.tone === 'critical' || maturityScorecard.some((item) => item.tone === 'critical')
+      ? 'critical'
+      : operationalScore.tone === 'warning' || weakCommitments.length > 0 || maturityScorecard.some((item) => item.tone === 'warning')
+        ? 'warning'
+        : 'ok'
+  const operationalCompleteness = [
+    {
+      label: 'Base instalada',
+      value: `${totals.devices} equipos`,
+      detail: `${totals.cameras} camaras, ${totals.sensors} sensores y ${totals.sites} sitio${totals.sites === 1 ? '' : 's'} visibles para operar.`,
+      tone: totals.devices > 0 ? 'ok' : 'warning',
+    },
+    {
+      label: 'Servicio',
+      value: weakCommitments.length > 0 ? `${weakCommitments.length} alertas` : 'en orden',
+      detail: weakCommitments[0]?.action || 'Los compromisos principales no muestran brechas visibles en esta lectura.',
+      tone: weakCommitments[0]?.tone || 'ok',
+    },
+    {
+      label: 'Madurez',
+      value: `${maturityAverage}/100`,
+      detail: maturityScorecard[0]?.nextStep || 'La operacion mantiene una lectura de mejora continua.',
+      tone: maturityScorecard[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Trazabilidad',
+      value: `${traceabilityLedger.length} registros`,
+      detail: traceabilityLedger[0]?.decisionLink || 'Eventos, evidencia y decisiones quedan disponibles para revisar.',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -876,6 +912,32 @@ export default async function ClientAppPage() {
               </a>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(operationalCompletenessTone)}`}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Completitud operativa</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que tan lista esta la seguridad para operar sin improvisar</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/68">
+              Esta lectura junta inventario, compromisos, madurez y trazabilidad para mostrar si la operacion esta
+              preparada para cuidar, responder y explicar sus decisiones.
+            </p>
+          </div>
+          <Badge className={getScoreTone(operationalCompletenessTone)}>
+            {operationalCompletenessTone === 'ok' ? 'lista para operar' : operationalCompletenessTone === 'warning' ? 'mejoras claras' : 'requiere cierre'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {operationalCompleteness.map((item) => (
+            <div key={item.label} className={`rounded-[22px] border p-5 ${getScoreTone(item.tone)}`}>
+              <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+            </div>
+          ))}
         </div>
       </section>
 
