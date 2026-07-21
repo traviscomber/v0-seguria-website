@@ -869,6 +869,40 @@ export default async function ClientAppPage() {
       tone: boardReport.tone,
     },
   ] as const
+  const boardReviewBrief = [
+    {
+      label: 'Estado',
+      value: boardReport.verdict,
+      detail: boardReport.outcome,
+      proof: boardReport.periodLabel,
+      href: '#decisiones',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Riesgo',
+      value: boardReport.risk,
+      detail: executiveRiskReading[0]?.impact || operationalForecast.primaryRisk,
+      proof: executiveRiskReading[0]?.decision || operationalForecast.bestMove,
+      href: '#decisiones',
+      tone: executiveRiskReading[0]?.tone || boardReport.tone,
+    },
+    {
+      label: 'Acuerdo',
+      value: meetingPack.close,
+      detail: meetingPack.commitment,
+      proof: meetingPack.evidence,
+      href: '#decisiones',
+      tone: meetingPack.tone,
+    },
+    {
+      label: 'Proximo cierre',
+      value: nextMilestones[0]?.title || actionRegister[0]?.title || meetingPack.decision,
+      detail: nextMilestones[0]?.expected || actionRegister[0]?.nextStep || nextAction,
+      proof: nextMilestones[0]?.owner || actionRegister[0]?.owner || 'Administracion',
+      href: '#acciones',
+      tone: nextMilestones[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
+    },
+  ] as const
   const responsibilityMap = [
     {
       label: 'Operacion diaria',
@@ -1686,6 +1720,42 @@ export default async function ClientAppPage() {
                 </div>
               </div>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.risk}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(157,210,242,0.14),transparent_30%),radial-gradient(circle_at_92%_0%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Revision de directorio cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Una pagina para conversar estado, riesgo, acuerdo y proximo cierre</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              La operacion queda resumida para una conversacion ejecutiva: que esta pasando, que riesgo requiere
+              criterio, que acuerdo debe sostenerse y cual es el cierre que no puede perderse.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            lista para reunion
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {boardReviewBrief.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-xl font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-5 w-5 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/68">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.proof}</p>
             </a>
           ))}
         </div>
