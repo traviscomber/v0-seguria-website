@@ -8,6 +8,7 @@ const requiredHomeTerms = [
   'Bitacora ejecutiva',
   'Paquete de reunion',
   'Valor operativo',
+  'Prueba de valor cliente',
   'Criterios de clase mundial',
   'Resumen para direccion',
   'Comparador operativo',

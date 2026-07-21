@@ -575,6 +575,44 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || 'ok',
     },
   ] as const
+  const clientValueProof = [
+    {
+      label: 'Control ganado',
+      value: `${totals.sites} sitios visibles`,
+      benefit: 'El cliente sabe donde esta cada operacion, que esta estable y que requiere mirada.',
+      proof: `${totals.devices} equipos y ${spaces.length} espacios ordenados en una lectura comun.`,
+      next: continuityHasRisk ? 'Cerrar puntos de continuidad antes de ampliar cobertura.' : 'Mantener rutina diaria con evidencia visible.',
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Respuesta ganada',
+      value: formatDuration(report.averageConfirmationMinutes, 'min'),
+      benefit: 'La reaccion deja de ser intuicion: se mide por confirmaciones, pendientes y cierres.',
+      proof: report.overdueConfirmations > 0 ? `${report.overdueConfirmations} confirmaciones necesitan seguimiento.` : 'Sin confirmaciones vencidas en esta lectura.',
+      next: actionRegister[0]?.nextStep || nextAction,
+      href: '#acciones',
+      tone: report.overdueConfirmations > 0 ? 'warning' : actionRegister[0]?.tone || 'ok',
+    },
+    {
+      label: 'Evidencia ganada',
+      value: `${traceabilityLedger.length} registros`,
+      benefit: 'Cada decision importante puede explicarse con historia, respaldo y salida esperada.',
+      proof: traceabilityLedger[0]?.evidence || traceabilityLedger[0]?.decisionLink || 'La evidencia queda disponible para revisar.',
+      next: traceabilityLedger[0]?.decisionLink || 'Mantener trazabilidad en cada cierre operativo.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Mejora ganada',
+      value: `${improvementActions.length} mejoras`,
+      benefit: 'La seguridad evoluciona con prioridades claras, no con listas sueltas de equipos.',
+      proof: improvementActions[0]?.expectedImpact || maturityScorecard[0]?.nextStep || 'La mejora queda conectada al resultado operativo.',
+      next: improvementActions[0]?.nextStep || actionRegister[0]?.nextStep || 'Priorizar el siguiente avance visible.',
+      href: '#decisiones',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+    },
+  ] as const
   const worldClassCriteria = [
     {
       label: 'Visibilidad unificada',
@@ -1286,6 +1324,46 @@ export default async function ClientAppPage() {
               </div>
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(157,210,242,0.14),transparent_30%),radial-gradient(circle_at_94%_0%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.054),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Prueba de valor cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que valor concreto queda demostrado en la operacion</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Una lectura ejecutiva para justificar continuidad, respuesta y mejora: beneficio visible, evidencia que lo
+              sostiene y siguiente movimiento para aumentar el valor del servicio.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            beneficio / prueba / mejora
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {clientValueProof.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.benefit}</p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Prueba</p>
+                <p className="mt-2 text-xs leading-5 text-white/58">{item.proof}</p>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.next}</p>
             </a>
           ))}
         </div>
