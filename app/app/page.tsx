@@ -388,6 +388,42 @@ export default async function ClientAppPage() {
       tone: activity.some((item) => item.status === 'critical' || item.status === 'falla') ? 'critical' : 'ok',
     },
   ] as const
+  const professionalReadiness = [
+    {
+      label: 'Vista integral',
+      value: `${totals.devices} equipos`,
+      reading: 'Camaras, sensores, accesos, eventos e incidentes se leen como una sola operacion.',
+      proof: `${totals.sites} sitios y ${totals.organizations} empresas en el mismo tablero.`,
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Inteligencia util',
+      value: `${alerts.length} avisos`,
+      reading: alerts.length > 0
+        ? 'Las senales con atencion aparecen antes que el ruido operativo.'
+        : 'La operacion conserva una lectura tranquila, con cambios visibles cuando corresponde.',
+      proof: `${dailyPriorities.length} prioridades diarias ordenadas por impacto.`,
+      href: '#acciones',
+      tone: alerts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Evidencia y cierre',
+      value: `${traceabilityLedger.length} pruebas`,
+      reading: 'Cada decision importante debe quedar vinculada a historia, responsable y resultado.',
+      proof: `${actionRegister.length} acciones abiertas con criterio de exito.`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || actionRegister[0]?.tone || 'ok',
+    },
+    {
+      label: 'Continuidad',
+      value: `${operationalScore.score}/100`,
+      reading: 'La seguridad profesional no depende de mirar pantallas: depende de saber que cambio y que hacer.',
+      proof: operationalScore.summary,
+      href: '#decisiones',
+      tone: operationalScore.tone,
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -595,6 +631,48 @@ export default async function ClientAppPage() {
           ))}
         </div>
       </nav>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.18),transparent_32%),radial-gradient(circle_at_92%_4%,rgba(255,255,255,0.08),transparent_25%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Estandar profesional</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white md:text-4xl">
+              Un sistema de seguridad no se mide por cuantos equipos tiene, sino por lo claro que ayuda a actuar.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/58">
+              El portal ordena lo existente en una lectura ejecutiva: que esta protegido, que cambio, donde hay riesgo,
+              quien debe responder y que evidencia queda para cerrar bien. Menos persecucion de pantallas, mas gobierno
+              de la operacion.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <InfoLine label="Lectura" value="Una sola historia operativa" />
+              <InfoLine label="Respuesta" value="Prioridad antes que ruido" />
+              <InfoLine label="Gobierno" value="Decision, prueba y cierre" />
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {professionalReadiness.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`group rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-2 text-3xl font-light text-white">{item.value}</h3>
+                  </div>
+                  <ArrowRight className="mt-1 h-5 w-5 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+                </div>
+                <p className="mt-4 text-sm leading-6 text-white/70">{item.reading}</p>
+                <p className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/55 px-4 py-3 text-xs leading-5 text-white/55">
+                  {item.proof}
+                </p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
         <div className={`rounded-[28px] border p-6 shadow-none md:p-7 ${getScoreTone(operationalScore.tone)}`}>
