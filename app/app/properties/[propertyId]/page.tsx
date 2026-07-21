@@ -147,6 +147,50 @@ export default async function PropertyPage({
     : sensorRisk.critical > 0 || gatewayRisk > 0
       ? site.profile.recommendedAttentionAction
       : site.profile.recommendedStableAction
+  const sectionIndex = [
+    {
+      href: '#operacion-viva',
+      label: 'Operacion viva',
+      value: liveOperation.title,
+      detail: liveOperation.headline,
+      tone: liveOperation.tone,
+    },
+    {
+      href: '#evidencia',
+      label: 'Evidencia',
+      value: `${evidenceGallery.length} pruebas`,
+      detail: 'Pruebas recientes, accion y estado de cierre.',
+      tone: evidenceGallery[0]?.tone || 'ok',
+    },
+    {
+      href: '#salud',
+      label: 'Salud',
+      value: operationalScore.score.toString(),
+      detail: operationalScore.label,
+      tone: operationalScore.tone,
+    },
+    {
+      href: '#acciones',
+      label: 'Acciones',
+      value: `${actionRegister.length} abiertas`,
+      detail: recommendedAction,
+      tone: actionRegister[0]?.tone || siteHealth.tone,
+    },
+    {
+      href: '#equipos-documentos',
+      label: 'Equipos',
+      value: `${site.deviceCount} activos`,
+      detail: 'Camaras, sensores, accesos y documentos.',
+      tone: site.alertCount > 0 ? 'warning' : 'ok',
+    },
+    {
+      href: '#actividad',
+      label: 'Actividad',
+      value: `${activity.length} cambios`,
+      detail: 'Ultimos eventos visibles del sitio.',
+      tone: activity.some((item) => item.status === 'critical' || item.status === 'falla') ? 'critical' : 'ok',
+    },
+  ] as const
 
   return (
     <div className="space-y-8">
@@ -243,7 +287,32 @@ export default async function PropertyPage({
         ))}
       </section>
 
-      <section className={`relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(liveOperation.tone)}`}>
+      <nav className="sticky top-4 z-20 rounded-[28px] border border-white/10 bg-[#071524]/88 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Indice ejecutivo</p>
+            <h2 className="mt-1 text-xl font-light text-white">Ir directo a lo importante</h2>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-white/5 text-white/58">
+            {site.label}
+          </Badge>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {sectionIndex.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+              <h3 className="mt-2 text-lg font-light text-white">{item.value}</h3>
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{item.detail}</p>
+            </a>
+          ))}
+        </div>
+      </nav>
+
+      <section id="operacion-viva" className={`scroll-mt-32 relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(liveOperation.tone)}`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(157,210,242,0.18),transparent_30%),radial-gradient(circle_at_94%_10%,rgba(255,255,255,0.08),transparent_26%)]" />
         <div className="relative grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
           <div>
@@ -291,7 +360,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+      <section id="evidencia" className="scroll-mt-32 rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Galeria de evidencia</p>
@@ -327,7 +396,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+      <section id="salud" className="scroll-mt-32 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <div className={`rounded-[28px] border p-6 md:p-7 ${getScoreTone(operationalScore.tone)}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -709,7 +778,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+      <section id="acciones" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bandeja de acciones</p>
@@ -1428,7 +1497,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section id="equipos-documentos" className="scroll-mt-32 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Equipos del sitio</CardTitle>
@@ -1534,7 +1603,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+      <section id="actividad" className="scroll-mt-32 grid gap-6 lg:grid-cols-[1fr_0.95fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
