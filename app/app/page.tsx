@@ -500,6 +500,42 @@ export default async function ClientAppPage() {
       tone: governanceRituals.some((ritual) => ritual.tone === 'critical') ? 'critical' : governanceRituals.some((ritual) => ritual.tone === 'warning') ? 'warning' : 'ok',
     },
   ] as const
+  const businessValue = [
+    {
+      label: 'Menos incertidumbre',
+      value: alerts.length > 0 ? `${alerts.length} avisos con contexto` : 'operacion tranquila',
+      detail: alerts.length > 0
+        ? 'Los avisos importantes llegan ordenados por impacto, sitio y siguiente paso.'
+        : 'Cuando no hay excepciones, el cliente tambien lo sabe: la tranquilidad queda visible.',
+      proof: `${dailyPriorities.length} prioridades listas para partir el dia.`,
+      href: '#acciones',
+      tone: alerts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Mejor respuesta',
+      value: formatDuration(report.averageConfirmationMinutes, 'min'),
+      detail: 'El portal convierte cambios dispersos en una lectura accionable para el equipo de turno.',
+      proof: report.overdueConfirmations > 0 ? `${report.overdueConfirmations} confirmaciones requieren seguimiento.` : 'Sin confirmaciones vencidas en esta lectura.',
+      href: '#actividad',
+      tone: report.overdueConfirmations > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Control administrativo',
+      value: `${actionRegister.length} acciones`,
+      detail: 'Cada pendiente queda con responsable, criterio de exito y salida esperada para no depender de memoria.',
+      proof: actionRegister[0]?.successCriteria || 'Las decisiones quedan listas para revisar y cerrar.',
+      href: '#decisiones',
+      tone: actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Confianza demostrable',
+      value: `${traceabilityLedger.length} registros`,
+      detail: 'La evidencia no queda perdida entre equipos: se transforma en historia, decision y aprendizaje.',
+      proof: traceabilityLedger[0]?.decisionLink || 'La operacion conserva prueba suficiente para explicar que paso.',
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+  ] as const
   const meetingBrief = [
     {
       label: 'Decision',
@@ -895,6 +931,42 @@ export default async function ClientAppPage() {
               </div>
               <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-[11px] uppercase tracking-[0.14em] text-white/42">{item.meta}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_92%_0%,rgba(157,210,242,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Valor operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Lo que el cliente gana cuando la seguridad deja de ser una suma de pantallas</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Menos dudas, mejor respuesta y una historia clara para administrar. El portal muestra beneficios concretos
+              de la operacion diaria sin exigirle al cliente entender como se conecta todo.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            beneficio visible
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {businessValue.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
             </a>
           ))}
         </div>
