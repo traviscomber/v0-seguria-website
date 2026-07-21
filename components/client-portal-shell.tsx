@@ -2,14 +2,35 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, Menu, House, Building2 } from 'lucide-react'
+import { Building2, ClipboardCheck, House, LogOut, Menu, ShieldCheck, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/app', label: 'Resumen', icon: House },
+  { href: '/app#decisiones', label: 'Decisiones', icon: ShieldCheck },
+  { href: '/app#acciones', label: 'Acciones', icon: ClipboardCheck },
+  { href: '/app#confianza', label: 'Confianza', icon: Sparkles },
   { href: '/app#sitios', label: 'Sitios', icon: Building2 },
+]
+
+const guidanceItems = [
+  {
+    label: 'Mirar primero',
+    value: 'Decisiones y acciones abiertas',
+    href: '/app#decisiones',
+  },
+  {
+    label: 'Ver evidencia',
+    value: 'Sitios, eventos y respaldo',
+    href: '/app#sitios',
+  },
+  {
+    label: 'Pedir apoyo',
+    value: 'Contacto con contexto',
+    href: '/contacto',
+  },
 ]
 
 export function ClientPortalShell({
@@ -36,6 +57,12 @@ export function ClientPortalShell({
     }
   }
 
+  const isNavActive = (href: string) => {
+    if (href === '/app') return pathname === '/app'
+    if (href === '/app#sitios') return pathname.startsWith('/app/properties')
+    return false
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(77,163,217,0.18),_transparent_28%),linear-gradient(180deg,#081624_0%,#0A1B2E_100%)] text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081624]/90 backdrop-blur-xl">
@@ -53,10 +80,7 @@ export function ClientPortalShell({
 
           <nav className="hidden items-center gap-2 md:flex">
             {navItems.map((item) => {
-              const active =
-                item.href === '/app'
-                  ? pathname === '/app'
-                  : pathname.startsWith('/app/properties')
+              const active = isNavActive(item.href)
               return (
                 <Link
                   key={item.href}
@@ -112,6 +136,40 @@ export function ClientPortalShell({
           </div>
         )}
       </header>
+
+      <section className="border-b border-white/10 bg-[#081624]/55 backdrop-blur">
+        <div className="mx-auto grid max-w-7xl gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[1.05fr_1.95fr] lg:px-8">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 rounded-full border border-[#4DA3D9]/40 bg-[#4DA3D9]/12 p-2 text-[#9FDBFF]">
+                <ShieldCheck className="h-4 w-4" strokeWidth={1.8} />
+              </span>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[#9FDBFF]">Operacion cliente</p>
+                <p className="mt-1 text-sm text-white">{userName}</p>
+                <p className="mt-1 text-xs leading-5 text-white/55">
+                  Tu portal resume lo que cambia, lo que importa y lo que necesita respuesta.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {guidanceItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-[#4DA3D9]/45 hover:bg-[#4DA3D9]/10"
+              >
+                <p className="text-[11px] uppercase tracking-[0.2em] text-white/45 group-hover:text-[#9FDBFF]">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-sm leading-5 text-white/78">{item.value}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
     </div>

@@ -1,6 +1,9 @@
 const defaultBaseUrl = 'https://seguria.tech'
 
 const requiredHomeTerms = [
+  'Operacion cliente',
+  'Mirar primero',
+  'Pedir apoyo',
   'Garantias visibles',
   'Ruta de trabajo del cliente',
   'Estandar profesional',
