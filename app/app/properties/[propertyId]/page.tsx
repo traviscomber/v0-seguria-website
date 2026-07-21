@@ -30,6 +30,7 @@ import {
   getPortalGovernanceRituals,
   getPortalImprovementActions,
   getPortalLeadershipBrief,
+  getPortalLiveOperation,
   getPortalMeetingPack,
   getPortalMaturityScorecard,
   getPortalOperationalScore,
@@ -138,6 +139,7 @@ export default async function PropertyPage({
   const decisionPackets = getPortalDecisionPackets([site])
   const responsePlaybook = getPortalResponsePlaybook([site])
   const siteHealth = getPortalSiteHealthRanking([site])[0]
+  const liveOperation = getPortalLiveOperation(site)
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -237,6 +239,54 @@ export default async function PropertyPage({
             <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
           </div>
         ))}
+      </section>
+
+      <section className={`relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(liveOperation.tone)}`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(157,210,242,0.18),transparent_30%),radial-gradient(circle_at_94%_10%,rgba(255,255,255,0.08),transparent_26%)]" />
+        <div className="relative grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{liveOperation.title}</p>
+            <h2 className="mt-3 text-3xl font-light text-white md:text-4xl">{liveOperation.headline}</h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{liveOperation.summary}</p>
+            <div className="mt-6 grid gap-3">
+              <InfoTile label="Que pasa ahora" value={liveOperation.nowDetail} icon={Radar} />
+              <InfoTile label="Evidencia disponible" value={liveOperation.evidenceDetail} icon={FileText} />
+              <InfoTile label="Cierre esperado" value={liveOperation.close} icon={CheckCircle2} />
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {liveOperation.lanes.map((lane) => (
+                <div key={lane.label} className={`rounded-[24px] border p-5 ${getScoreTone(lane.tone)}`}>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{lane.label}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{lane.value}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/64">{lane.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-[26px] border border-white/10 bg-[#071524]/55 p-5">
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/38">Secuencia de respuesta</p>
+                  <h3 className="mt-2 text-2xl font-light text-white">{liveOperation.owner}</h3>
+                </div>
+                <Badge className={getScoreTone(liveOperation.tone)}>seguimiento vivo</Badge>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-4">
+                {liveOperation.timeline.map((step, index) => (
+                  <div key={`${step.label}-${step.title}`} className={`rounded-2xl border p-4 ${getScoreTone(step.tone)}`}>
+                    <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">0{index + 1} / {step.label}</p>
+                    <h4 className="mt-2 text-sm font-normal text-white">{step.title}</h4>
+                    <p className="mt-2 text-xs leading-5 text-white/62">{step.detail}</p>
+                    {step.at ? <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-white/38">{formatDate(step.at)}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">

@@ -486,6 +486,32 @@ export interface PortalDecisionRoom {
   }[]
 }
 
+export interface PortalLiveOperation {
+  title: string
+  headline: string
+  summary: string
+  nowLabel: string
+  nowDetail: string
+  evidenceLabel: string
+  evidenceDetail: string
+  owner: string
+  close: string
+  tone: 'ok' | 'warning' | 'critical'
+  lanes: {
+    label: string
+    value: string
+    detail: string
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+  timeline: {
+    label: string
+    title: string
+    detail: string
+    at?: Date
+    tone: 'ok' | 'warning' | 'critical'
+  }[]
+}
+
 type PortalNotificationMetric = {
   propertyId: string
   severity: 'warning' | 'critical'
@@ -2472,6 +2498,112 @@ export function getPortalDecisionRoom(sites: PortalSiteSummary[]): PortalDecisio
       { label: 'Mirar', detail: evidence },
       { label: 'Decidir', detail: decisionNow },
       { label: 'Cerrar', detail: `${owner} debe dejar resultado visible antes de ${deadline}.` },
+    ],
+  }
+}
+
+export function getPortalLiveOperation(site: PortalSiteSummary): PortalLiveOperation {
+  const activity = getPortalActivityFeed([site])
+  const traceability = getPortalTraceabilityLedger([site])
+  const actions = getPortalActionRegister([site])
+  const decisions = getPortalDecisionPackets([site])
+  const playbook = getPortalResponsePlaybook([site])
+  const sensitiveWindows = getPortalSensitiveWindows([site])
+  const score = getPortalOperationalScore([site])
+  const recentActivity = activity[0]
+  const evidence = traceability[0]
+  const action = actions[0]
+  const decision = decisions[0]
+  const response = playbook[0]
+  const window = sensitiveWindows[0]
+  const activityTone: PortalLiveOperation['tone'] =
+    recentActivity?.status === 'critical' || recentActivity?.status === 'falla'
+      ? 'critical'
+      : recentActivity?.status === 'warning' || recentActivity?.status === 'mantencion' || recentActivity?.status === 'revision'
+        ? 'warning'
+        : 'ok'
+  const tone: PortalLiveOperation['tone'] = score.tone === 'critical' || action?.tone === 'critical' || activityTone === 'critical'
+    ? 'critical'
+    : score.tone === 'warning' || action?.tone === 'warning' || activityTone === 'warning'
+      ? 'warning'
+      : 'ok'
+  const headline = tone === 'critical'
+    ? 'Hay actividad que requiere cierre visible.'
+    : tone === 'warning'
+      ? 'La operacion esta activa y necesita seguimiento.'
+      : 'La operacion esta viva, visible y ordenada.'
+  const nowLabel = recentActivity?.title || 'Sin actividad reciente critica'
+  const nowDetail = recentActivity
+    ? `${recentActivity.detail} queda registrado como ${recentActivity.kind === 'event' ? 'senal' : recentActivity.kind === 'device' ? 'equipo' : 'documento'} reciente.`
+    : 'No hay actividad reciente que exija accion inmediata.'
+  const evidenceLabel = evidence?.title || decision?.evidence || 'Evidencia del sitio'
+  const evidenceDetail = evidence?.evidence || decision?.evidence || 'La evidencia disponible queda asociada al historial del sitio.'
+  const owner = action?.owner || decision?.owner || response?.owner || 'Administrador del cliente'
+  const close = action?.successCriteria || decision?.outcome || response?.close || site.profile.recommendedStableAction
+
+  return {
+    title: 'Operacion viva',
+    headline,
+    summary: 'Una lectura del sitio en tiempo real operativo: que acaba de pasar, que evidencia lo respalda, quien debe mirarlo y como se cierra sin perder contexto.',
+    nowLabel,
+    nowDetail,
+    evidenceLabel,
+    evidenceDetail,
+    owner,
+    close,
+    tone,
+    lanes: [
+      {
+        label: 'Ahora',
+        value: nowLabel,
+        detail: nowDetail,
+        tone: activityTone,
+      },
+      {
+        label: 'Evidencia',
+        value: evidenceLabel,
+        detail: evidenceDetail,
+        tone: evidence?.tone || decision?.tone || tone,
+      },
+      {
+        label: 'Responsable',
+        value: owner,
+        detail: action?.nextStep || response?.firstMove || site.profile.recommendedStableAction,
+        tone: action?.tone || response?.tone || tone,
+      },
+      {
+        label: 'Cierre',
+        value: action?.status || decision?.timing || 'Cierre operativo',
+        detail: close,
+        tone: action?.tone || decision?.tone || tone,
+      },
+    ],
+    timeline: [
+      {
+        label: 'Senal',
+        title: nowLabel,
+        detail: nowDetail,
+        at: recentActivity?.at,
+        tone: activityTone,
+      },
+      {
+        label: 'Contexto',
+        title: window?.label || 'Ventana operativa',
+        detail: window?.summary || site.profile.operatingPromise,
+        tone: window?.tone || tone,
+      },
+      {
+        label: 'Decision',
+        title: decision?.decision || action?.title || 'Decision de seguimiento',
+        detail: decision?.outcome || action?.nextStep || response?.verify || site.profile.recommendedStableAction,
+        tone: decision?.tone || action?.tone || tone,
+      },
+      {
+        label: 'Cierre',
+        title: owner,
+        detail: close,
+        tone: action?.tone || decision?.tone || tone,
+      },
     ],
   }
 }
