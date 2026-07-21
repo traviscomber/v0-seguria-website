@@ -656,6 +656,38 @@ export default async function ClientAppPage() {
       tone: meetingPack.tone,
     },
   ] as const
+  const weeklyClientAgenda = [
+    {
+      label: 'Decision de la semana',
+      value: weeklyDecisionAgenda[0]?.decision || meetingPack.decision,
+      owner: weeklyDecisionAgenda[0]?.owner || meetingPack.agenda[1]?.owner || 'Administracion',
+      deadline: weeklyDecisionAgenda[0]?.deadline || 'Esta semana',
+      detail: weeklyDecisionAgenda[0]?.customerValue || meetingPack.opening,
+      output: weeklyDecisionAgenda[0]?.expectedOutcome || meetingPack.close,
+      tone: weeklyDecisionAgenda[0]?.tone || meetingPack.tone,
+      href: '#decisiones',
+    },
+    {
+      label: 'Rutina de control',
+      value: governanceRituals[0]?.title || 'Revisar operacion con evidencia',
+      owner: governanceRituals[0]?.owner || 'Operacion',
+      deadline: governanceRituals[0]?.cadence || 'Diario',
+      detail: governanceRituals[0]?.question || 'Que cambio y que queda pendiente?',
+      output: governanceRituals[0]?.output || actionRegister[0]?.nextStep || nextAction,
+      tone: governanceRituals[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
+      href: '#actividad',
+    },
+    {
+      label: 'Mejora prioritaria',
+      value: improvementActions[0]?.title || maturityScorecard[0]?.label || 'Sostener mejora continua',
+      owner: improvementActions[0]?.siteLabel || 'Equipo cliente',
+      deadline: 'Proximo ciclo',
+      detail: improvementActions[0]?.why || maturityScorecard[0]?.reading || 'Reducir ruido y mejorar respuesta.',
+      output: improvementActions[0]?.expectedImpact || maturityScorecard[0]?.nextStep || 'Mantener una mejora visible y medible.',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+      href: '#acciones',
+    },
+  ] as const
   const maturityAverage = Math.round(
     maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length)
   )
@@ -1188,6 +1220,51 @@ export default async function ClientAppPage() {
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Agenda semanal cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que revisar esta semana y que compromiso debe quedar cerrado</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/62">
+              La operacion se transforma en una pauta simple: mirar el punto correcto, asignar responsable y cerrar con
+              evidencia. Menos reunion para entender el problema, mas tiempo para resolverlo.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {weeklyClientAgenda.length} focos activos
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {weeklyClientAgenda.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-[#071524]/60 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-white/48">
+                  {item.deadline}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/66">{item.detail}</p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">Responsable</p>
+                <p className="mt-1 text-sm text-white/78">{item.owner}</p>
+              </div>
+              <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-white/52">
+                <span className="line-clamp-2">{item.output}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+            </Link>
           ))}
         </div>
       </section>
