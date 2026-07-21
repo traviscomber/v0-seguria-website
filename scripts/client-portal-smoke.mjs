@@ -17,6 +17,7 @@ const requiredHomeTerms = [
   'Ficha de servicio cliente',
   'Completitud operativa',
   'Roadmap cliente',
+  'Hitos proximos',
   'Mapa de responsables',
   'Garantias visibles',
   'Ruta de trabajo del cliente',

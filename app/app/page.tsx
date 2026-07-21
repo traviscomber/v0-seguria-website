@@ -789,6 +789,48 @@ export default async function ClientAppPage() {
       tone: weeklyDecisionAgenda[0]?.tone || governanceRituals[0]?.tone || 'ok',
     },
   ] as const
+  const nextMilestones = [
+    {
+      label: 'Esta semana',
+      title: weeklyClientAgenda[0]?.value || meetingPack.decision,
+      owner: weeklyClientAgenda[0]?.owner || meetingPack.agenda[1]?.owner || 'Administracion',
+      due: weeklyClientAgenda[0]?.deadline || 'Esta semana',
+      expected: weeklyClientAgenda[0]?.output || meetingPack.close,
+      risk: weeklyClientAgenda[0]?.detail || meetingPack.opening,
+      href: '#decisiones',
+      tone: weeklyClientAgenda[0]?.tone || meetingPack.tone,
+    },
+    {
+      label: 'Cierre operativo',
+      title: actionRegister[0]?.title || 'Mantener seguimiento normal',
+      owner: actionRegister[0]?.owner || 'Operacion',
+      due: actionRegister[0]?.due || 'Proximo cierre',
+      expected: actionRegister[0]?.successCriteria || actionRegister[0]?.nextStep || nextAction,
+      risk: actionRegister[0]?.why || decisionRoom.reason,
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Brecha de servicio',
+      title: serviceGaps[0]?.label || serviceCommitments[0]?.label || 'Servicio en seguimiento',
+      owner: serviceGaps[0]?.siteLabel || serviceCommitments[0]?.siteLabel || 'Equipo cliente',
+      due: serviceGaps.length > 0 ? 'Por cerrar' : 'En seguimiento',
+      expected: serviceGaps[0]?.action || serviceCommitments[0]?.action || 'Mantener revision visible del servicio.',
+      risk: serviceGaps[0]?.summary || serviceCommitments[0]?.summary || 'Sin brechas visibles en esta lectura.',
+      href: '#acciones',
+      tone: serviceGaps[0]?.tone || serviceCommitments[0]?.tone || 'ok',
+    },
+    {
+      label: 'Proxima reunion',
+      title: meetingPack.decision,
+      owner: meetingPack.agenda[1]?.owner || weeklyDecisionAgenda[0]?.owner || 'Administracion',
+      due: meetingPack.title,
+      expected: meetingPack.close,
+      risk: meetingPack.evidence,
+      href: '#decisiones',
+      tone: meetingPack.tone,
+    },
+  ] as const
   const responsibilityMap = [
     {
       label: 'Operacion diaria',
@@ -1562,6 +1604,51 @@ export default async function ClientAppPage() {
                 </p>
               </div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Hitos proximos</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que debe pasar ahora para que el servicio siga avanzando</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              La mejora profesional necesita continuidad: cada hito muestra responsable, plazo, riesgo a cuidar y salida
+              esperada. Asi el cliente ve avance real sin esperar una reunion para reconstruir el estado.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {nextMilestones.length} hitos abiertos
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {nextMilestones.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-xl font-light leading-snug text-white">{item.title}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-5 w-5 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <div className="mt-5 grid gap-3">
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Responsable / plazo</p>
+                  <p className="mt-2 text-sm leading-6 text-white/74">{item.owner} · {item.due}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Salida esperada</p>
+                  <p className="mt-2 text-sm leading-6 text-white/74">{item.expected}</p>
+                </div>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.risk}</p>
+            </a>
           ))}
         </div>
       </section>
