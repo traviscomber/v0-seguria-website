@@ -18,6 +18,7 @@ const requiredHomeTerms = [
   'Completitud operativa',
   'Roadmap cliente',
   'Hitos proximos',
+  'Lectura ejecutiva de riesgo',
   'Mapa de responsables',
   'Garantias visibles',
   'Ruta de trabajo del cliente',

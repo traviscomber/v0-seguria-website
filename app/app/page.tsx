@@ -831,6 +831,44 @@ export default async function ClientAppPage() {
       tone: meetingPack.tone,
     },
   ] as const
+  const executiveRiskReading = [
+    {
+      label: 'Continuidad',
+      impact: continuityHasRisk ? 'Puede afectar visibilidad o respuesta' : 'Operacion visible y estable',
+      signal: operationalForecast.primaryRisk,
+      decision: operationalForecast.bestMove,
+      evidence: operationalForecast.summary,
+      href: '#decisiones',
+      tone: operationalForecast.tone,
+    },
+    {
+      label: 'Servicio',
+      impact: serviceGaps.length > 0 ? `${serviceGaps.length} compromiso${serviceGaps.length === 1 ? '' : 's'} requiere${serviceGaps.length === 1 ? '' : 'n'} cierre` : 'Compromisos sin brechas visibles',
+      signal: serviceGaps[0]?.current || serviceCommitments[0]?.current || 'Sin brechas visibles',
+      decision: serviceGaps[0]?.action || serviceCommitments[0]?.action || 'Mantener revision de respuesta y cierre.',
+      evidence: serviceGaps[0]?.summary || serviceCommitments[0]?.summary || 'La lectura actual no muestra compromisos fuera de rango.',
+      href: '#acciones',
+      tone: serviceGaps[0]?.tone || serviceCommitments[0]?.tone || 'ok',
+    },
+    {
+      label: 'Evidencia',
+      impact: traceabilityLedger[0]?.tone === 'critical' ? 'Falta respaldo para explicar un cierre' : 'Respaldo listo para explicar decisiones',
+      signal: traceabilityLedger[0]?.title || 'Evidencia operativa',
+      decision: traceabilityLedger[0]?.decisionLink || 'Mantener la historia preparada para revision.',
+      evidence: traceabilityLedger[0]?.evidence || `${traceabilityLedger.length} registros disponibles.`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      label: 'Decision',
+      impact: boardReport.risk,
+      signal: boardReport.verdict,
+      decision: boardReport.decision,
+      evidence: boardReport.proofPoints[0] || meetingPack.evidence,
+      href: '#decisiones',
+      tone: boardReport.tone,
+    },
+  ] as const
   const responsibilityMap = [
     {
       label: 'Operacion diaria',
@@ -1648,6 +1686,51 @@ export default async function ClientAppPage() {
                 </div>
               </div>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.risk}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_92%_0%,rgba(255,255,255,0.08),transparent_24%),radial-gradient(circle_at_8%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.054),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Lectura ejecutiva de riesgo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que podria afectar la operacion y que decision reduce el riesgo</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Una vista para direccion y administracion: separa continuidad, servicio, evidencia y decision. El objetivo
+              no es alarmar; es saber que mirar, por que importa y que salida deja la operacion mas tranquila.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            continuidad / servicio / evidencia / decision
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {executiveRiskReading.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-xl font-light leading-snug text-white">{item.impact}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-5 w-5 text-white/45 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Senal visible</p>
+                  <p className="mt-2 text-sm leading-6 text-white/74">{item.signal}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Decision recomendada</p>
+                  <p className="mt-2 text-sm leading-6 text-white/74">{item.decision}</p>
+                </div>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.evidence}</p>
             </a>
           ))}
         </div>
