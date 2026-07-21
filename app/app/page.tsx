@@ -562,6 +562,32 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || 'ok',
     },
   ] as const
+  const clientRoadmap = [
+    {
+      label: '0-30 dias',
+      title: actionRegister[0]?.title || 'Consolidar operacion diaria',
+      detail: actionRegister[0]?.nextStep || nextAction,
+      outcome: actionRegister[0]?.successCriteria || 'Rutina diaria con responsables, prioridad y evidencia visible.',
+      owner: actionRegister[0]?.owner || 'Operacion',
+      tone: actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: '31-60 dias',
+      title: improvementActions[0]?.title || 'Reducir ruido y reforzar cobertura',
+      detail: improvementActions[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Revisar zonas, reglas y criterios de cierre.',
+      outcome: improvementActions[0]?.expectedImpact || 'Menos dudas operativas y mejor lectura para administrar.',
+      owner: improvementActions[0]?.siteLabel || 'Equipo cliente',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+    },
+    {
+      label: '61-90 dias',
+      title: weeklyDecisionAgenda[0]?.decision || 'Formalizar gobierno de seguridad',
+      detail: weeklyDecisionAgenda[0]?.customerValue || governanceRituals[0]?.question || 'Convertir hallazgos en decisiones recurrentes.',
+      outcome: weeklyDecisionAgenda[0]?.expectedOutcome || governanceRituals[0]?.output || 'Comite con evidencia, acuerdos y mejoras medibles.',
+      owner: weeklyDecisionAgenda[0]?.owner || governanceRituals[0]?.owner || 'Administracion',
+      tone: weeklyDecisionAgenda[0]?.tone || governanceRituals[0]?.tone || 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -936,6 +962,42 @@ export default async function ClientAppPage() {
               <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
               <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Roadmap cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Proximos 90 dias para operar con mas orden</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              La mejora queda dividida en tres horizontes: resolver lo inmediato, fortalecer la operacion y convertir
+              la seguridad en una rutina de gobierno medible.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            30 / 60 / 90
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {clientRoadmap.map((item) => (
+            <div key={item.label} className={`flex min-h-full flex-col rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-xl font-light leading-snug text-white">{item.title}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.owner}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/66">{item.detail}</p>
+              <div className="mt-auto pt-5">
+                <p className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4 text-sm leading-6 text-white/72">
+                  {item.outcome}
+                </p>
+              </div>
             </div>
           ))}
         </div>
