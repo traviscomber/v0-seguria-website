@@ -185,6 +185,36 @@ export default async function PropertyPage({
       tone: traceabilityLedger[0]?.tone || siteHealth.tone,
     },
   ] as const
+  const serviceSnapshot = [
+    {
+      label: 'Confirmacion',
+      value: formatDuration(site.report.averageConfirmationMinutes, 'min'),
+      detail: site.report.overdueConfirmations > 0
+        ? `${site.report.overdueConfirmations} confirmaciones requieren revision.`
+        : 'Los avisos importantes mantienen seguimiento visible.',
+      tone: site.report.overdueConfirmations > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Resolucion',
+      value: formatDuration(site.report.averageResolutionHours, 'h'),
+      detail: site.report.resolvedThisMonth > 0
+        ? `${site.report.resolvedThisMonth} cierres registrados este mes.`
+        : 'Sin cierres recientes que reportar para este sitio.',
+      tone: openIncidents.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Evidencia',
+      value: `${evidenceGallery.length} pruebas`,
+      detail: evidenceGallery[0]?.action || 'Eventos y registros quedan disponibles para explicar decisiones.',
+      tone: evidenceGallery[0]?.tone || 'ok',
+    },
+    {
+      label: 'Aprendizaje',
+      value: `${improvementActions.length} mejoras`,
+      detail: improvementActions[0]?.nextStep || 'El historial ayuda a reducir ruido y mejorar respuesta.',
+      tone: improvementActions[0]?.tone || siteHealth.tone,
+    },
+  ] as const
   const sectionIndex = [
     {
       href: '#operacion-viva',
@@ -1295,6 +1325,31 @@ export default async function PropertyPage({
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Tablero de servicio</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white">
+              Respuesta medible para que {site.label} sepa que paso y que viene.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/58">
+              Un sitio profesional no solo muestra alarmas: muestra tiempos, evidencia, cierre y aprendizaje.
+              Esta lectura resume si la operacion esta respondiendo con orden o si necesita una revision concreta.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {serviceSnapshot.map((item) => (
+              <div key={item.label} className={`rounded-[22px] border p-4 ${getScoreTone(item.tone)}`}>
+                <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
+                <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
