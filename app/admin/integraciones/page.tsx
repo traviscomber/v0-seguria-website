@@ -41,8 +41,19 @@ const statusLabels = {
 }
 
 const providerLabels = {
-  home_assistant: 'Home Assistant',
+  home_assistant: 'Puente local',
   tuya: 'Cuenta operativa',
+}
+
+function scrubVisibleText(value: string) {
+  return value
+    .replace(/home[_\s-]?assistant/gi, 'Puente local')
+    .replace(/\bha\b/gi, 'puente local')
+    .replace(/tuya/gi, 'Cuenta operativa')
+}
+
+function scrubVisiblePayload(value?: string | null) {
+  return value ? scrubVisibleText(value) : ''
 }
 
 export default async function IntegrationsAdminPage() {
@@ -54,9 +65,9 @@ export default async function IntegrationsAdminPage() {
   const [summary, connections, recentEvents, properties, credentials] = await Promise.all([
     getIntegrationSummary(user),
     getIntegrationConnections(user),
-    getIntegrationEvents(8, user),
+    getIntegrationEvents(12, user),
     getIntegrationPropertyOptions(user),
-    user.role === 'admin' ? getIntegrationCredentialSummaries(user) : Promise.resolve([]),
+    user?.role === 'admin' ? getIntegrationCredentialSummaries(user) : Promise.resolve([]),
   ])
 
   const totalDevices = connections.reduce((total, connection) => total + connection.totalDevices, 0)
@@ -89,8 +100,8 @@ export default async function IntegrationsAdminPage() {
               Integraciones simples, estado claro.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/58">
-              Home Assistant conecta camaras, sensores y alarmas por sitio. SegurIA ordena esa senal en inventario,
-              eventos y evidencia. El cliente ve SegurIA; el equipo interno ve el puente tecnico.
+              El puente local conecta camaras, sensores y alarmas por sitio. SegurIA ordena esa senal en inventario,
+              eventos y evidencia. El cliente ve SegurIA; el equipo interno ve la operacion tecnica.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/admin/dispositivos" className="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm">
@@ -105,7 +116,7 @@ export default async function IntegrationsAdminPage() {
 
           <div className="grid grid-cols-2 gap-px bg-white/10 md:grid-cols-4 xl:grid-cols-2">
             <Metric label="Sitios" value={properties.length.toString()} icon={<Home className="h-5 w-5" strokeWidth={1.5} />} />
-            <Metric label="Home Assistant" value={homeAssistantConnections.length.toString()} icon={<PlugZap className="h-5 w-5" strokeWidth={1.5} />} />
+            <Metric label="Puente local" value={homeAssistantConnections.length.toString()} icon={<PlugZap className="h-5 w-5" strokeWidth={1.5} />} />
             <Metric label="Equipos" value={totalDevices.toString()} icon={<Radio className="h-5 w-5" strokeWidth={1.5} />} />
             <Metric label="Eventos" value={summary.recentEvents.length.toString()} icon={<Activity className="h-5 w-5" strokeWidth={1.5} />} />
           </div>
@@ -133,14 +144,14 @@ export default async function IntegrationsAdminPage() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-lg font-light text-white">{property.organizationName}</p>
-                      <p className="mt-1 text-sm text-white/52">{property.name} · {property.location}</p>
+                      <p className="mt-1 text-sm text-white/52">{property.name} / {property.location}</p>
                     </div>
                     <StatusBadge connection={property.connection} />
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-4">
                     <StepCheck label="Gateway" active={Boolean(property.connection)} />
-                    <StepCheck label="Home Assistant" active={property.hasHomeAssistant} />
+                    <StepCheck label="Puente local" active={property.hasHomeAssistant} />
                     <StepCheck label="Inventario" active={property.totalDevices > 0} />
                     <StepCheck label="Eventos" active={property.totalEvents > 0} />
                   </div>
@@ -158,10 +169,10 @@ export default async function IntegrationsAdminPage() {
 
         <div className="space-y-6">
           <div className="glass-card p-6">
-            <SectionHeader eyebrow="Puente tecnico" title="Home Assistant" />
+            <SectionHeader eyebrow="Puente tecnico" title="Puente local" />
             <div className="mt-5 space-y-3">
               {homeAssistantConnections.length === 0 ? (
-                <EmptyState text="Aun no hay conexiones Home Assistant activas." />
+                <EmptyState text="Aun no hay puentes locales activos." />
               ) : (
                 homeAssistantConnections.map((connection) => (
                   <ConnectionCard key={`${connection.propertyId || connection.name}-${connection.endpoint}`} connection={connection} />
@@ -188,12 +199,12 @@ export default async function IntegrationsAdminPage() {
           properties={properties.map((property) => ({ id: property.id, name: property.name, location: property.location }))}
         />
 
-        {user.role === 'admin' ? (
+        {user?.role === 'admin' ? (
           <IntegrationCredentialForm properties={properties} initialCredentials={credentials} />
         ) : (
           <section className="glass-card border border-white/10 p-6">
             <KeyRound className="h-5 w-5 text-[#9DD2F2]" strokeWidth={1.5} />
-            <h2 className="mt-4 text-2xl font-light text-white">Credenciales protegidas</h2>
+            <h2 className="mt-4 text-2xl font-light text-white">Credenciales reservadas para administradores</h2>
             <p className="mt-2 text-sm leading-6 text-white/55">
               Los tecnicos pueden validar estado e inventario. Las credenciales quedan reservadas para administradores.
             </p>
@@ -269,6 +280,10 @@ function ConnectionCard({ connection }: { connection: IntegrationConnection }) {
 }
 
 function EventRow({ event }: { event: IntegrationEvent }) {
+  const eventType = scrubVisiblePayload(event.eventType)
+  const eventTitle = scrubVisiblePayload(event.title)
+  const entityId = scrubVisiblePayload(event.entityId)
+
   return (
     <article className="rounded-[5px] border border-white/10 bg-white/[0.04] p-4">
       <div className="flex items-start gap-3">
@@ -280,10 +295,10 @@ function EventRow({ event }: { event: IntegrationEvent }) {
             <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-white/55">
               {providerLabels[event.provider]}
             </span>
-            <span className="text-[11px] text-white/35">{event.eventType}</span>
+            <span className="text-[11px] text-white/35">{eventType}</span>
           </div>
-          <p className="mt-2 text-sm text-white">{event.title}</p>
-          {event.entityId && <p className="mt-1 truncate text-xs text-white/42">{event.entityId}</p>}
+          <p className="mt-2 text-sm text-white">{eventTitle}</p>
+          {entityId && <p className="mt-1 truncate text-xs text-white/42">{entityId}</p>}
         </div>
       </div>
     </article>
