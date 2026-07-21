@@ -30,6 +30,7 @@ const requiredDetailTerms = [
   'Operacion viva',
   'Galeria de evidencia',
   'Centro de confianza',
+  'Cumplimiento operativo',
   'Bandeja de acciones',
   'Equipos del sitio',
 ]

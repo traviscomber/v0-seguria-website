@@ -253,6 +253,47 @@ export default async function PropertyPage({
       tone: shiftHandoff[0]?.tone || operationalScore.tone,
     },
   ] as const
+  const weakServiceCommitments = serviceCommitments.filter((commitment) => commitment.tone !== 'ok')
+  const weakMaturityItems = maturityScorecard.filter((item) => item.tone !== 'ok')
+  const weakTrustItems = trustCenter.filter((item) => item.tone !== 'ok')
+  const operationalComplianceTone: 'ok' | 'warning' | 'critical' =
+    weakServiceCommitments.some((item) => item.tone === 'critical') ||
+    weakMaturityItems.some((item) => item.tone === 'critical') ||
+    weakTrustItems.some((item) => item.tone === 'critical')
+      ? 'critical'
+      : weakServiceCommitments.length > 0 || weakMaturityItems.length > 0 || weakTrustItems.length > 0
+        ? 'warning'
+        : 'ok'
+  const operationalCompliance = [
+    {
+      label: 'Servicio',
+      value: weakServiceCommitments.length > 0 ? `${weakServiceCommitments.length} brechas` : 'en orden',
+      detail: weakServiceCommitments[0]?.summary || 'Los compromisos principales mantienen una lectura estable.',
+      action: weakServiceCommitments[0]?.action || 'Mantener seguimiento y confirmar cierres relevantes.',
+      tone: weakServiceCommitments[0]?.tone || 'ok',
+    },
+    {
+      label: 'Madurez',
+      value: `${Math.round(maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length))}/100`,
+      detail: weakMaturityItems[0]?.reading || 'La operacion conserva pilares suficientes para funcionar con claridad.',
+      action: weakMaturityItems[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Sostener la rutina y revisar mejoras del ciclo.',
+      tone: weakMaturityItems[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Confianza',
+      value: weakTrustItems.length > 0 ? `${weakTrustItems.length} alertas` : 'visible',
+      detail: weakTrustItems[0]?.customerMeaning || 'Acceso, evidencia y responsables se mantienen explicables para el cliente.',
+      action: weakTrustItems[0]?.proof || trustCenter[0]?.proof || 'Conservar trazabilidad y criterios de cierre disponibles.',
+      tone: weakTrustItems[0]?.tone || 'ok',
+    },
+    {
+      label: 'Cierre',
+      value: `${traceabilityLedger.length} registros`,
+      detail: traceabilityLedger[0]?.decisionLink || 'La historia del sitio queda disponible para explicar decisiones.',
+      action: actionRegister[0]?.successCriteria || meetingPack.close,
+      tone: traceabilityLedger[0]?.tone || actionRegister[0]?.tone || 'ok',
+    },
+  ] as const
   const sectionIndex = [
     {
       href: '#operacion-viva',
@@ -706,6 +747,33 @@ export default async function PropertyPage({
               </div>
               <p className="mt-3 text-xs leading-5 text-white/45">{item.proof}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(operationalComplianceTone)}`}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Cumplimiento operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Lo que {site.label} debe sostener para operar con confianza</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              Una lectura de control para administracion: compromisos, madurez, confianza y cierre quedan en el mismo
+              tablero para saber si el sitio cumple o necesita atencion concreta.
+            </p>
+          </div>
+          <Badge className={getScoreTone(operationalComplianceTone)}>
+            {operationalComplianceTone === 'ok' ? 'cumple' : operationalComplianceTone === 'warning' ? 'requiere seguimiento' : 'requiere cierre'}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {operationalCompliance.map((item) => (
+            <article key={item.label} className={`flex min-h-full flex-col rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-5 text-xs leading-5 text-white/48">{item.action}</p>
+            </article>
           ))}
         </div>
       </section>
