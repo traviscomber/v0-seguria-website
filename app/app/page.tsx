@@ -725,6 +725,35 @@ export default async function ClientAppPage() {
     href: `/app/properties/${item.propertyId}`,
     tone: item.tone,
   }))
+  const roleBriefs = [
+    {
+      label: 'Direccion',
+      value: executiveBrief.verdict,
+      question: 'Que riesgo o decision requiere respaldo hoy?',
+      action: boardReport.decision,
+      proof: boardReport.proofPoints[0] || executiveBrief.highlights[0] || meetingPack.evidence,
+      href: '#decisiones',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Administracion',
+      value: leadershipBrief.customerOutcome,
+      question: 'Que debe quedar ordenado para operar sin friccion?',
+      action: weeklyDecisionAgenda[0]?.expectedOutcome || meetingPack.close,
+      proof: leadershipBrief.nextConversation,
+      href: '#acciones',
+      tone: weeklyDecisionAgenda[0]?.tone || leadershipBrief.tone,
+    },
+    {
+      label: 'Operacion',
+      value: dailyPriorities[0]?.title || headline,
+      question: 'Que mirar primero durante el turno?',
+      action: actionRegister[0]?.nextStep || nextAction,
+      proof: traceabilityLedger[0]?.decisionLink || `${activity.length} cambios recientes con contexto.`,
+      href: '#actividad',
+      tone: dailyPriorities[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -1149,6 +1178,46 @@ export default async function ClientAppPage() {
                 <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1 group-hover:text-white" />
               </div>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_88%_0%,rgba(157,210,242,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Lectura por rol</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La misma operacion, tres respuestas claras</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Direccion necesita decision, administracion necesita orden y operacion necesita prioridad. El portal
+              separa la lectura para que cada equipo actue sin traducir la informacion.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            direccion / administracion / operacion
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {roleBriefs.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/66">{item.question}</p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Accion esperada</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">{item.action}</p>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
           ))}
         </div>
       </section>

@@ -11,6 +11,7 @@ const requiredHomeTerms = [
   'Criterios de clase mundial',
   'Resumen para direccion',
   'Comparador operativo',
+  'Lectura por rol',
   'Completitud operativa',
   'Roadmap cliente',
   'Mapa de responsables',
