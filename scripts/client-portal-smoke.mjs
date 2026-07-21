@@ -22,6 +22,7 @@ const requiredHomeTerms = [
 
 const requiredDetailTerms = [
   'Modelo operativo del sitio',
+  'Control diario del sitio',
   'Tablero de servicio',
   'Operacion viva',
   'Galeria de evidencia',

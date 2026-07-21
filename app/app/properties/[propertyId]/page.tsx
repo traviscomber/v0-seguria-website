@@ -215,6 +215,44 @@ export default async function PropertyPage({
       tone: improvementActions[0]?.tone || siteHealth.tone,
     },
   ] as const
+  const siteDailyControl = [
+    {
+      label: 'Mirar primero',
+      value: `${dailyPriorities.length} prioridades`,
+      title: dailyPriorities[0]?.title || liveOperation.headline,
+      detail: dailyPriorities[0]?.detail || 'Abrir el sitio con estado, cambios recientes y zonas que requieren contexto.',
+      proof: dailyPriorities[0]?.action || recommendedAction,
+      href: '#operacion-viva',
+      tone: dailyPriorities[0]?.tone || liveOperation.tone,
+    },
+    {
+      label: 'Actuar hoy',
+      value: `${actionRegister.length} acciones`,
+      title: actionRegister[0]?.title || 'Mantener seguimiento operacional',
+      detail: actionRegister[0]?.why || responsePlaybook[0]?.trigger || 'Convertir avisos en acciones claras para el equipo responsable.',
+      proof: actionRegister[0]?.nextStep || responsePlaybook[0]?.firstMove || recommendedAction,
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || responsePlaybook[0]?.tone || siteHealth.tone,
+    },
+    {
+      label: 'Decidir con prueba',
+      value: `${decisionPackets.length} decisiones`,
+      title: decisionPackets[0]?.decision || meetingPack.decision,
+      detail: decisionPackets[0]?.evidence || meetingPack.evidence,
+      proof: decisionPackets[0]?.outcome || meetingPack.close,
+      href: '#evidencia',
+      tone: decisionPackets[0]?.tone || meetingPack.tone,
+    },
+    {
+      label: 'Entregar turno',
+      value: `${shiftHandoff.length} pautas`,
+      title: shiftHandoff[0]?.title || 'Cerrar el dia sin perder contexto',
+      detail: shiftHandoff[0]?.summary || 'El siguiente responsable recibe estado, riesgos y salida esperada.',
+      proof: shiftHandoff[0]?.output || liveOperation.close,
+      href: '#equipos-documentos',
+      tone: shiftHandoff[0]?.tone || operationalScore.tone,
+    },
+  ] as const
   const sectionIndex = [
     {
       href: '#operacion-viva',
@@ -353,6 +391,43 @@ export default async function PropertyPage({
             <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
           </div>
         ))}
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(157,210,242,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.024))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Control diario del sitio</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Que mirar, que mover y que dejar cerrado en {site.label}</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Una pauta simple para que administracion, turno y direccion lean el mismo sitio sin perseguir pantallas:
+              prioridad, accion, prueba y traspaso.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            lectura diaria
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          {siteDailyControl.map((item, index) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">0{index + 1} / {item.label}</p>
+                  <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
+                </div>
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-white/45 transition group-hover:text-white" />
+              </div>
+              <h4 className="mt-5 text-base font-normal text-white">{item.title}</h4>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-5 text-xs leading-5 text-white/48">{item.proof}</p>
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.18),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
