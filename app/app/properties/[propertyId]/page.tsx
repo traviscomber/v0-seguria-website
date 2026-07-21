@@ -27,6 +27,7 @@ import {
   getPortalDecisionPackets,
   getPortalDeviceBuckets,
   getPortalExecutiveBrief,
+  getPortalEvidenceGallery,
   getPortalGovernanceRituals,
   getPortalImprovementActions,
   getPortalLeadershipBrief,
@@ -140,6 +141,7 @@ export default async function PropertyPage({
   const responsePlaybook = getPortalResponsePlaybook([site])
   const siteHealth = getPortalSiteHealthRanking([site])[0]
   const liveOperation = getPortalLiveOperation(site)
+  const evidenceGallery = getPortalEvidenceGallery(site)
   const recommendedAction = openIncidents.length > 0
     ? 'Atender el incidente abierto y confirmar recepcion.'
     : sensorRisk.critical > 0 || gatewayRisk > 0
@@ -286,6 +288,42 @@ export default async function PropertyPage({
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Galeria de evidencia</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Pruebas recientes para decidir sin reconstruir la historia</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              Incidentes, senales, documentos y trazabilidad quedan ordenados por urgencia para revisar que prueba existe,
+              que significa y que accion debe cerrar.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {evidenceGallery.length} pruebas priorizadas
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {evidenceGallery.map((item) => (
+            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.status}</Badge>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/64">{item.detail}</p>
+              <div className="mt-5 grid gap-3">
+                <InfoTile label="Prueba" value={item.proof} icon={FileText} />
+                <InfoTile label="Accion" value={item.action} icon={CheckCircle2} />
+                {item.at ? <InfoTile label="Fecha" value={formatDate(item.at)} icon={Siren} /> : null}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
