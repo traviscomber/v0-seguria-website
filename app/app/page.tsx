@@ -344,6 +344,50 @@ export default async function ClientAppPage() {
       : 'Esperar la primera sincronizacion del sitio.'
   const updatedLabel = `Actualizado ${formatDate(primarySite?.lastUpdatedAt)}`
   const continuityHasRisk = totals.offlineGateways > 0 || sensorRisk.critical > 0 || openIncidents.length > 0
+  const portalIndex = [
+    {
+      href: '#decisiones',
+      label: 'Decisiones',
+      value: decisionRoom.title,
+      detail: decisionRoom.headline,
+      tone: decisionRoom.tone,
+    },
+    {
+      href: '#sitios',
+      label: 'Sitios',
+      value: `${totals.sites} operaciones`,
+      detail: 'Empresas, estado, actividad y acceso a cada sitio.',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      href: '#evidencia',
+      label: 'Evidencia',
+      value: `${traceabilityLedger.length} registros`,
+      detail: 'Historia, prueba y decision vinculada.',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+    {
+      href: '#camaras',
+      label: 'Camaras',
+      value: `${totals.cameras} vistas`,
+      detail: 'Vistas recientes y zonas monitoreadas.',
+      tone: alerts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      href: '#acciones',
+      label: 'Acciones',
+      value: `${actionRegister.length} pendientes`,
+      detail: actionRegister[0]?.nextStep || nextAction,
+      tone: actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      href: '#actividad',
+      label: 'Actividad',
+      value: `${activity.length} cambios`,
+      detail: 'Ultimos eventos, documentos y equipos actualizados.',
+      tone: activity.some((item) => item.status === 'critical' || item.status === 'falla') ? 'critical' : 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -409,7 +453,7 @@ export default async function ClientAppPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.22),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
+      <section id="camaras" className="scroll-mt-32 relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.22),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.26)] lg:p-10">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05)_0%,transparent_35%,rgba(255,255,255,0.02)_100%)]" />
         <div className="relative grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
           <div className="flex flex-col justify-center space-y-6">
@@ -527,6 +571,31 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
+      <nav className="sticky top-4 z-20 rounded-[28px] border border-white/10 bg-[#071524]/88 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Indice ejecutivo</p>
+            <h2 className="mt-1 text-xl font-light text-white">Ir directo a la operacion correcta</h2>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-white/5 text-white/58">
+            {totals.organizations} empresas / {totals.sites} sitios
+          </Badge>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {portalIndex.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+              <h3 className="mt-2 text-lg font-light text-white">{item.value}</h3>
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{item.detail}</p>
+            </a>
+          ))}
+        </div>
+      </nav>
+
       <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
         <div className={`rounded-[28px] border p-6 shadow-none md:p-7 ${getScoreTone(operationalScore.tone)}`}>
           <div className="flex items-start justify-between gap-4">
@@ -625,7 +694,7 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
-      <section className={`relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(decisionRoom.tone)}`}>
+      <section id="decisiones" className={`scroll-mt-32 relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(decisionRoom.tone)}`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(157,210,242,0.18),transparent_30%),radial-gradient(circle_at_100%_15%,rgba(255,255,255,0.08),transparent_24%)]" />
         <div className="relative grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
           <div>
@@ -928,7 +997,7 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
+      <section id="acciones" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bandeja de acciones</p>
@@ -1002,7 +1071,7 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
+      <section id="evidencia" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Trazabilidad cliente</p>
@@ -1725,7 +1794,7 @@ export default async function ClientAppPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <section id="actividad" className="scroll-mt-32 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <Card className="border-white/10 bg-white/5 shadow-none">
           <CardHeader>
             <div className="flex items-center gap-2">
