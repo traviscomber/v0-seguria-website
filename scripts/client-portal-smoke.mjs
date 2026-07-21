@@ -9,6 +9,7 @@ const requiredHomeTerms = [
   'Paquete de reunion',
   'Completitud operativa',
   'Roadmap cliente',
+  'Mapa de responsables',
   'Garantias visibles',
   'Ruta de trabajo del cliente',
   'Estandar profesional',

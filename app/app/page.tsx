@@ -588,6 +588,32 @@ export default async function ClientAppPage() {
       tone: weeklyDecisionAgenda[0]?.tone || governanceRituals[0]?.tone || 'ok',
     },
   ] as const
+  const responsibilityMap = [
+    {
+      label: 'Operacion diaria',
+      owner: actionRegister[0]?.owner || governanceRituals[0]?.owner || 'Operacion',
+      question: governanceRituals[0]?.question || 'Que cambio desde la ultima revision?',
+      output: actionRegister[0]?.nextStep || governanceRituals[0]?.output || nextAction,
+      proof: actionRegister[0]?.successCriteria || 'Rutina con responsable, accion y evidencia visible.',
+      tone: actionRegister[0]?.tone || governanceRituals[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Decision cliente',
+      owner: weeklyDecisionAgenda[0]?.owner || meetingPack.agenda[1]?.owner || 'Administracion',
+      question: weeklyDecisionAgenda[0]?.decision || meetingPack.decision,
+      output: weeklyDecisionAgenda[0]?.expectedOutcome || meetingPack.close,
+      proof: weeklyDecisionAgenda[0]?.customerValue || meetingPack.evidence,
+      tone: weeklyDecisionAgenda[0]?.tone || meetingPack.tone,
+    },
+    {
+      label: 'Mejora continua',
+      owner: improvementActions[0]?.siteLabel || governanceRituals[1]?.owner || 'Equipo cliente',
+      question: improvementActions[0]?.title || maturityScorecard[0]?.label || 'Que debemos mejorar?',
+      output: improvementActions[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Priorizar la siguiente mejora visible.',
+      proof: improvementActions[0]?.expectedImpact || 'Menos ruido y mayor claridad operativa.',
+      tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
+    },
+  ] as const
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -999,6 +1025,41 @@ export default async function ClientAppPage() {
                 </p>
               </div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(157,210,242,0.13),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.022))] p-6 md:p-8">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Mapa de responsables</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Quien mira, quien decide y que debe quedar cerrado</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              La seguridad profesional no vive solo en eventos: vive en responsables claros, salidas esperadas y
+              evidencia suficiente para que cada turno sepa como continuar.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            responsabilidad visible
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {responsibilityMap.map((item) => (
+            <article key={item.label} className={`flex min-h-full flex-col rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-3 text-lg font-light leading-snug text-white">{item.question}</h3>
+                </div>
+                <Badge className={getScoreTone(item.tone)}>{item.owner}</Badge>
+              </div>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Salida esperada</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">{item.output}</p>
+              </div>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </article>
           ))}
         </div>
       </section>
