@@ -3,7 +3,7 @@ const defaultBaseUrl = 'https://seguria.tech'
 const requiredHomeTerms = [
   'Operacion cliente',
   'Mirar primero',
-  'Pedir apoyo',
+  'Preparar reunion',
   'Bitacora ejecutiva',
   'Paquete de reunion',
   'Garantias visibles',

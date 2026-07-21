@@ -1167,7 +1167,7 @@ export default async function ClientAppPage() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_92%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
+      <section id="reunion" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_92%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Paquete de reunion</p>

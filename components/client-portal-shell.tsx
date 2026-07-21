@@ -10,8 +10,9 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { href: '/app', label: 'Resumen', icon: House },
   { href: '/app#decisiones', label: 'Decisiones', icon: ShieldCheck },
+  { href: '/app#reunion', label: 'Reunion', icon: Sparkles },
   { href: '/app#acciones', label: 'Acciones', icon: ClipboardCheck },
-  { href: '/app#confianza', label: 'Confianza', icon: Sparkles },
+  { href: '/app#confianza', label: 'Confianza', icon: ShieldCheck },
   { href: '/app#sitios', label: 'Sitios', icon: Building2 },
 ]
 
@@ -27,9 +28,9 @@ const guidanceItems = [
     href: '/app#sitios',
   },
   {
-    label: 'Pedir apoyo',
-    value: 'Contacto con contexto',
-    href: '/contacto',
+    label: 'Preparar reunion',
+    value: 'Decision, evidencia y cierre',
+    href: '/app#reunion',
   },
 ]
 
