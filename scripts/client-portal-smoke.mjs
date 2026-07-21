@@ -10,6 +10,7 @@ const requiredHomeTerms = [
   'Valor operativo',
   'Criterios de clase mundial',
   'Resumen para direccion',
+  'Comparador operativo',
   'Completitud operativa',
   'Roadmap cliente',
   'Mapa de responsables',

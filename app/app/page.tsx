@@ -714,6 +714,17 @@ export default async function ClientAppPage() {
       tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
     },
   ] as const
+  const siteComparisonBrief = siteHealthRanking.slice(0, 3).map((item) => ({
+    label: `#${item.position} / ${item.organizationName}`,
+    value: item.siteLabel,
+    score: item.score,
+    status: item.status,
+    summary: item.summary,
+    attention: item.attentionPoint,
+    nextMove: item.nextMove,
+    href: `/app/properties/${item.propertyId}`,
+    tone: item.tone,
+  }))
   const primaryProfile = primarySite?.profile || {
     eyebrow: 'Portal de cliente',
     headline: 'Tu seguridad, clara y lista para decidir.',
@@ -1093,6 +1104,51 @@ export default async function ClientAppPage() {
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.14),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Comparador operativo</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Donde mirar primero sin revisar sitio por sitio</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+              Una lectura corta para comparar operaciones, entender cual esta mas fuerte y abrir directo el sitio que
+              necesita atencion o cierre.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            {siteHealthRanking.length} sitios comparados
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {siteComparisonBrief.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light text-white">{item.value}</h3>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#071524]/55 px-3 py-2 text-center">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">salud</p>
+                  <p className="text-xl font-light text-white">{item.score}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.summary}</p>
+              <p className="mt-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-3 text-xs leading-5 text-white/56">
+                {item.attention}
+              </p>
+              <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-white/52">
+                <span className="line-clamp-2">{item.nextMove}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+            </Link>
           ))}
         </div>
       </section>
