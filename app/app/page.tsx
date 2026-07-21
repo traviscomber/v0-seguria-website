@@ -570,6 +570,36 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || 'ok',
     },
   ] as const
+  const executiveDecisionSummary = [
+    {
+      label: 'Veredicto',
+      value: executiveBrief.verdict,
+      detail: executiveBrief.narrative,
+      proof: executiveBrief.highlights[0] || operationalScore.summary,
+      tone: executiveBrief.tone,
+    },
+    {
+      label: 'Valor para el cliente',
+      value: leadershipBrief.customerOutcome,
+      detail: leadershipBrief.businessReading,
+      proof: leadershipBrief.pillars[0]?.proof || leadershipBrief.nextConversation,
+      tone: leadershipBrief.tone,
+    },
+    {
+      label: 'Decision requerida',
+      value: boardReport.decision,
+      detail: boardReport.risk,
+      proof: boardReport.proofPoints[0] || meetingPack.evidence,
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Cierre esperado',
+      value: meetingPack.close,
+      detail: meetingPack.commitment,
+      proof: meetingPack.evidence,
+      tone: meetingPack.tone,
+    },
+  ] as const
   const meetingBrief = [
     {
       label: 'Decision',
@@ -1038,6 +1068,31 @@ export default async function ClientAppPage() {
               <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
               <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
             </a>
+          ))}
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-5 md:p-6 ${getScoreTone(executiveBrief.tone)}`}>
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] opacity-70">Resumen para direccion</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La version corta para decidir sin reconstruir la operacion</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              Una lectura preparada para administracion y gerencia: que significa el estado actual, que valor produce,
+              que decision corresponde y con que prueba se sostiene.
+            </p>
+          </div>
+          <Badge className={getScoreTone(executiveBrief.tone)}>{executiveBrief.periodLabel}</Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {executiveDecisionSummary.map((item) => (
+            <article key={item.label} className={`flex min-h-full flex-col rounded-[22px] border p-4 ${getScoreTone(item.tone)}`}>
+              <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+              <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </article>
           ))}
         </div>
       </section>
