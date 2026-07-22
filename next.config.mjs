@@ -16,8 +16,43 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/',
+        destination: '/es',
+        permanent: false,
+      },
+      {
+        source: '/soluciones',
+        destination: '/es/soluciones',
+        permanent: false,
+      },
+      {
+        source: '/campos-inteligentes',
+        destination: '/es/campos-inteligentes',
+        permanent: false,
+      },
+      {
+        source: '/propiedades-inteligentes',
+        destination: '/es/propiedades-inteligentes',
+        permanent: false,
+      },
+      {
+        source: '/hoteleria-inteligente',
+        destination: '/es/hoteleria-inteligente',
+        permanent: false,
+      },
+      {
+        source: '/integraciones',
+        destination: '/es/integraciones',
+        permanent: false,
+      },
+      {
+        source: '/contacto',
+        destination: '/es/contacto',
+        permanent: false,
+      },
+      {
         source: '/casas-inteligentes',
-        destination: '/propiedades-inteligentes',
+        destination: '/es/propiedades-inteligentes',
         permanent: true,
       },
       // Redirect www to non-www (n3uralia.com)
