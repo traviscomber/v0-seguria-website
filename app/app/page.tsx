@@ -847,6 +847,44 @@ export default async function ClientAppPage() {
       href: '#acciones',
     },
   ] as const
+  const executiveCadence = [
+    {
+      label: 'Diario',
+      value: dailyPriorities[0]?.title || 'Abrir con foco',
+      owner: actionRegister[0]?.owner || governanceRituals[0]?.owner || 'Operacion',
+      evidence: `${dailyPriorities.length} prioridades y ${activity.length} cambios recientes.`,
+      output: dailyPriorities[0]?.action || actionRegister[0]?.nextStep || nextAction,
+      href: '#actividad',
+      tone: dailyPriorities[0]?.tone || actionRegister[0]?.tone || operationalScore.tone,
+    },
+    {
+      label: 'Semanal',
+      value: weeklyClientAgenda[0]?.value || meetingPack.decision,
+      owner: weeklyClientAgenda[0]?.owner || meetingPack.agenda[1]?.owner || 'Administracion',
+      evidence: weeklyClientAgenda[0]?.detail || meetingPack.evidence,
+      output: weeklyClientAgenda[0]?.output || meetingPack.close,
+      href: '#decisiones',
+      tone: weeklyClientAgenda[0]?.tone || meetingPack.tone,
+    },
+    {
+      label: 'Mensual',
+      value: `${report.resolvedThisMonth}/${report.incidentsThisMonth} cierres`,
+      owner: 'Direccion',
+      evidence: boardReport.proofPoints[0] || executiveImpact[2]?.proof || meetingPack.evidence,
+      output: boardReport.decision,
+      href: '#decisiones',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Cierre',
+      value: actionRegister[0]?.title || meetingPack.close,
+      owner: actionRegister[0]?.owner || 'Equipo cliente',
+      evidence: actionRegister[0]?.successCriteria || traceabilityLedger[0]?.evidence || 'Evidencia pendiente de cierre.',
+      output: actionRegister[0]?.nextStep || 'Cerrar con prueba y responsable visible.',
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || 'ok',
+    },
+  ] as const
   const maturityAverage = Math.round(
     maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length)
   )
@@ -1706,6 +1744,48 @@ export default async function ClientAppPage() {
                 <span className="line-clamp-2">{item.output}</span>
                 <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1 group-hover:text-white" />
               </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.18),transparent_30%),radial-gradient(circle_at_92%_8%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-5 md:p-7">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Cadencia ejecutiva cliente</p>
+            <h2 className="mt-2 max-w-4xl text-3xl font-light leading-tight text-white">
+              Un portal profesional tiene ritmo: mira, decide, asigna y cierra con evidencia.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-white/60">
+              La cadencia evita que el dashboard sea una pantalla pasiva. Convierte la lectura diaria en decisiones,
+              responsables y cierres que administracion puede revisar sin reconstruir la historia.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
+            diario / semanal / mensual / cierre
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {executiveCadence.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Responsable</p>
+                <p className="mt-2 text-sm leading-5 text-white/72">{item.owner}</p>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-white/54">{item.evidence}</p>
+              <p className="mt-auto pt-4 text-sm leading-6 text-white/76">{item.output}</p>
             </Link>
           ))}
         </div>

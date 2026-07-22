@@ -18,6 +18,7 @@ const requiredHomeTerms = [
   'Madurez ejecutiva cliente',
   'Minuta ejecutiva',
   'Agenda semanal cliente',
+  'Cadencia ejecutiva cliente',
   'Ficha de servicio cliente',
   'Promesa operativa cliente',
   'Completitud operativa',
