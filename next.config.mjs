@@ -15,6 +15,11 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: '/casas-inteligentes',
+        destination: '/propiedades-inteligentes',
+        permanent: true,
+      },
       // Redirect www to non-www (n3uralia.com)
       {
         source: '/:path*',

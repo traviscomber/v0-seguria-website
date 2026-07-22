@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://v0-seguria-website.vercel.app'
+  const baseUrl = 'https://seguria.tech'
 
   const routes = [
     {
@@ -18,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/propiedades-inteligentes`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/hoteleria-inteligente`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
