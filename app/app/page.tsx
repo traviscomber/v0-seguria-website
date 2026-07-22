@@ -651,6 +651,50 @@ export default async function ClientAppPage() {
       tone: improvementActions[0]?.tone || maturityScorecard[0]?.tone || 'ok',
     },
   ] as const
+  const executiveImpact = [
+    {
+      label: 'Continuidad',
+      value: continuityHasRisk ? 'requiere foco' : 'estable',
+      effect: continuityHasRisk
+        ? 'Hay puntos que pueden obligar al equipo a operar con informacion incompleta.'
+        : 'La operacion mantiene visibilidad suficiente para trabajar sin rondas improvisadas.',
+      proof: `${totals.onlineGateways} conexiones activas, ${totals.offlineGateways} con revision y ${totals.sites} sitios visibles.`,
+      decision: continuityHasRisk ? 'Cerrar continuidad antes de ampliar alcance.' : 'Mantener rutina de revision por sitio.',
+      href: '#sitios',
+      tone: continuityHasRisk ? 'warning' : 'ok',
+    },
+    {
+      label: 'Atencion',
+      value: alerts.length > 0 ? `${alerts.length} avisos` : 'sin ruido critico',
+      effect: alerts.length > 0
+        ? 'La atencion del equipo se concentra en senales priorizadas, no en revisar todas las pantallas.'
+        : 'El cliente puede distinguir tranquilidad real de falta de informacion.',
+      proof: `${dailyPriorities.length} prioridades y ${actionRegister.length} acciones preparadas.`,
+      decision: alerts.length > 0 ? 'Atender avisos segun prioridad y responsable.' : 'Conservar bitacora limpia y revisable.',
+      href: '#acciones',
+      tone: alerts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Exposicion',
+      value: `${openIncidents.length} abiertos`,
+      effect: openIncidents.length > 0
+        ? 'Los incidentes abiertos todavia pueden impactar continuidad, experiencia o administracion del sitio.'
+        : 'No hay incidentes abiertos que arrastren decisiones pendientes en esta lectura.',
+      proof: `${report.resolvedThisMonth}/${report.incidentsThisMonth} cierres del mes y ${report.overdueConfirmations} confirmaciones vencidas.`,
+      decision: openIncidents.length > 0 ? 'Asignar cierre, prueba y proximo paso visible.' : 'Usar cierres del mes para aprendizaje operativo.',
+      href: '#decisiones',
+      tone: openIncidents.length > 0 || report.overdueConfirmations > 0 ? 'critical' : 'ok',
+    },
+    {
+      label: 'Confianza',
+      value: `${traceabilityLedger.length} pruebas`,
+      effect: 'La confianza mejora cuando cada decision puede explicarse con evidencia, contexto y salida esperada.',
+      proof: traceabilityLedger[0]?.decisionLink || trustCenter[1]?.proof || 'La historia queda disponible para revisar.',
+      decision: traceabilityLedger.length > 0 ? 'Usar evidencia en la proxima revision ejecutiva.' : 'Completar evidencia antes de cerrar eventos relevantes.',
+      href: '#evidencia',
+      tone: traceabilityLedger.length > 0 ? 'ok' : 'warning',
+    },
+  ] as const
   const worldClassCriteria = [
     {
       label: 'Visibilidad unificada',
@@ -1488,6 +1532,51 @@ export default async function ClientAppPage() {
               <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.next}</p>
             </a>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(77,163,217,0.18),transparent_30%),radial-gradient(circle_at_90%_8%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-5 md:p-7">
+        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+          <div className="rounded-[26px] border border-white/10 bg-[#071524]/52 p-5 md:p-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Impacto ejecutivo del servicio</p>
+            <h2 className="mt-3 text-3xl font-light leading-tight text-white">
+              La seguridad importa cuando protege continuidad, atencion y confianza.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/60">
+              Esta lectura traduce eventos, avisos y evidencia en impacto operativo. Sirve para que gerencia entienda
+              que se gana, que podria deteriorarse y que decision evita improvisacion.
+            </p>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">Criterio</p>
+              <p className="mt-2 text-sm leading-6 text-white/68">
+                No se inventan ahorros: se muestran riesgos, pruebas y decisiones respaldadas por la operacion visible.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {executiveImpact.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                    <h3 className="mt-2 text-2xl font-light leading-snug text-white">{item.value}</h3>
+                  </div>
+                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+                </div>
+                <p className="mt-4 text-sm leading-6 text-white/70">{item.effect}</p>
+                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Evidencia de impacto</p>
+                  <p className="mt-2 text-xs leading-5 text-white/62">{item.proof}</p>
+                </div>
+                <p className="mt-auto pt-4 text-sm leading-6 text-white/76">{item.decision}</p>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
