@@ -1309,6 +1309,40 @@ export default async function ClientAppPage() {
       tone: traceabilityLedger[0]?.tone || 'ok',
     },
   ] as const
+  const executiveClosure = [
+    {
+      label: 'Veredicto',
+      value: boardReport.verdict,
+      detail: boardReport.outcome,
+      proof: boardReport.periodLabel,
+      href: '#decisiones',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Decision',
+      value: decisionRoom.decisionNow,
+      detail: decisionRoom.reason,
+      proof: decisionRoom.owner,
+      href: '#decisiones',
+      tone: decisionRoom.tone,
+    },
+    {
+      label: 'Responsable',
+      value: actionRegister[0]?.owner || decisionRoom.owner,
+      detail: actionRegister[0]?.nextStep || meetingPack.close,
+      proof: actionRegister[0]?.successCriteria || 'Cierre con responsable, criterio y evidencia visible.',
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || decisionRoom.tone,
+    },
+    {
+      label: 'Prueba',
+      value: traceabilityLedger[0]?.title || `${traceabilityLedger.length} registros`,
+      detail: traceabilityLedger[0]?.decisionLink || decisionRoom.evidence,
+      proof: traceabilityLedger[0]?.siteLabel || meetingPack.evidence,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || 'ok',
+    },
+  ] as const
 
   return (
     <div className="space-y-8">
@@ -1427,6 +1461,40 @@ export default async function ClientAppPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className={`rounded-[28px] border p-5 md:p-6 ${getScoreTone(boardReport.tone)}`}>
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] opacity-70">Cierre ejecutivo cliente</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Lo minimo que gerencia necesita para actuar sin otra reunion</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              Una lectura temprana con veredicto, decision, responsable y prueba. Si el cliente solo mira esta parte,
+              debe poder entender el estado y saber que corresponde hacer.
+            </p>
+          </div>
+          <Badge className={getScoreTone(boardReport.tone)}>{meetingPack.title}</Badge>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {executiveClosure.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[22px] border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-lg font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/48">{item.proof}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
