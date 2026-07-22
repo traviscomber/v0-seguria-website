@@ -38,6 +38,7 @@ const requiredHomeTerms = [
 ]
 
 const requiredDetailTerms = [
+  'Cierre ejecutivo del sitio',
   'Modelo operativo del sitio',
   'Control diario del sitio',
   'Tablero de servicio',

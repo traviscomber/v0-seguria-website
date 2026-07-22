@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import {
+  ArrowRight,
   ArrowLeft,
   Camera,
   CheckCircle2,
@@ -294,6 +295,40 @@ export default async function PropertyPage({
       tone: traceabilityLedger[0]?.tone || actionRegister[0]?.tone || 'ok',
     },
   ] as const
+  const siteExecutiveClosure = [
+    {
+      label: 'Estado',
+      value: siteHealth?.status || liveOperation.title,
+      detail: liveOperation.headline,
+      proof: operationalScore.summary,
+      href: '#salud',
+      tone: siteHealth?.tone || liveOperation.tone,
+    },
+    {
+      label: 'Decision',
+      value: boardReport.decision,
+      detail: boardReport.risk,
+      proof: boardReport.proofPoints[0] || meetingPack.evidence,
+      href: '#acciones',
+      tone: boardReport.tone,
+    },
+    {
+      label: 'Responsable',
+      value: actionRegister[0]?.owner || governanceRituals[0]?.owner || 'Operacion',
+      detail: actionRegister[0]?.nextStep || recommendedAction,
+      proof: actionRegister[0]?.successCriteria || governanceRituals[0]?.output || 'Cierre con responsable y criterio visible.',
+      href: '#acciones',
+      tone: actionRegister[0]?.tone || governanceRituals[0]?.tone || liveOperation.tone,
+    },
+    {
+      label: 'Prueba',
+      value: traceabilityLedger[0]?.title || `${traceabilityLedger.length} registros`,
+      detail: traceabilityLedger[0]?.decisionLink || evidenceGallery[0]?.action || 'Evidencia disponible para explicar la lectura del sitio.',
+      proof: traceabilityLedger[0]?.siteLabel || `${evidenceGallery.length} pruebas recientes.`,
+      href: '#evidencia',
+      tone: traceabilityLedger[0]?.tone || evidenceGallery[0]?.tone || 'ok',
+    },
+  ] as const
   const sectionIndex = [
     {
       href: '#operacion-viva',
@@ -432,6 +467,42 @@ export default async function PropertyPage({
             <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
           </div>
         ))}
+      </section>
+
+      <section className={`rounded-[30px] border p-6 md:p-8 ${getScoreTone(siteHealth?.tone || liveOperation.tone)}`}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Cierre ejecutivo del sitio</p>
+            <h2 className="mt-2 text-2xl font-light text-white">La lectura corta para decidir sobre {site.label}</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
+              Estado, decision, responsable y prueba quedan juntos para que el sitio no dependa de explicaciones
+              separadas. Si hay que actuar, esta vista muestra por donde partir.
+            </p>
+          </div>
+          <Badge className={getScoreTone(siteHealth?.tone || liveOperation.tone)}>
+            {formatDate(site.lastUpdatedAt)}
+          </Badge>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {siteExecutiveClosure.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
+                  <h3 className="mt-2 text-xl font-light leading-snug text-white">{item.value}</h3>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/68">{item.detail}</p>
+              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.proof}</p>
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(157,210,242,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.024))] p-6 md:p-8">
