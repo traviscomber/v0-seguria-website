@@ -17,25 +17,43 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     setError(null)
 
     try {
+      console.log('[v0] Login attempt:', { email, hasPassword: !!password })
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const result = await response.json().catch(() => null)
+      
+      console.log('[v0] Login response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.log('[v0] Login error response:', errorText)
+        throw new Error(`Error ${response.status}: No pudimos validar tu acceso.`)
+      }
+      
+      const result = await response.json()
+      console.log('[v0] Login result:', { success: result.success, hasUser: !!result.data?.user })
 
-      if (!response.ok || !result?.success) {
+      if (!result?.success) {
         throw new Error(result?.error || 'No fue posible iniciar sesion.')
       }
 
       const role = result.data?.user?.role
+      console.log('[v0] User role:', role)
+      
       if (role === 'client') {
+        console.log('[v0] Redirecting to app')
         router.replace(nextPath.startsWith('/app') ? nextPath : '/app')
       } else {
+        console.log('[v0] Redirecting to admin')
         router.replace('/admin')
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'No fue posible iniciar sesion.')
+      const errorMsg = submitError instanceof Error ? submitError.message : 'No fue posible iniciar sesion.'
+      console.log('[v0] Login error:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
