@@ -1,9 +1,9 @@
-import { TrendingUp, AlertOff, Clock, BarChart3 } from 'lucide-react'
+import { TrendingUp, AlertCircle, Clock, BarChart3 } from 'lucide-react'
 
 export function ImpactMetrics() {
   const metrics = [
     {
-      icon: AlertOff,
+      icon: AlertCircle,
       stat: '85%',
       label: 'Reducción de falsas alarmas',
       description: 'Con IA que entiende lo normal vs lo que importa'
