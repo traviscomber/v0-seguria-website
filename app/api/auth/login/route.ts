@@ -34,6 +34,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'No pudimos validar tu acceso.' }, { status: 401 })
     }
 
+    // Ensure user profile exists in users table
+    try {
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // User profile doesn't exist, create it
+        await supabase.from('users').insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: data.user.user_metadata?.full_name || 'User',
+          role: 'cliente'
+        }).throwOnError()
+      }
+    } catch (profileErr) {
+      // Profile creation might fail if table doesn't exist yet, but login should still work
+      console.log('Profile creation note:', profileErr instanceof Error ? profileErr.message : 'unknown error')
+    }
+
     const authUser = mapSupabaseUserToAuthUser(data.user)
     return NextResponse.json({
       success: true,
