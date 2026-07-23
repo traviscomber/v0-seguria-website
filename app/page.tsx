@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
+import { ImpactMetrics } from '@/components/impact-metrics'
+import { ClientStories } from '@/components/client-stories'
 import {
   ArrowRight,
   BellRing,
@@ -120,12 +122,12 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link href="/soluciones" className="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
-                Ver sistema
+              <Link href="/blog" className="btn-primary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
+                Ver cómo funciona
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/contacto" className="btn-secondary inline-flex items-center justify-center gap-2 px-8 py-4 text-[15px]">
-                Disenar mi operacion
+                Hablar con nosotros
               </Link>
             </div>
           </div>
@@ -293,6 +295,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <ImpactMetrics />
+      <ClientStories />
 
       <Footer />
     </main>

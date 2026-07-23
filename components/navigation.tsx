@@ -23,6 +23,9 @@ export function Navigation() {
             <Link href="/soluciones" className="text-sm text-white/70 transition-colors hover:text-white">
               Soluciones
             </Link>
+            <Link href="/blog" className="text-sm text-white/70 transition-colors hover:text-white">
+              Blog
+            </Link>
             <Link href="/app" className="text-sm text-white/70 transition-colors hover:text-white">
               Portal
             </Link>
@@ -44,6 +47,13 @@ export function Navigation() {
               onClick={() => setIsOpen(false)}
             >
               Soluciones
+            </Link>
+            <Link
+              href="/blog"
+              className="block px-4 py-2 text-sm text-white/70 transition-colors hover:text-white"
+              onClick={() => setIsOpen(false)}
+            >
+              Blog
             </Link>
             <Link
               href="/app"
