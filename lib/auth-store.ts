@@ -65,22 +65,35 @@ export async function getCurrentAuthSession() {
 
   if (userError || !userData.user) return null
 
-  const { data: memberships } = await supabase
-    .from('memberships')
-    .select('organization_id')
-    .eq('user_id', userData.user.id)
-
-  const organizationIds = Array.from(
-    new Set((memberships || []).map((membership) => membership.organization_id as string))
-  )
-
+  // Try to get operations from user_operations table
+  let organizationIds: string[] = []
   let propertyIds: string[] = []
-  if (organizationIds.length > 0) {
-    const { data: properties } = await supabase
-      .from('properties')
-      .select('id')
-      .in('organization_id', organizationIds)
-    propertyIds = (properties || []).map((property) => property.id as string)
+
+  try {
+    const { data: userOps } = await supabase
+      .from('user_operations')
+      .select('operation_id')
+      .eq('user_id', userData.user.id)
+
+    organizationIds = Array.from(
+      new Set((userOps || []).map((op) => op.operation_id as string))
+    )
+
+    // Try to get properties from operations/properties relationship
+    if (organizationIds.length > 0) {
+      try {
+        const { data: properties } = await supabase
+          .from('properties')
+          .select('id')
+          .in('operation_id', organizationIds)
+        propertyIds = (properties || []).map((property) => property.id as string)
+      } catch {
+        // Properties table might not exist, continue with empty
+      }
+    }
+  } catch {
+    // user_operations table might not exist, continue with empty ids
+    console.log('[v0] Auth: user_operations table not available, continuing with empty scope')
   }
 
   const user = mapSupabaseUserToAuthUser(userData.user, { organizationIds, propertyIds })
