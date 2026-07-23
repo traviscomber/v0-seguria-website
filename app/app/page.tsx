@@ -304,7 +304,7 @@ export default async function ClientAppPage() {
   const activity = getPortalActivityFeed(sites)
   const primarySite = sites[0]
   const openIncidents = sites
-    .flatMap((site) => site.incidents.filter(isOpenPortalIncident).map((incident) => ({ site, incident })))
+    .flatMap((site) => site.incidents.filter(isOpenPortalIncident).map((incident: any) => ({ site, incident })))
     .sort((left, right) => right.incident.createdAt.getTime() - left.incident.createdAt.getTime())
   const sensorRisk = sites.reduce(
     (current, site) => {
