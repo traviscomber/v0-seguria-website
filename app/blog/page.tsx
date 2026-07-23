@@ -22,10 +22,42 @@ const posts = [
   },
   {
     slug: 'tuya-vs-home-assistant',
-    title: 'Tuya vs Home Assistant: Cuál elegir para seguridad rural',
-    excerpt: 'Comparativa honesta entre los dos ecosistemas smart home más populares en Chile. Ventajas, limitaciones y cuándo cada uno tiene sentido.',
+    title: 'Tuya vs Home Assistant: Cuál elegir para seguridad',
+    excerpt: 'Comparativa honesta entre los dos ecosistemas smart home. Ventajas, limitaciones y cuándo cada uno tiene sentido para tu operación.',
     date: '18 de julio, 2026',
     readTime: '10 min',
+    category: 'Integración'
+  },
+  {
+    slug: 'seguridad-condominios',
+    title: 'Seguridad en condominios: Cómo reducir robos en 60%',
+    excerpt: 'Caso real: Condominio La Paz implementó SegurIA. Resultado: 0 robos en 18 meses y satisfacción de vecinos +45%.',
+    date: '16 de julio, 2026',
+    readTime: '6 min',
+    category: 'Caso Real'
+  },
+  {
+    slug: 'ai-reconocimiento-objetos',
+    title: 'IA y reconocimiento de objetos: Más allá de cámaras',
+    excerpt: 'Cómo la IA diferencia entre un perro y un intruso. Entre caída normal y emergencia. La ciencia detrás de alertas inteligentes.',
+    date: '14 de julio, 2026',
+    readTime: '7 min',
+    category: 'Educación'
+  },
+  {
+    slug: 'seguridad-hotelera',
+    title: 'Seguridad en hoteles: Huéspedes protegidos, staff tranquilo',
+    excerpt: 'La mejor seguridad hotelera es la que nadie ve. Cómo implementar protección invisible que los huéspedes SIENTEN.',
+    date: '12 de julio, 2026',
+    readTime: '7 min',
+    category: 'Hotelería'
+  },
+  {
+    slug: 'integracion-sistemas-existentes',
+    title: 'No reemplaces, evoluciona: Integración de sistemas existentes',
+    excerpt: 'Por qué SegurIA NO te obliga a cambiar equipos. Cómo hace inteligentes lo que ya tienes invertido.',
+    date: '10 de julio, 2026',
+    readTime: '6 min',
     category: 'Integración'
   },
 ]
