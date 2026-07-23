@@ -18,7 +18,7 @@ export interface AuthUser {
 
 export interface AuthSession {
   userId: string
-  expiresAt: string
+  expiresAt: string | null
   createdAt: string
 }
 
@@ -58,13 +58,17 @@ export async function getCurrentAuthSession() {
   const supabase = await createSupabaseServerClient()
   if (!supabase) return null
 
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data.user) return null
+  const [{ data: userData, error: userError }, { data: sessionData }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.auth.getSession(),
+  ])
+
+  if (userError || !userData.user) return null
 
   const { data: memberships } = await supabase
     .from('memberships')
     .select('organization_id')
-    .eq('user_id', data.user.id)
+    .eq('user_id', userData.user.id)
 
   const organizationIds = Array.from(
     new Set((memberships || []).map((membership) => membership.organization_id as string))
@@ -79,13 +83,17 @@ export async function getCurrentAuthSession() {
     propertyIds = (properties || []).map((property) => property.id as string)
   }
 
-  const user = mapSupabaseUserToAuthUser(data.user, { organizationIds, propertyIds })
+  const user = mapSupabaseUserToAuthUser(userData.user, { organizationIds, propertyIds })
+  const expiresAt = sessionData.session?.expires_at
+    ? new Date(sessionData.session.expires_at * 1000).toISOString()
+    : null
+
   return {
     user,
     session: {
       userId: user.id,
-      expiresAt: data.user.updated_at || data.user.created_at,
-      createdAt: data.user.created_at,
+      expiresAt,
+      createdAt: userData.user.created_at,
     },
   }
 }
