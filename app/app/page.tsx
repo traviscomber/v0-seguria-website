@@ -266,7 +266,14 @@ export default async function ClientAppPage() {
     redirect('/login?next=/app')
   }
 
-  const sites = await getAccessiblePortalSites(session.user)
+  // For now, show a welcome page if no sites data available
+  let sites: any[] = []
+  try {
+    sites = await getAccessiblePortalSites(session.user)
+  } catch (error) {
+    console.log('[v0] Could not fetch portal sites, showing welcome page')
+  }
+
   const totals = getPortalDashboardTotals(sites)
   const report = getPortalPortfolioReport(sites)
   const operationalScore = getPortalOperationalScore(sites)
