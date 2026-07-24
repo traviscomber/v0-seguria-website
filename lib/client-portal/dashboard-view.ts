@@ -56,9 +56,11 @@ export async function buildClientDashboardView(user: PortalUser): Promise<Client
     sites = []
   }
 
-  const totals = getPortalDashboardTotals(sites.map(toDashboardSiteSummary))
-  const alerts = getPortalAlertDevices(sites) as PortalSiteDeviceItem[]
-  const activity = getPortalActivityFeed(sites).slice(0, 8) as PortalActivityItem[]
+  const dashboardSites = sites.map(toDashboardSiteSummary)
+  const totals = getPortalDashboardTotals(dashboardSites)
+  const alerts = getPortalAlertDevices(dashboardSites) as PortalSiteDeviceItem[]
+  const activity = getPortalActivityFeed(dashboardSites).slice(0, 8) as PortalActivityItem[]
+
   const incidents = sites
     .flatMap((site) =>
       (site.incidents || [])
