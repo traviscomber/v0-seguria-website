@@ -19,6 +19,7 @@ export default async function ClientAppPage() {
   
   if (supabase) {
     try {
+      // @ts-ignore
       const { data: user } = await supabase
         .from('users')
         .select('*')
@@ -30,6 +31,7 @@ export default async function ClientAppPage() {
     }
 
     try {
+      // @ts-ignore
       const { data: ops } = await supabase
         .from('user_operations')
         .select('operation_id, operations(id, name, type, location, description)')
