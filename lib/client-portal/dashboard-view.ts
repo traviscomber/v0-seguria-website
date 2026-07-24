@@ -29,6 +29,16 @@ function isOpenIncident(incident: NonNullable<PortalSite['incidents']>[number]) 
   return status !== 'closed' && status !== 'resolved' && status !== 'resuelto'
 }
 
+function toDashboardSiteSummary(site: PortalSite) {
+  return {
+    ...site,
+    organizationId: site.organizationName || site.propertyId,
+    projectId: site.propertyId,
+    imageCredit: undefined,
+    imageCreditUrl: undefined,
+  }
+}
+
 export async function buildClientDashboardView(user: PortalUser): Promise<ClientDashboardView> {
   let sites: PortalSite[] = []
 
@@ -38,7 +48,7 @@ export async function buildClientDashboardView(user: PortalUser): Promise<Client
     sites = []
   }
 
-  const totals = getPortalDashboardTotals(sites)
+  const totals = getPortalDashboardTotals(sites.map(toDashboardSiteSummary))
   const alerts = getPortalAlertDevices(sites) as PortalSiteDeviceItem[]
   const activity = getPortalActivityFeed(sites).slice(0, 8) as PortalActivityItem[]
   const incidents = sites
