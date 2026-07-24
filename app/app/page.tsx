@@ -13,20 +13,28 @@ export default async function ClientAppPage() {
 
   // Get user and operation info
   const supabase = await createSupabaseServerClient()
-  const { data: userProfile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single()
-    .catch(() => ({ data: null }))
+  
+  let userProfile = null
+  let operations = []
+  
+  if (supabase) {
+    const userRes = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
+      .catch(() => ({ data: null }))
+    userProfile = userRes.data
 
-  const { data: operations } = await supabase
-    .from('user_operations')
-    .select('operation_id, operations(id, name, type, location, description)')
-    .eq('user_id', session.user.id)
-    .catch(() => ({ data: [] }))
+    const opsRes = await supabase
+      .from('user_operations')
+      .select('operation_id, operations(id, name, type, location, description)')
+      .eq('user_id', session.user.id)
+      .catch(() => ({ data: [] }))
+    operations = opsRes.data || []
+  }
 
-  const operation = operations?.[0]?.operations
+  const operation = (operations as any)?.[0]?.operations
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
