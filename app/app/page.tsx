@@ -6,7 +6,8 @@ import {
   DashboardHero,
   DashboardProperties,
   DashboardStats,
-} from '@/components/portal/dashboard-sections'
+  DashboardSupport,
+} from '@/components/portal/dashboard'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { buildClientDashboardView } from '@/lib/client-portal/dashboard-view'
 
@@ -35,7 +36,10 @@ export default async function ClientAppPage() {
       <DashboardProperties sites={model.sites} />
       <DashboardAttention incidents={model.incidents} alerts={model.alerts} />
       <DashboardCameras cameras={model.cameras} />
-      <DashboardActivity activity={model.activity} />
+      <section id="actividad" className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <DashboardActivity activity={model.activity} />
+        <DashboardSupport />
+      </section>
     </div>
   )
 }
