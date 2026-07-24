@@ -3,7 +3,6 @@ import {
   getPortalActivityFeed,
   getPortalAlertDevices,
   getPortalDashboardTotals,
-  isOpenPortalIncident,
 } from '@/lib/client-portal'
 import type {
   PortalActivityItem,
@@ -25,6 +24,11 @@ export interface ClientDashboardView {
   overallStatus: 'Atención requerida' | 'Todo operativo'
 }
 
+function isOpenIncident(incident: NonNullable<PortalSite['incidents']>[number]) {
+  const status = String(incident.status || '').toLowerCase()
+  return status !== 'closed' && status !== 'resolved' && status !== 'resuelto'
+}
+
 export async function buildClientDashboardView(user: PortalUser): Promise<ClientDashboardView> {
   let sites: PortalSite[] = []
 
@@ -40,7 +44,7 @@ export async function buildClientDashboardView(user: PortalUser): Promise<Client
   const incidents = sites
     .flatMap((site) =>
       (site.incidents || [])
-        .filter(isOpenPortalIncident)
+        .filter(isOpenIncident)
         .map((incident) => ({ site, incident }))
     )
     .sort((left, right) => {
