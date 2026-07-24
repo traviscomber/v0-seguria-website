@@ -5,12 +5,16 @@ import {
   PortalSectionHeading,
   PortalStatusBadge,
 } from '@/components/portal/portal-ui'
-import { isOpenPortalIncident } from '@/lib/client-portal'
 import { getPortalTone } from '@/lib/client-portal/presentation'
 import type { ClientDashboardView } from '@/lib/client-portal/dashboard-view'
 
 interface DashboardPropertiesProps {
   sites: ClientDashboardView['sites']
+}
+
+function isOpenIncident(incident: NonNullable<ClientDashboardView['sites'][number]['incidents']>[number]) {
+  const status = String(incident.status || '').toLowerCase()
+  return status !== 'closed' && status !== 'resolved' && status !== 'resuelto'
 }
 
 export function DashboardProperties({ sites }: DashboardPropertiesProps) {
@@ -29,7 +33,7 @@ export function DashboardProperties({ sites }: DashboardPropertiesProps) {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {sites.map((site) => {
-            const openSiteIncidents = (site.incidents || []).filter(isOpenPortalIncident)
+            const openSiteIncidents = (site.incidents || []).filter(isOpenIncident)
             const status = site.statusLabel || (openSiteIncidents.length > 0 ? 'Atención requerida' : 'Operativo')
             const siteLabel = site.label || site.name || 'Propiedad'
 
@@ -41,11 +45,7 @@ export function DashboardProperties({ sites }: DashboardPropertiesProps) {
               >
                 <div className="relative h-44 overflow-hidden bg-[#071524]">
                   {site.imageUrl ? (
-                    <img
-                      src={site.imageUrl}
-                      alt={site.imageAlt || siteLabel}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                    />
+                    <img src={site.imageUrl} alt={site.imageAlt || siteLabel} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-white/25">
                       <Building2 className="h-12 w-12" strokeWidth={1.3} />
