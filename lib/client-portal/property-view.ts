@@ -2,7 +2,6 @@ import {
   getPortalActivityFeed,
   getPortalEvidenceGallery,
   getPortalSiteForUser,
-  isOpenPortalIncident,
 } from '@/lib/client-portal'
 import type {
   PortalActivityItem,
@@ -26,6 +25,11 @@ export interface ClientPropertyView {
   overallStatus: 'Atención requerida' | 'Operativo'
 }
 
+function isOpenIncident(incident: PortalIncident) {
+  const status = String(incident.status || '').toLowerCase()
+  return status !== 'closed' && status !== 'resolved' && status !== 'resuelto'
+}
+
 export async function buildClientPropertyView(
   user: PortalUser,
   propertyId: string
@@ -36,7 +40,7 @@ export async function buildClientPropertyView(
 
   const devices = (site.devices || []) as PortalDevice[]
   const incidents = ((site.incidents || []) as PortalIncident[])
-    .filter(isOpenPortalIncident)
+    .filter(isOpenIncident)
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
 
   const cameras = devices.filter(
