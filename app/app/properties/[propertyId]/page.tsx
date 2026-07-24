@@ -26,7 +26,9 @@ export default async function PropertyPage({
 
   const model = await buildClientPropertyView(session.user, propertyId)
 
-  if (!model) notFound()
+  if (!model) {
+    notFound()
+  }
 
   return (
     <div className="space-y-8 pb-12">
