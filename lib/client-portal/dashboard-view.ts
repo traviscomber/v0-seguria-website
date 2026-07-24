@@ -13,6 +13,8 @@ import type {
 
 type PortalUser = Parameters<typeof getAccessiblePortalSites>[0]
 
+type DashboardSiteSummary = Parameters<typeof getPortalDashboardTotals>[0][number]
+
 export interface ClientDashboardView {
   sites: PortalSite[]
   totals: ReturnType<typeof getPortalDashboardTotals>
@@ -29,14 +31,14 @@ function isOpenIncident(incident: NonNullable<PortalSite['incidents']>[number]) 
   return status !== 'closed' && status !== 'resolved' && status !== 'resuelto'
 }
 
-function toDashboardSiteSummary(site: PortalSite) {
+function toDashboardSiteSummary(site: PortalSite): DashboardSiteSummary {
   return {
     ...site,
     organizationId: site.organizationName || site.propertyId,
     projectId: site.propertyId,
     imageCredit: undefined,
     imageCreditUrl: undefined,
-  }
+  } as DashboardSiteSummary
 }
 
 export async function buildClientDashboardView(user: PortalUser): Promise<ClientDashboardView> {
