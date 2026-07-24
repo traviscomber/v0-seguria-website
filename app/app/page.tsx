@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BellRing,
   Building2,
-  Camera,
   CircleAlert,
   Clock3,
   FileText,
@@ -24,26 +23,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getCurrentAuthSession } from '@/lib/auth-store'
-import {
-  getAccessiblePortalSites,
-  getPortalActivityFeed,
-  getPortalAlertDevices,
-  getPortalDashboardTotals,
-  isOpenPortalIncident,
-} from '@/lib/client-portal'
+import { isOpenPortalIncident } from '@/lib/client-portal'
+import { buildClientDashboardView } from '@/lib/client-portal/dashboard-view'
 import {
   formatPortalDate,
   getPortalDeviceLabel,
   getPortalTone,
 } from '@/lib/client-portal/presentation'
-import type {
-  PortalActivityItem,
-  PortalDevice,
-  PortalIncident,
-  PortalSite,
-  PortalSiteDeviceItem,
-  PortalSiteIncidentItem,
-} from '@/types/client-portal'
+import type { PortalDevice } from '@/types/client-portal'
 
 export default async function ClientAppPage() {
   const session = await getCurrentAuthSession()
@@ -51,39 +38,16 @@ export default async function ClientAppPage() {
     redirect('/login?next=/app')
   }
 
-  let sites: PortalSite[] = []
-  try {
-    sites = (await getAccessiblePortalSites(session.user)) as PortalSite[]
-  } catch {
-    sites = []
-  }
-
-  const totals = getPortalDashboardTotals(sites)
-  const alerts = getPortalAlertDevices(sites) as PortalSiteDeviceItem[]
-  const activity = getPortalActivityFeed(sites).slice(0, 8) as PortalActivityItem[]
-  const incidents = sites
-    .flatMap((site) =>
-      (site.incidents || [])
-        .filter(isOpenPortalIncident)
-        .map((incident) => ({ site, incident }))
-    )
-    .sort((left, right) => {
-      const leftDate = new Date(left.incident.createdAt || 0).getTime()
-      const rightDate = new Date(right.incident.createdAt || 0).getTime()
-      return rightDate - leftDate
-    })
-    .slice(0, 6) as PortalSiteIncidentItem[]
-
-  const cameras = sites
-    .flatMap((site) =>
-      (site.devices || [])
-        .filter((device) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica')
-        .map((device) => ({ site, device }))
-    )
-    .slice(0, 4) as PortalSiteDeviceItem[]
-
-  const attentionRequired = alerts.length + incidents.length
-  const overallStatus = attentionRequired > 0 ? 'Atención requerida' : 'Todo operativo'
+  const {
+    sites,
+    totals,
+    alerts,
+    activity,
+    incidents,
+    cameras,
+    attentionRequired,
+    overallStatus,
+  } = await buildClientDashboardView(session.user)
 
   return (
     <div className="space-y-8 pb-12">
