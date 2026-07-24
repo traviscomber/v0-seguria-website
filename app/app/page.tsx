@@ -18,20 +18,26 @@ export default async function ClientAppPage() {
   let operations = []
   
   if (supabase) {
-    const userRes = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single()
-      .catch(() => ({ data: null }))
-    userProfile = userRes.data
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+      userProfile = user
+    } catch {
+      userProfile = null
+    }
 
-    const opsRes = await supabase
-      .from('user_operations')
-      .select('operation_id, operations(id, name, type, location, description)')
-      .eq('user_id', session.user.id)
-      .catch(() => ({ data: [] }))
-    operations = opsRes.data || []
+    try {
+      const { data: ops } = await supabase
+        .from('user_operations')
+        .select('operation_id, operations(id, name, type, location, description)')
+        .eq('user_id', session.user.id)
+      operations = ops || []
+    } catch {
+      operations = []
+    }
   }
 
   const operation = (operations as any)?.[0]?.operations
