@@ -12,7 +12,6 @@ import type {
 } from '@/types/client-portal'
 
 type PortalUser = Parameters<typeof getAccessiblePortalSites>[0]
-
 type DashboardSiteSummary = Parameters<typeof getPortalDashboardTotals>[0][number]
 
 export interface ClientDashboardView {
@@ -36,8 +35,15 @@ function toDashboardSiteSummary(site: PortalSite): DashboardSiteSummary {
     ...site,
     organizationId: site.organizationName || site.propertyId,
     projectId: site.propertyId,
-    imageCredit: undefined,
-    imageCreditUrl: undefined,
+    imageCredit: '',
+    imageCreditUrl: '',
+    imageIsRepresentative: Boolean(site.imageUrl),
+    accessCount: 0,
+    documentCount: 0,
+    alertCount: site.incidents?.length || 0,
+    cameraCount: site.cameraCount || 0,
+    sensorCount: site.sensorCount || 0,
+    deviceCount: site.deviceCount || site.devices?.length || 0,
   } as DashboardSiteSummary
 }
 
