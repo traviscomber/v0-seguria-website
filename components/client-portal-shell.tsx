@@ -13,7 +13,7 @@ import {
   Siren,
   UserRound,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,7 @@ const navItems = [
   { href: '/app#incidentes', label: 'Incidentes', icon: Siren },
   { href: '/app#camaras', label: 'Cámaras', icon: Camera },
   { href: '/app#actividad', label: 'Actividad', icon: BellRing },
-  { href: '/contacto', label: 'Soporte', icon: Headphones },
+  { href: '/es/contacto', label: 'Soporte', icon: Headphones },
 ]
 
 const quickLinks = [
@@ -45,7 +45,7 @@ const quickLinks = [
   {
     label: 'Solicitar ayuda',
     value: 'Contacto directo con SegurIA',
-    href: '/contacto',
+    href: '/es/contacto',
   },
 ]
 
@@ -62,6 +62,14 @@ export function ClientPortalShell({
   const router = useRouter()
   const [loggingOut, setLoggingOut] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [activeHash, setActiveHash] = useState('')
+
+  useEffect(() => {
+    const syncHash = () => setActiveHash(window.location.hash)
+    syncHash()
+    window.addEventListener('hashchange', syncHash)
+    return () => window.removeEventListener('hashchange', syncHash)
+  }, [pathname])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -74,9 +82,14 @@ export function ClientPortalShell({
   }
 
   const isNavActive = (href: string) => {
-    if (href === '/app') return pathname === '/app'
-    if (href === '/app#propiedades') return pathname.startsWith('/app/properties')
-    return false
+    if (href === '/app') return pathname === '/app' && !activeHash
+    if (href === '/app#propiedades') {
+      return pathname.startsWith('/app/properties') || (pathname === '/app' && activeHash === '#propiedades')
+    }
+    if (href.startsWith('/app#')) {
+      return pathname === '/app' && activeHash === href.slice('/app'.length)
+    }
+    return pathname === href
   }
 
   return (
@@ -101,6 +114,7 @@ export function ClientPortalShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors',
                     active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
@@ -144,17 +158,24 @@ export function ClientPortalShell({
         {mobileOpen && (
           <div className="border-t border-white/10 px-4 py-4 lg:hidden">
             <div className="mx-auto flex max-w-7xl flex-col gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const active = isNavActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
+                      active ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                )
+              })}
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
