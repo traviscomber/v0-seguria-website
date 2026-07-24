@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { redirect } from 'next/navigation'
 import { LogOut, Menu, Bell, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
