@@ -9,6 +9,11 @@ export type PortalSiteSummary = PortalSite & {
   accessCount: number
   documentCount: number
   alertCount: number
+  documents: unknown[]
+  events: unknown[]
+  spaces: unknown[]
+  gatewayHealth: string
+  report: unknown | null
 }
 
 export function mapPortalSiteToSummary(site: PortalSite): PortalSiteSummary {
@@ -22,6 +27,11 @@ export function mapPortalSiteToSummary(site: PortalSite): PortalSiteSummary {
     accessCount: 0,
     documentCount: 0,
     alertCount: site.incidents?.length || 0,
+    documents: [],
+    events: [],
+    spaces: [],
+    gatewayHealth: 'unknown',
+    report: null,
   }
 }
 
