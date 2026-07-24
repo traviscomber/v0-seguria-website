@@ -1,1 +1,8 @@
-// Property portal components will be exported here as they are extracted.
+export { PropertyActivity } from './activity'
+export { PropertyCameras } from './cameras'
+export { PropertyDevices } from './devices'
+export { PropertyEvidence } from './evidence'
+export { PropertyHeader } from './header'
+export { PropertyIncidents } from './incidents'
+export { PropertyStats } from './stats'
+export { PropertySupport } from './support'
