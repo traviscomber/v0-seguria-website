@@ -30,7 +30,19 @@ export async function POST(request: NextRequest) {
       password: parsed.data.password,
     })
 
+    console.log('[v0] Login attempt:', {
+      email: parsed.data.email,
+      error: error?.message,
+      hasUser: !!data.user,
+      hasSession: !!data.session,
+    })
+
     if (error || !data.user || !data.session) {
+      console.log('[v0] Login failed:', {
+        error: error?.message,
+        errorCode: error?.status,
+        user: data?.user?.email,
+      })
       return NextResponse.json({ success: false, error: 'No pudimos validar tu acceso.' }, { status: 401 })
     }
 
