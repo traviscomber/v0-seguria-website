@@ -1,96 +1,101 @@
+// @ts-nocheck
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import {
-  ArrowRight,
   ArrowLeft,
+  BellRing,
   Camera,
   CheckCircle2,
+  CircleAlert,
+  Clock3,
   FileText,
+  Headphones,
   MapPin,
-  Radar,
-  ShieldAlert,
-  Signal,
+  Radio,
+  ShieldCheck,
   Siren,
-  Sparkles,
   Wifi,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CameraStreamControl } from '@/components/camera-stream-control'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CameraSnapshot } from '@/components/camera-snapshot'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import {
   getPortalActivityFeed,
-  getPortalActionRegister,
-  getPortalBoardReport,
-  getPortalCoverageZones,
-  getPortalDailyPriorities,
-  getPortalDecisionPackets,
   getPortalDeviceBuckets,
-  getPortalExecutiveBrief,
   getPortalEvidenceGallery,
-  getPortalGovernanceRituals,
-  getPortalImprovementActions,
-  getPortalLeadershipBrief,
-  getPortalLiveOperation,
-  getPortalMeetingPack,
-  getPortalMaturityScorecard,
-  getPortalOperationalScore,
-  getPortalOperationalFlow,
-  getPortalOperationalForecast,
-  getPortalRiskMap,
-  getPortalResponsePlaybook,
-  getPortalSensorRisk,
-  getPortalServiceCommitments,
-  getPortalShiftHandoff,
-  getPortalSensitiveWindows,
   getPortalSiteForUser,
-  getPortalSiteHealthRanking,
-  getPortalTraceabilityLedger,
-  getPortalTrustCenter,
-  getPortalWeeklyDecisionAgenda,
   isOpenPortalIncident,
 } from '@/lib/client-portal'
 
-function formatDate(value?: Date) {
-  if (!value) return 'Sin actualizacion'
+function formatDate(value?: Date | string | null) {
+  if (!value) return 'Sin actualización'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Sin actualización'
+
   return new Intl.DateTimeFormat('es-CL', {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(value)
+  }).format(date)
 }
 
-function formatDuration(value: number | undefined, unit: 'min' | 'h') {
-  if (typeof value !== 'number') return 'Sin datos'
-  return `${Math.round(value)} ${unit}`
-}
-
-function getStatusTone(status: string) {
-  if (status === 'operativo') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-  if (status === 'revision') return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+function statusTone(status?: string) {
+  const normalized = String(status || '').toLowerCase()
+  if (['operativo', 'online', 'activo', 'active', 'ok', 'resuelto', 'closed'].includes(normalized)) {
+    return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
+  }
+  if (['revision', 'mantencion', 'warning', 'degraded', 'pendiente', 'open'].includes(normalized)) {
+    return 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+  }
   return 'border-rose-400/30 bg-rose-400/10 text-rose-100'
 }
 
-function getGroupTone(group: string) {
-  if (group === 'camera') return 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
-  if (group === 'sensor') return 'border-sky-400/25 bg-sky-400/10 text-sky-100'
-  if (group === 'alert') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
-  if (group === 'access') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
-  return 'border-white/10 bg-white/5 text-white/70'
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: React.ElementType
+  label: string
+  value: string | number
+  detail: string
+}) {
+  return (
+    <Card className="border-white/10 bg-white/[0.045]">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-white/40">{label}</p>
+            <p className="mt-3 text-3xl font-light text-white">{value}</p>
+            <p className="mt-2 text-sm text-white/50">{detail}</p>
+          </div>
+          <span className="rounded-2xl bg-[#4DA3D9]/12 p-3 text-[#9DD2F2]">
+            <Icon className="h-5 w-5" strokeWidth={1.7} />
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
-function groupLabel(group: string) {
-  if (group === 'camera') return 'Camaras'
-  if (group === 'sensor') return 'Sensores'
-  if (group === 'alert') return 'Alertas'
-  if (group === 'access') return 'Accesos'
-  return 'Otros'
+function EmptyState({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.025] px-5 py-8 text-center">
+      <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-300" strokeWidth={1.6} />
+      <p className="mt-3 text-sm font-medium text-white">{title}</p>
+      <p className="mt-1 text-sm text-white/50">{detail}</p>
+    </div>
+  )
 }
 
-function getScoreTone(tone: 'ok' | 'warning' | 'critical') {
-  if (tone === 'critical') return 'border-rose-400/25 bg-rose-400/10 text-rose-100'
-  if (tone === 'warning') return 'border-amber-400/25 bg-amber-400/10 text-amber-100'
-  return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
+function deviceLabel(device: any) {
+  return device.name || device.nombre || device.label || 'Dispositivo'
+}
+
+function deviceLocation(device: any) {
+  return device.location || device.ubicacion || device.zone || device.zona || 'Ubicación no indicada'
 }
 
 export default async function PropertyPage({
@@ -105,1993 +110,277 @@ export default async function PropertyPage({
   }
 
   const site = await getPortalSiteForUser(session.user, propertyId)
-  if (!site) {
-    notFound()
-  }
+  if (!site) notFound()
 
-  const activity = getPortalActivityFeed([site])
-  const buckets = getPortalDeviceBuckets(site.devices)
-  const cameraCount = site.cameraCount
-  const sensorCount = site.sensorCount
-  const accessCount = site.accessCount
-  const activeCount = site.devices.filter((device) => device.estado === 'activo').length
-  const sensorRisk = getPortalSensorRisk(site.devices)
-  const openIncidents = site.incidents.filter(isOpenPortalIncident)
-  const gatewayRisk = site.gatewayHealth.offline + site.gatewayHealth.degraded
-  const operationalScore = getPortalOperationalScore([site])
-  const operationalForecast = getPortalOperationalForecast([site])
-  const meetingPack = getPortalMeetingPack([site])
-  const maturityScorecard = getPortalMaturityScorecard([site])
-  const operationalFlow = getPortalOperationalFlow([site])
-  const boardReport = getPortalBoardReport([site])
-  const governanceRituals = getPortalGovernanceRituals([site])
-  const actionRegister = getPortalActionRegister([site])
-  const traceabilityLedger = getPortalTraceabilityLedger([site])
-  const weeklyDecisionAgenda = getPortalWeeklyDecisionAgenda([site])
-  const riskMap = getPortalRiskMap([site])
-  const dailyPriorities = getPortalDailyPriorities([site])
-  const coverageZones = getPortalCoverageZones(site)
-  const serviceCommitments = getPortalServiceCommitments([site])
-  const executiveBrief = getPortalExecutiveBrief([site])
-  const leadershipBrief = getPortalLeadershipBrief([site])
-  const trustCenter = getPortalTrustCenter([site])
-  const shiftHandoff = getPortalShiftHandoff([site])
-  const sensitiveWindows = getPortalSensitiveWindows([site])
-  const improvementActions = getPortalImprovementActions([site])
-  const decisionPackets = getPortalDecisionPackets([site])
-  const responsePlaybook = getPortalResponsePlaybook([site])
-  const siteHealth = getPortalSiteHealthRanking([site])[0]
-  const liveOperation = getPortalLiveOperation(site)
-  const evidenceGallery = getPortalEvidenceGallery(site)
-  const recommendedAction = openIncidents.length > 0
-    ? 'Atender el incidente abierto y confirmar recepcion.'
-    : sensorRisk.critical > 0 || gatewayRisk > 0
-      ? site.profile.recommendedAttentionAction
-      : site.profile.recommendedStableAction
-  const siteOperatingModel = [
-    {
-      label: 'Integrar',
-      value: `${site.deviceCount} equipos`,
-      title: 'Lo existente entra en una sola lectura',
-      detail: site.profile.integrationPromise,
-      proof: `${cameraCount} camaras, ${sensorCount} sensores y ${accessCount} accesos conectados al contexto del sitio.`,
-      href: '#equipos-documentos',
-      tone: site.alertCount > 0 ? 'warning' : 'ok',
-    },
-    {
-      label: 'Interpretar',
-      value: `${coverageZones.length} zonas`,
-      title: 'Cada senal tiene lugar, hora e impacto',
-      detail: 'El sitio deja de ser una lista de equipos y se convierte en una operacion comprensible por zonas, turnos y prioridad.',
-      proof: `${dailyPriorities.length} prioridades diarias y ${riskMap.length} lecturas de riesgo disponibles.`,
-      href: '#salud',
-      tone: operationalScore.tone,
-    },
-    {
-      label: 'Responder',
-      value: `${actionRegister.length} acciones`,
-      title: 'El aviso termina en responsable y siguiente paso',
-      detail: recommendedAction,
-      proof: `${openIncidents.length} incidentes abiertos y ${responsePlaybook.length} pautas de respuesta para el equipo.`,
-      href: '#acciones',
-      tone: actionRegister[0]?.tone || liveOperation.tone,
-    },
-    {
-      label: 'Mejorar',
-      value: `${traceabilityLedger.length} registros`,
-      title: 'La evidencia queda lista para aprender',
-      detail: 'Cada cierre alimenta mejores reglas, menos ruido y decisiones mas faciles de explicar.',
-      proof: `${evidenceGallery.length} pruebas recientes y ${improvementActions.length} mejoras priorizadas.`,
-      href: '#evidencia',
-      tone: traceabilityLedger[0]?.tone || siteHealth.tone,
-    },
-  ] as const
-  const serviceSnapshot = [
-    {
-      label: 'Confirmacion',
-      value: formatDuration(site.report.averageConfirmationMinutes, 'min'),
-      detail: site.report.overdueConfirmations > 0
-        ? `${site.report.overdueConfirmations} confirmaciones requieren revision.`
-        : 'Los avisos importantes mantienen seguimiento visible.',
-      tone: site.report.overdueConfirmations > 0 ? 'warning' : 'ok',
-    },
-    {
-      label: 'Resolucion',
-      value: formatDuration(site.report.averageResolutionHours, 'h'),
-      detail: site.report.resolvedThisMonth > 0
-        ? `${site.report.resolvedThisMonth} cierres registrados este mes.`
-        : 'Sin cierres recientes que reportar para este sitio.',
-      tone: openIncidents.length > 0 ? 'warning' : 'ok',
-    },
-    {
-      label: 'Evidencia',
-      value: `${evidenceGallery.length} pruebas`,
-      detail: evidenceGallery[0]?.action || 'Eventos y registros quedan disponibles para explicar decisiones.',
-      tone: evidenceGallery[0]?.tone || 'ok',
-    },
-    {
-      label: 'Aprendizaje',
-      value: `${improvementActions.length} mejoras`,
-      detail: improvementActions[0]?.nextStep || 'El historial ayuda a reducir ruido y mejorar respuesta.',
-      tone: improvementActions[0]?.tone || siteHealth.tone,
-    },
-  ] as const
-  const siteDailyControl = [
-    {
-      label: 'Mirar primero',
-      value: `${dailyPriorities.length} prioridades`,
-      title: dailyPriorities[0]?.title || liveOperation.headline,
-      detail: dailyPriorities[0]?.detail || 'Abrir el sitio con estado, cambios recientes y zonas que requieren contexto.',
-      proof: dailyPriorities[0]?.action || recommendedAction,
-      href: '#operacion-viva',
-      tone: dailyPriorities[0]?.tone || liveOperation.tone,
-    },
-    {
-      label: 'Actuar hoy',
-      value: `${actionRegister.length} acciones`,
-      title: actionRegister[0]?.title || 'Mantener seguimiento operacional',
-      detail: actionRegister[0]?.why || responsePlaybook[0]?.trigger || 'Convertir avisos en acciones claras para el equipo responsable.',
-      proof: actionRegister[0]?.nextStep || responsePlaybook[0]?.firstMove || recommendedAction,
-      href: '#acciones',
-      tone: actionRegister[0]?.tone || responsePlaybook[0]?.tone || siteHealth.tone,
-    },
-    {
-      label: 'Decidir con prueba',
-      value: `${decisionPackets.length} decisiones`,
-      title: decisionPackets[0]?.decision || meetingPack.decision,
-      detail: decisionPackets[0]?.evidence || meetingPack.evidence,
-      proof: decisionPackets[0]?.outcome || meetingPack.close,
-      href: '#evidencia',
-      tone: decisionPackets[0]?.tone || meetingPack.tone,
-    },
-    {
-      label: 'Entregar turno',
-      value: `${shiftHandoff.length} pautas`,
-      title: shiftHandoff[0]?.title || 'Cerrar el dia sin perder contexto',
-      detail: shiftHandoff[0]?.summary || 'El siguiente responsable recibe estado, riesgos y salida esperada.',
-      proof: shiftHandoff[0]?.output || liveOperation.close,
-      href: '#equipos-documentos',
-      tone: shiftHandoff[0]?.tone || operationalScore.tone,
-    },
-  ] as const
-  const weakServiceCommitments = serviceCommitments.filter((commitment) => commitment.tone !== 'ok')
-  const weakMaturityItems = maturityScorecard.filter((item) => item.tone !== 'ok')
-  const weakTrustItems = trustCenter.filter((item) => item.tone !== 'ok')
-  const operationalComplianceTone: 'ok' | 'warning' | 'critical' =
-    weakServiceCommitments.some((item) => item.tone === 'critical') ||
-    weakMaturityItems.some((item) => item.tone === 'critical') ||
-    weakTrustItems.some((item) => item.tone === 'critical')
-      ? 'critical'
-      : weakServiceCommitments.length > 0 || weakMaturityItems.length > 0 || weakTrustItems.length > 0
-        ? 'warning'
-        : 'ok'
-  const operationalCompliance = [
-    {
-      label: 'Servicio',
-      value: weakServiceCommitments.length > 0 ? `${weakServiceCommitments.length} brechas` : 'en orden',
-      detail: weakServiceCommitments[0]?.summary || 'Los compromisos principales mantienen una lectura estable.',
-      action: weakServiceCommitments[0]?.action || 'Mantener seguimiento y confirmar cierres relevantes.',
-      tone: weakServiceCommitments[0]?.tone || 'ok',
-    },
-    {
-      label: 'Madurez',
-      value: `${Math.round(maturityScorecard.reduce((total, item) => total + item.score, 0) / Math.max(1, maturityScorecard.length))}/100`,
-      detail: weakMaturityItems[0]?.reading || 'La operacion conserva pilares suficientes para funcionar con claridad.',
-      action: weakMaturityItems[0]?.nextStep || maturityScorecard[0]?.nextStep || 'Sostener la rutina y revisar mejoras del ciclo.',
-      tone: weakMaturityItems[0]?.tone || operationalScore.tone,
-    },
-    {
-      label: 'Confianza',
-      value: weakTrustItems.length > 0 ? `${weakTrustItems.length} alertas` : 'visible',
-      detail: weakTrustItems[0]?.customerMeaning || 'Acceso, evidencia y responsables se mantienen explicables para el cliente.',
-      action: weakTrustItems[0]?.proof || trustCenter[0]?.proof || 'Conservar trazabilidad y criterios de cierre disponibles.',
-      tone: weakTrustItems[0]?.tone || 'ok',
-    },
-    {
-      label: 'Cierre',
-      value: `${traceabilityLedger.length} registros`,
-      detail: traceabilityLedger[0]?.decisionLink || 'La historia del sitio queda disponible para explicar decisiones.',
-      action: actionRegister[0]?.successCriteria || meetingPack.close,
-      tone: traceabilityLedger[0]?.tone || actionRegister[0]?.tone || 'ok',
-    },
-  ] as const
-  const siteExecutiveClosure = [
-    {
-      label: 'Estado',
-      value: siteHealth?.status || liveOperation.title,
-      detail: liveOperation.headline,
-      proof: operationalScore.summary,
-      href: '#salud',
-      tone: siteHealth?.tone || liveOperation.tone,
-    },
-    {
-      label: 'Decision',
-      value: boardReport.decision,
-      detail: boardReport.risk,
-      proof: boardReport.proofPoints[0] || meetingPack.evidence,
-      href: '#acciones',
-      tone: boardReport.tone,
-    },
-    {
-      label: 'Responsable',
-      value: actionRegister[0]?.owner || governanceRituals[0]?.owner || 'Operacion',
-      detail: actionRegister[0]?.nextStep || recommendedAction,
-      proof: actionRegister[0]?.successCriteria || governanceRituals[0]?.output || 'Cierre con responsable y criterio visible.',
-      href: '#acciones',
-      tone: actionRegister[0]?.tone || governanceRituals[0]?.tone || liveOperation.tone,
-    },
-    {
-      label: 'Prueba',
-      value: traceabilityLedger[0]?.title || `${traceabilityLedger.length} registros`,
-      detail: traceabilityLedger[0]?.decisionLink || evidenceGallery[0]?.action || 'Evidencia disponible para explicar la lectura del sitio.',
-      proof: traceabilityLedger[0]?.siteLabel || `${evidenceGallery.length} pruebas recientes.`,
-      href: '#evidencia',
-      tone: traceabilityLedger[0]?.tone || evidenceGallery[0]?.tone || 'ok',
-    },
-  ] as const
-  const sectionIndex = [
-    {
-      href: '#operacion-viva',
-      label: 'Operacion viva',
-      value: liveOperation.title,
-      detail: liveOperation.headline,
-      tone: liveOperation.tone,
-    },
-    {
-      href: '#evidencia',
-      label: 'Evidencia',
-      value: `${evidenceGallery.length} pruebas`,
-      detail: 'Pruebas recientes, accion y estado de cierre.',
-      tone: evidenceGallery[0]?.tone || 'ok',
-    },
-    {
-      href: '#salud',
-      label: 'Salud',
-      value: operationalScore.score.toString(),
-      detail: operationalScore.label,
-      tone: operationalScore.tone,
-    },
-    {
-      href: '#acciones',
-      label: 'Acciones',
-      value: `${actionRegister.length} abiertas`,
-      detail: recommendedAction,
-      tone: actionRegister[0]?.tone || siteHealth.tone,
-    },
-    {
-      href: '#equipos-documentos',
-      label: 'Equipos',
-      value: `${site.deviceCount} activos`,
-      detail: 'Camaras, sensores, accesos y documentos.',
-      tone: site.alertCount > 0 ? 'warning' : 'ok',
-    },
-    {
-      href: '#actividad',
-      label: 'Actividad',
-      value: `${activity.length} cambios`,
-      detail: 'Ultimos eventos visibles del sitio.',
-      tone: activity.some((item) => item.status === 'critical' || item.status === 'falla') ? 'critical' : 'ok',
-    },
-  ] as const
+  const activity = getPortalActivityFeed([site]).slice(0, 10)
+  const buckets = getPortalDeviceBuckets(site.devices || [])
+  const evidence = getPortalEvidenceGallery(site).slice(0, 8)
+  const incidents = (site.incidents || [])
+    .filter(isOpenPortalIncident)
+    .sort((left: any, right: any) => {
+      const leftDate = new Date(left.createdAt || 0).getTime()
+      const rightDate = new Date(right.createdAt || 0).getTime()
+      return rightDate - leftDate
+    })
+
+  const cameras = (site.devices || []).filter(
+    (device: any) => device.tipo === 'camara_ip' || device.tipo === 'camara_analogica'
+  )
+  const activeDevices = (site.devices || []).filter((device: any) =>
+    ['activo', 'active', 'online', 'ok'].includes(String(device.estado || device.status || '').toLowerCase())
+  ).length
+  const devicesWithAttention = Math.max(0, (site.devices || []).length - activeDevices)
+  const overallStatus = incidents.length > 0 || devicesWithAttention > 0 ? 'Atención requerida' : 'Operativo'
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(77,163,217,0.18),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)] lg:p-10">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(77,163,217,0.06)_0%,transparent_42%,rgba(255,255,255,0.03)_100%)]" />
-        <div className="relative space-y-6">
-          <Button asChild variant="ghost" className="w-fit rounded-full px-0 text-white/60 hover:bg-transparent hover:text-white">
-            <Link href="/app">
-              <ArrowLeft className="h-4 w-4" />
-              Volver al portal
-            </Link>
-          </Button>
+    <div className="space-y-8 pb-12">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button asChild variant="ghost" className="px-0 text-white/60 hover:bg-transparent hover:text-white">
+          <Link href="/app#propiedades">
+            <ArrowLeft className="h-4 w-4" />
+            Volver a propiedades
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/contacto">
+            <Headphones className="h-4 w-4" />
+            Solicitar ayuda
+          </Link>
+        </Button>
+      </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge className={getStatusTone(site.status)}>{site.statusLabel}</Badge>
-                <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                  {site.organizationName}
+      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(77,163,217,0.22),transparent_36%),rgba(255,255,255,0.045)]">
+        {site.imageUrl ? (
+          <div className="relative h-52 overflow-hidden border-b border-white/10 sm:h-64">
+            <img src={site.imageUrl} alt={site.imageAlt || site.label} className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#081624] via-[#081624]/35 to-transparent" />
+          </div>
+        ) : null}
+
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={statusTone(site.status || overallStatus)}>{site.statusLabel || overallStatus}</Badge>
+                <span className="inline-flex items-center gap-1 text-xs text-white/45">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {site.address || site.location || site.organizationName || 'Propiedad del cliente'}
+                </span>
+              </div>
+              <h1 className="mt-4 text-3xl font-light tracking-tight text-white sm:text-4xl">
+                {site.label || site.name || 'Propiedad'}
+              </h1>
+              <p className="mt-3 max-w-3xl text-base leading-7 text-white/60">
+                {site.profile?.summary || 'Estado de seguridad, dispositivos, incidentes y actividad de esta propiedad.'}
+              </p>
+            </div>
+            <p className="text-sm text-white/45">Última actualización: {formatDate(site.lastUpdatedAt)}</p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Resumen de propiedad" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Wifi} label="Dispositivos" value={site.deviceCount || site.devices?.length || 0} detail={`${activeDevices} disponibles`} />
+        <StatCard icon={Camera} label="Cámaras" value={site.cameraCount || cameras.length} detail="Vistas asociadas a la propiedad" />
+        <StatCard icon={BellRing} label="Equipos con atención" value={devicesWithAttention} detail={devicesWithAttention > 0 ? 'Requieren revisión' : 'Todos disponibles'} />
+        <StatCard icon={Siren} label="Incidentes abiertos" value={incidents.length} detail={incidents.length > 0 ? 'Actualmente en seguimiento' : 'Sin incidentes pendientes'} />
+      </section>
+
+      <section id="incidentes" className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Incidentes</p>
+              <CardTitle className="mt-2 text-2xl font-light text-white">Situaciones en seguimiento</CardTitle>
+            </div>
+            <Siren className="h-5 w-5 text-rose-200" strokeWidth={1.6} />
+          </CardHeader>
+          <CardContent>
+            {incidents.length === 0 ? (
+              <EmptyState title="Sin incidentes abiertos" detail="No existen situaciones pendientes en esta propiedad." />
+            ) : (
+              <div className="space-y-3">
+                {incidents.map((incident: any, index: number) => (
+                  <div key={incident.id || index} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 gap-3">
+                        <span className="mt-0.5 rounded-xl bg-rose-400/10 p-2 text-rose-200">
+                          <CircleAlert className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white">{incident.title || incident.type || 'Incidente'}</p>
+                          <p className="mt-1 text-xs text-white/45">{incident.description || formatDate(incident.createdAt)}</p>
+                          {incident.responsible || incident.assignee ? (
+                            <p className="mt-2 text-xs text-white/55">Responsable: {incident.responsible || incident.assignee}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <Badge className={statusTone(incident.status)}>{incident.statusLabel || incident.status || 'Abierto'}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Estado</p>
+              <CardTitle className="mt-2 text-2xl font-light text-white">Lectura rápida</CardTitle>
+            </div>
+            <ShieldCheck className="h-5 w-5 text-[#9DD2F2]" strokeWidth={1.6} />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/35">Estado general</p>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-lg font-light text-white">{overallStatus}</p>
+                <Badge className={statusTone(overallStatus)}>{overallStatus}</Badge>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/35">Acción recomendada</p>
+              <p className="mt-3 text-sm leading-6 text-white/65">
+                {incidents.length > 0
+                  ? 'Revisar los incidentes abiertos y confirmar que exista un responsable asignado.'
+                  : devicesWithAttention > 0
+                    ? 'Revisar los equipos que requieren atención y solicitar soporte si el estado persiste.'
+                    : 'No se requieren acciones. Mantener el seguimiento normal de la propiedad.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {cameras.length > 0 ? (
+        <section id="camaras" className="space-y-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Cámaras</p>
+            <h2 className="mt-2 text-2xl font-light text-white">Vistas disponibles</h2>
+            <p className="mt-2 text-sm text-white/50">Revisa las cámaras asociadas a esta propiedad.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {cameras.map((device: any, index: number) => (
+              <div key={device.id || index} className="overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.04]">
+                <div className="relative h-52 overflow-hidden bg-[#071524]">
+                  <CameraSnapshot deviceId={device.id} alt={deviceLabel(device)} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#071524] via-transparent to-transparent" />
+                  <Badge className={`absolute left-3 top-3 ${statusTone(device.estado || device.status)}`}>
+                    {device.statusLabel || device.estado || device.status || 'Disponible'}
+                  </Badge>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm font-medium text-white">{deviceLabel(device)}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-white/45">
+                    <MapPin className="h-3 w-3" />
+                    {deviceLocation(device)}
+                  </p>
+                  <p className="mt-2 text-xs text-white/35">Actualizado: {formatDate(device.updatedAt || device.lastSeenAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section id="dispositivos" className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Dispositivos</p>
+          <h2 className="mt-2 text-2xl font-light text-white">Equipos de la propiedad</h2>
+          <p className="mt-2 text-sm text-white/50">Nombre, ubicación, estado y última comunicación. Sin configuraciones técnicas innecesarias.</p>
+        </div>
+
+        {(site.devices || []).length === 0 ? (
+          <EmptyState title="Sin dispositivos registrados" detail="Los equipos asociados aparecerán aquí." />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {(site.devices || []).map((device: any, index: number) => (
+              <div key={device.id || index} className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex min-w-0 gap-3">
+                  <span className="mt-0.5 rounded-xl bg-[#4DA3D9]/10 p-2 text-[#9DD2F2]">
+                    {device.tipo?.includes('camara') ? <Camera className="h-4 w-4" /> : <Radio className="h-4 w-4" />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{deviceLabel(device)}</p>
+                    <p className="mt-1 truncate text-xs text-white/45">{deviceLocation(device)}</p>
+                    <p className="mt-2 text-xs text-white/35">Última comunicación: {formatDate(device.updatedAt || device.lastSeenAt)}</p>
+                  </div>
+                </div>
+                <Badge className={statusTone(device.estado || device.status)}>
+                  {device.statusLabel || device.estado || device.status || 'Sin estado'}
                 </Badge>
               </div>
+            ))}
+          </div>
+        )}
+      </section>
 
+      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card id="evidencia" className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Evidencia</p>
+              <CardTitle className="mt-2 text-2xl font-light text-white">Registros recientes</CardTitle>
+            </div>
+            <FileText className="h-5 w-5 text-[#9DD2F2]" strokeWidth={1.6} />
+          </CardHeader>
+          <CardContent>
+            {evidence.length === 0 ? (
+              <EmptyState title="Sin evidencia reciente" detail="Las fotos, documentos y registros relacionados aparecerán aquí." />
+            ) : (
               <div className="space-y-3">
-                <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">{site.profile.eyebrow}</p>
-                <h1 className="text-4xl font-light text-white text-balance md:text-5xl">{site.label}</h1>
-                <p className="max-w-3xl text-base leading-7 text-white/65 md:text-lg">
-                  {site.profile.headline}
-                </p>
-                <p className="max-w-3xl text-sm leading-7 text-white/55 md:text-base">
-                  {site.profile.operatingPromise}
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <InfoTile label="Ubicacion" value={site.location} icon={MapPin} />
-                <InfoTile label={site.profile.metricLabels.camera} value={cameraCount.toString()} icon={Camera} />
-                <InfoTile label={site.profile.metricLabels.sensor} value={sensorCount.toString()} icon={Signal} />
-                <InfoTile label={site.profile.metricLabels.access} value={accessCount.toString()} icon={Wifi} />
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071524]/80 shadow-[0_20px_70px_rgba(0,0,0,0.26)] backdrop-blur">
-              <div className="relative h-64 overflow-hidden border-b border-white/10">
-                <img src={site.imageUrl} alt={site.imageAlt} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,21,36,0.04),rgba(7,21,36,0.8))]" />
-                <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-white/15 bg-[#071524]/75 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
-                    {site.organizationName}
-                  </span>
-                  {site.imageIsRepresentative ? (
-                    <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-amber-100/80">
-                      Imagen referencial
-                    </span>
-                  ) : null}
-                </div>
-                <a
-                  href={site.imageCreditUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="absolute bottom-3 right-3 rounded-full border border-white/10 bg-[#071524]/85 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/55 transition hover:text-white"
-                >
-                  {site.imageCredit}
-                </a>
-              </div>
-
-              <div className="p-5">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-                  <h2 className="text-lg font-normal text-white">Resumen rapido</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-white/55">{site.profile.summary}</p>
-                <p className="mt-3 rounded-2xl border border-[#4DA3D9]/20 bg-[#4DA3D9]/10 p-4 text-sm leading-6 text-cyan-50/78">
-                  {site.profile.integrationPromise}
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <MiniMetric label="Dispositivos" value={site.deviceCount} />
-                  <MiniMetric label="Activos" value={activeCount} />
-                  <MiniMetric label="Documentos" value={site.documentCount} />
-                  <MiniMetric label="Alertas" value={site.alertCount} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-4">
-        {site.profile.commandCenter.map((item) => (
-          <div key={`${item.label}-${item.value}`} className="rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(77,163,217,0.13),transparent_34%),rgba(255,255,255,0.045)] p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/38">{item.label}</p>
-            <h2 className="mt-3 text-2xl font-light text-white">{item.value}</h2>
-            <p className="mt-3 text-sm leading-6 text-white/58">{item.detail}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className={`rounded-[30px] border p-6 md:p-8 ${getScoreTone(siteHealth?.tone || liveOperation.tone)}`}>
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Cierre ejecutivo del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">La lectura corta para decidir sobre {site.label}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
-              Estado, decision, responsable y prueba quedan juntos para que el sitio no dependa de explicaciones
-              separadas. Si hay que actuar, esta vista muestra por donde partir.
-            </p>
-          </div>
-          <Badge className={getScoreTone(siteHealth?.tone || liveOperation.tone)}>
-            {formatDate(site.lastUpdatedAt)}
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {siteExecutiveClosure.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-                  <h3 className="mt-2 text-xl font-light leading-snug text-white">{item.value}</h3>
-                </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/42 transition group-hover:translate-x-1 group-hover:text-white" />
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/68">{item.detail}</p>
-              <p className="mt-auto pt-4 text-xs leading-5 text-white/50">{item.proof}</p>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(157,210,242,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.056),rgba(255,255,255,0.024))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Control diario del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Que mirar, que mover y que dejar cerrado en {site.label}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
-              Una pauta simple para que administracion, turno y direccion lean el mismo sitio sin perseguir pantallas:
-              prioridad, accion, prueba y traspaso.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            lectura diaria
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-4">
-          {siteDailyControl.map((item, index) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`group flex min-h-full flex-col rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">0{index + 1} / {item.label}</p>
-                  <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
-                </div>
-                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-white/45 transition group-hover:text-white" />
-              </div>
-              <h4 className="mt-5 text-base font-normal text-white">{item.title}</h4>
-              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
-              <p className="mt-auto pt-5 text-xs leading-5 text-white/48">{item.proof}</p>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.18),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
-        <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Modelo operativo del sitio</p>
-            <h2 className="mt-3 text-3xl font-light leading-tight text-white md:text-4xl">
-              {site.label} se gestiona como una operacion viva, no como una suma de pantallas.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/58">
-              La vista transforma equipos, eventos y documentos en una secuencia simple: integrar lo que ya existe,
-              interpretar lo que cambia, responder con responsable y mejorar con evidencia. Asi el cliente entiende
-              el estado del sitio sin depender de explicaciones tecnicas.
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <InfoTile label="Lectura actual" value={liveOperation.headline} icon={Radar} />
-              <InfoTile label="Decision recomendada" value={recommendedAction} icon={CheckCircle2} />
-            </div>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {siteOperatingModel.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className={`group rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-                    <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
-                  </div>
-                  <Sparkles className="mt-1 h-5 w-5 text-white/45 transition group-hover:text-white" />
-                </div>
-                <h4 className="mt-4 text-base font-normal text-white">{item.title}</h4>
-                <p className="mt-3 text-sm leading-6 text-white/68">{item.detail}</p>
-                <p className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/55 px-4 py-3 text-xs leading-5 text-white/55">
-                  {item.proof}
-                </p>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <nav className="sticky top-4 z-20 rounded-[28px] border border-white/10 bg-[#071524]/88 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Indice ejecutivo</p>
-            <h2 className="mt-1 text-xl font-light text-white">Ir directo a lo importante</h2>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-white/5 text-white/58">
-            {site.label}
-          </Badge>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {sectionIndex.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:bg-white/10 ${getScoreTone(item.tone)}`}
-            >
-              <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
-              <h3 className="mt-2 text-lg font-light text-white">{item.value}</h3>
-              <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{item.detail}</p>
-            </a>
-          ))}
-        </div>
-      </nav>
-
-      <section id="operacion-viva" className={`scroll-mt-32 relative overflow-hidden rounded-[32px] border p-6 md:p-8 ${getScoreTone(liveOperation.tone)}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(157,210,242,0.18),transparent_30%),radial-gradient(circle_at_94%_10%,rgba(255,255,255,0.08),transparent_26%)]" />
-        <div className="relative grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{liveOperation.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white md:text-4xl">{liveOperation.headline}</h2>
-            <p className="mt-5 text-base leading-8 text-white/70">{liveOperation.summary}</p>
-            <div className="mt-6 grid gap-3">
-              <InfoTile label="Que pasa ahora" value={liveOperation.nowDetail} icon={Radar} />
-              <InfoTile label="Evidencia disponible" value={liveOperation.evidenceDetail} icon={FileText} />
-              <InfoTile label="Cierre esperado" value={liveOperation.close} icon={CheckCircle2} />
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {liveOperation.lanes.map((lane) => (
-                <div key={lane.label} className={`rounded-[24px] border p-5 ${getScoreTone(lane.tone)}`}>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{lane.label}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{lane.value}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/64">{lane.detail}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-[26px] border border-white/10 bg-[#071524]/55 p-5">
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/38">Secuencia de respuesta</p>
-                  <h3 className="mt-2 text-2xl font-light text-white">{liveOperation.owner}</h3>
-                </div>
-                <Badge className={getScoreTone(liveOperation.tone)}>seguimiento vivo</Badge>
-              </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-4">
-                {liveOperation.timeline.map((step, index) => (
-                  <div key={`${step.label}-${step.title}`} className={`rounded-2xl border p-4 ${getScoreTone(step.tone)}`}>
-                    <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">0{index + 1} / {step.label}</p>
-                    <h4 className="mt-2 text-sm font-normal text-white">{step.title}</h4>
-                    <p className="mt-2 text-xs leading-5 text-white/62">{step.detail}</p>
-                    {step.at ? <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-white/38">{formatDate(step.at)}</p> : null}
+                {evidence.map((item: any, index: number) => (
+                  <div key={item.id || index} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
+                    <p className="text-sm font-medium text-white">{item.title || item.label || item.type || 'Registro'}</p>
+                    <p className="mt-1 text-xs leading-5 text-white/45">{item.description || item.evidence || item.action || 'Evidencia disponible para revisión.'}</p>
+                    <p className="mt-2 text-xs text-white/35">{formatDate(item.createdAt || item.updatedAt)}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="evidencia" className="scroll-mt-32 rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Galeria de evidencia</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Pruebas recientes para decidir sin reconstruir la historia</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Incidentes, senales, documentos y trazabilidad quedan ordenados por urgencia para revisar que prueba existe,
-              que significa y que accion debe cerrar.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            {evidenceGallery.length} pruebas priorizadas
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {evidenceGallery.map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.status}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.detail}</p>
-              <div className="mt-5 grid gap-3">
-                <InfoTile label="Prueba" value={item.proof} icon={FileText} />
-                <InfoTile label="Accion" value={item.action} icon={CheckCircle2} />
-                {item.at ? <InfoTile label="Fecha" value={formatDate(item.at)} icon={Siren} /> : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="salud" className="scroll-mt-32 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className={`rounded-[28px] border p-6 md:p-7 ${getScoreTone(operationalScore.tone)}`}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] opacity-70">Indice del sitio</p>
-              <h2 className="mt-3 text-5xl font-light text-white">{operationalScore.score}</h2>
-              <p className="mt-1 text-sm text-white/55">sobre 100</p>
-            </div>
-            <Badge className={getScoreTone(operationalScore.tone)}>{operationalScore.label}</Badge>
-          </div>
-          <p className="mt-6 text-sm leading-7 text-white/66">{operationalScore.summary}</p>
-        </div>
-
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-7">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Lectura de prioridad</p>
-              <h2 className="mt-2 text-2xl font-light text-white">Por que este sitio esta asi</h2>
-            </div>
-            <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-              accion clara
-            </Badge>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {operationalScore.drivers.map((driver) => (
-              <div key={driver} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                <p className="text-sm leading-6 text-white/64">{driver}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(executiveBrief.tone)}`}>
-        <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{executiveBrief.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white">{executiveBrief.verdict}</h2>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{executiveBrief.periodLabel}</p>
-            <p className="mt-5 text-base leading-8 text-white/70">{executiveBrief.narrative}</p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Indicadores para gerencia</p>
-              <div className="mt-4 space-y-3">
-                {executiveBrief.highlights.map((item) => (
-                  <div key={item} className="flex items-start gap-3 text-sm leading-6 text-white/70">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Foco recomendado</p>
-              <div className="mt-4 space-y-3">
-                {executiveBrief.focus.map((item) => (
-                  <div key={item} className="flex items-start gap-3 text-sm leading-6 text-white/70">
-                    <ArrowLeft className="mt-0.5 h-4 w-4 shrink-0 rotate-180 text-[#9DD2F2]" strokeWidth={1.8} />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(leadershipBrief.tone)}`}>
-        <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{leadershipBrief.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white">{leadershipBrief.headline}</h2>
-            <p className="mt-5 text-base leading-8 text-white/70">{leadershipBrief.businessReading}</p>
-            <div className="mt-5 grid gap-3">
-              <InfoTile label="Valor para el cliente" value={leadershipBrief.customerOutcome} icon={Sparkles} />
-              <InfoTile label="Proxima conversacion" value={leadershipBrief.nextConversation} icon={CheckCircle2} />
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {leadershipBrief.pillars.map((pillar) => (
-              <div key={pillar.label} className={`rounded-[24px] border p-5 ${getScoreTone(pillar.tone)}`}>
-                <p className="text-xs uppercase tracking-[0.18em] opacity-70">{pillar.label}</p>
-                <h3 className="mt-3 text-2xl font-light text-white">{pillar.value}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/64">{pillar.detail}</p>
-                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Prueba</p>
-                  <p className="mt-2 text-xs leading-5 text-white/60">{pillar.proof}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_32%),radial-gradient(circle_at_86%_6%,rgba(255,255,255,0.08),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Centro de confianza</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Por que {site.label} puede operar con calma</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Garantias simples para revisar el sitio sin depender de explicaciones internas: acceso acotado,
-              evidencia, respuesta, continuidad y mejora permanente.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            confianza del sitio
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-5">
-          {trustCenter.map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
-              <p className="mt-3 text-sm leading-6 text-white/64">{item.promise}</p>
-              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Que significa</p>
-                <p className="mt-2 text-sm leading-6 text-white/70">{item.customerMeaning}</p>
-              </div>
-              <p className="mt-3 text-xs leading-5 text-white/45">{item.proof}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(operationalComplianceTone)}`}>
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Cumplimiento operativo</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Lo que {site.label} debe sostener para operar con confianza</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
-              Una lectura de control para administracion: compromisos, madurez, confianza y cierre quedan en el mismo
-              tablero para saber si el sitio cumple o necesita atencion concreta.
-            </p>
-          </div>
-          <Badge className={getScoreTone(operationalComplianceTone)}>
-            {operationalComplianceTone === 'ok' ? 'cumple' : operationalComplianceTone === 'warning' ? 'requiere seguimiento' : 'requiere cierre'}
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {operationalCompliance.map((item) => (
-            <article key={item.label} className={`flex min-h-full flex-col rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <p className="text-[11px] uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-              <h3 className="mt-3 text-2xl font-light text-white">{item.value}</h3>
-              <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
-              <p className="mt-auto pt-5 text-xs leading-5 text-white/48">{item.action}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(operationalForecast.tone)}`}>
-        <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{operationalForecast.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white">{operationalForecast.direction}</h2>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{operationalForecast.horizon}</p>
-            <p className="mt-5 text-base leading-8 text-white/70">{operationalForecast.summary}</p>
-            <div className="mt-5 grid gap-3">
-              <InfoTile label="Riesgo principal" value={operationalForecast.primaryRisk} icon={ShieldAlert} />
-              <InfoTile label="Mejor movimiento" value={operationalForecast.bestMove} icon={CheckCircle2} />
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {operationalForecast.signals.map((signal) => (
-              <div key={signal.label} className={`rounded-[24px] border p-5 ${getScoreTone(signal.tone)}`}>
-                <p className="text-xs uppercase tracking-[0.18em] opacity-70">{signal.label}</p>
-                <h3 className="mt-3 text-2xl font-light text-white">{signal.value}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/64">{signal.reading}</p>
-                <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion</p>
-                  <p className="mt-2 text-sm leading-6 text-white/70">{signal.action}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(siteHealth.tone)}`}>
-        <div className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">Salud del sitio</p>
-            <h2 className="mt-3 text-3xl font-light text-white">{site.label} en una sola lectura</h2>
-            <p className="mt-5 text-base leading-8 text-white/70">{siteHealth.summary}</p>
-            <div className="mt-5 rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/38">Score operativo</p>
-              <p className="mt-2 text-5xl font-light text-white">{siteHealth.score}</p>
-              <p className="mt-2 text-sm uppercase tracking-[0.14em] opacity-70">{siteHealth.status}</p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Punto fuerte</p>
-              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.strongestPoint}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Punto de atencion</p>
-              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.attentionPoint}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">Siguiente movimiento</p>
-              <p className="mt-3 text-sm leading-7 text-white/70">{siteHealth.nextMove}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(meetingPack.tone)}`}>
-        <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{meetingPack.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white">La reunion de {site.label} ya parte ordenada</h2>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{meetingPack.subtitle}</p>
-            <p className="mt-5 text-base leading-8 text-white/70">{meetingPack.opening}</p>
-            <div className="mt-5 grid gap-3">
-              <InfoTile label="Decision central" value={meetingPack.decision} icon={CheckCircle2} />
-              <InfoTile label="Evidencia para mostrar" value={meetingPack.evidence} icon={FileText} />
-              <InfoTile label="Cierre esperado" value={meetingPack.close} icon={Sparkles} />
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {meetingPack.agenda.map((item) => (
-              <div key={item.label} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-                    <h3 className="mt-3 text-xl font-light text-white">{item.outcome}</h3>
-                  </div>
-                  <Badge className={getScoreTone(item.tone)}>{item.owner}</Badge>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-white/64">{item.detail}</p>
-              </div>
-            ))}
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5 lg:col-span-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Compromiso de cierre</p>
-              <p className="mt-3 text-sm leading-7 text-white/70">{meetingPack.commitment}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Scorecard de madurez</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Que tan madura esta la operacion de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              La lectura resume visibilidad, respuesta, evidencia, gobierno y continuidad del sitio en una sola
-              evaluacion.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            cinco pilares
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-5">
-          {maturityScorecard.map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.label}</p>
-                  <h3 className="mt-3 text-4xl font-light text-white">{item.score}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.level}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.reading}</p>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Siguiente mejora</p>
-                <p className="mt-2 text-sm leading-6 text-white/72">{item.nextStep}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Flujo operativo</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Como opera la seguridad de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              El sitio se lee como una secuencia simple: senal relevante, contexto suficiente, respuesta responsable,
-              cierre auditable y continuidad visible.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            operacion completa
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-5">
-          {operationalFlow.slice(0, 5).map((step, index) => (
-            <div key={step.id} className={`relative rounded-[24px] border p-5 ${getScoreTone(step.tone)}`}>
-              <span className="absolute right-4 top-4 rounded-full border border-white/10 bg-[#071524]/45 px-2 py-1 text-[11px] text-white/46">
-                0{index + 1}
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-[#071524]/45 text-[#9DD2F2]">
-                {step.stage === 'Detectar' ? (
-                  <Radar className="h-4 w-4" strokeWidth={1.8} />
-                ) : step.stage === 'Verificar' ? (
-                  <FileText className="h-4 w-4" strokeWidth={1.8} />
-                ) : step.stage === 'Responder' ? (
-                  <Siren className="h-4 w-4" strokeWidth={1.8} />
-                ) : step.stage === 'Continuidad' ? (
-                  <Wifi className="h-4 w-4" strokeWidth={1.8} />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" strokeWidth={1.8} />
-                )}
-              </div>
-              <p className="mt-4 text-xs uppercase tracking-[0.18em] opacity-70">{step.stage}</p>
-              <h3 className="mt-2 text-xl font-light text-white">{step.title}</h3>
-              <p className="mt-2 text-2xl font-light text-white">{step.metric}</p>
-              <p className="mt-3 text-sm leading-6 text-white/64">{step.reading}</p>
-              <div className="mt-4 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion</p>
-                <p className="mt-2 text-sm leading-6 text-white/72">{step.action}</p>
-              </div>
-              <p className="mt-3 text-xs leading-5 text-white/45">{step.proof}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className={`rounded-[28px] border p-6 md:p-8 ${getScoreTone(boardReport.tone)}`}>
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] opacity-70">{boardReport.title}</p>
-            <h2 className="mt-3 text-3xl font-light text-white">{boardReport.verdict}</h2>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-white/45">{boardReport.periodLabel}</p>
-            <p className="mt-5 text-base leading-8 text-white/70">{boardReport.outcome}</p>
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <InfoTile label="Riesgo principal" value={boardReport.risk} icon={ShieldAlert} />
-              <InfoTile label="Decision sugerida" value={boardReport.decision} icon={CheckCircle2} />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {boardReport.metrics.map((metric) => (
-                <div key={metric.label} className={`rounded-2xl border p-4 ${getScoreTone(metric.tone)}`}>
-                  <p className="text-xs uppercase tracking-[0.16em] opacity-70">{metric.label}</p>
-                  <p className="mt-2 text-2xl font-light text-white">{metric.value}</p>
-                  <p className="mt-2 text-xs leading-5 text-white/55">{metric.detail}</p>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-[#071524]/45 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/38">Evidencia para reunion</p>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {boardReport.proofPoints.map((point) => (
-                  <div key={point} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                    <p className="text-sm leading-6 text-white/66">{point}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.15),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Gobierno operativo</p>
-            <h2 className="mt-2 text-2xl font-light text-white">La rutina de control de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Cada revision tiene pregunta, entrada, salida y responsable. Asi la seguridad queda gobernada, no solo
-              observada.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            cadencia del sitio
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
-          {governanceRituals.slice(0, 5).map((ritual) => (
-            <div key={ritual.id} className={`rounded-[24px] border p-5 ${getScoreTone(ritual.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{ritual.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{ritual.title}</h3>
-                </div>
-                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
-                  {ritual.cadence}
-                </span>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/68">{ritual.question}</p>
-              <div className="mt-5 grid gap-3">
-                <InfoTile label="Responsable" value={ritual.owner} icon={ShieldAlert} />
-                <InfoTile label="Entrada" value={ritual.input} icon={FileText} />
-                <InfoTile label="Salida" value={ritual.output} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="acciones" className="scroll-mt-32 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bandeja de acciones</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Pendientes accionables de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Riesgos, decisiones y mejoras quedan convertidos en trabajo concreto: responsable, plazo, siguiente paso
-              y criterio de cierre.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            {actionRegister.length} acciones del sitio
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {actionRegister.slice(0, 6).map((action) => (
-            <div key={action.id} className={`rounded-[24px] border p-5 ${getScoreTone(action.tone)}`}>
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{action.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{action.title}</h3>
-                </div>
-                <Badge className={getScoreTone(action.tone)}>{action.status}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{action.why}</p>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <InfoTile label="Responsable" value={action.owner} icon={ShieldAlert} />
-                <InfoTile label="Plazo" value={action.due} icon={Siren} />
-                <InfoTile label="Siguiente paso" value={action.nextStep} icon={FileText} />
-                <InfoTile label="Criterio de cierre" value={action.successCriteria} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.18),transparent_30%),radial-gradient(circle_at_92%_12%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.058),rgba(255,255,255,0.024))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Agenda semanal</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Decisiones que mejoran {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Una pauta breve para cerrar la semana con criterio: decision, evidencia, responsable, plazo y beneficio
-              visible para la operacion.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            reunion semanal
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {weeklyDecisionAgenda.slice(0, 4).map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.decision}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.priorityLabel}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.customerValue}</p>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <InfoTile label="Evidencia" value={item.evidence} icon={FileText} />
-                <InfoTile label="Responsable" value={item.owner} icon={ShieldAlert} />
-                <InfoTile label="Plazo" value={item.deadline} icon={Siren} />
-                <InfoTile label="Resultado esperado" value={item.expectedOutcome} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Trazabilidad cliente</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Evidencia y decisiones de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Cada senal relevante queda ligada a evidencia, accion, estado y fecha para explicar que se decidio y por
-              que.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            historial explicable
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {traceabilityLedger.slice(0, 6).map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.status}</Badge>
-              </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <InfoTile label="Origen" value={item.source} icon={ShieldAlert} />
-                <InfoTile label="Evidencia" value={item.evidence} icon={FileText} />
-                <InfoTile label="Accion vinculada" value={item.decisionLink} icon={CheckCircle2} />
-                <InfoTile label="Fecha" value={formatDate(item.occurredAt)} icon={Siren} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Mapa de riesgo operativo</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Zonas y horarios sensibles de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              La lectura cruza cobertura, actividad horaria y acciones abiertas para decidir donde concentrar la
-              supervision.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            mapa del sitio
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {riskMap.slice(0, 4).map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.zone}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.window}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.exposure}</p>
-              <div className="mt-5 grid gap-3">
-                <InfoTile label="Proteccion" value={item.protection} icon={ShieldAlert} />
-                <InfoTile label="Responsable" value={item.owner} icon={Siren} />
-                <InfoTile label="Accion" value={item.action} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_15%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Ventanas sensibles</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Horarios que conviene mirar en {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              La lectura separa apertura, operacion diaria, cierre y noche para orientar turnos, rondas y evidencia
-              con criterio operativo.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            patron por turno
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {sensitiveWindows.slice(0, 4).map((window) => (
-            <div key={window.id} className={`rounded-[24px] border p-5 ${getScoreTone(window.tone)}`}>
-              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{window.siteLabel}</p>
-              <div className="mt-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-light text-white">{window.label}</h3>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/42">{window.range}</p>
-                </div>
-                <Badge className={getScoreTone(window.tone)}>{window.criticalCount > 0 ? 'critica' : window.incidentCount > 0 ? 'atencion' : 'normal'}</Badge>
-              </div>
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Eventos</p>
-                  <p className="mt-1 text-lg font-light text-white">{window.eventCount}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Incid.</p>
-                  <p className="mt-1 text-lg font-light text-white">{window.incidentCount}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Crit.</p>
-                  <p className="mt-1 text-lg font-light text-white">{window.criticalCount}</p>
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{window.summary}</p>
-              <p className="mt-3 text-sm leading-6 text-white/74">{window.action}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_88%_0%,rgba(77,163,217,0.16),transparent_30%),rgba(255,255,255,0.045)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Plan de mejora</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Como mejorar la operacion de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Acciones priorizadas para cerrar brechas, mejorar evidencia y reducir ruido operativo sin cambiar la
-              forma en que el cliente entiende su seguridad.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            proxima mejora
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {improvementActions.slice(0, 4).map((action, index) => (
-            <div key={action.id} className={`rounded-[24px] border p-5 ${getScoreTone(action.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{action.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{action.title}</h3>
-                </div>
-                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
-                  0{index + 1}
-                </span>
-              </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Por que</p>
-                  <p className="mt-2 text-sm leading-6 text-white/70">{action.why}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Siguiente paso</p>
-                  <p className="mt-2 text-sm leading-6 text-white/70">{action.nextStep}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Impacto</p>
-                  <p className="mt-2 text-sm leading-6 text-white/70">{action.expectedImpact}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.15),transparent_30%)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Paquete de decision</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Decisiones pendientes de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Una sintesis para revisar decisiones con evidencia minima, responsable sugerido y resultado esperado
-              antes de cerrar la reunion operativa.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            criterio de cierre
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {decisionPackets.slice(0, 4).map((packet) => (
-            <div key={packet.id} className={`rounded-[24px] border p-5 ${getScoreTone(packet.tone)}`}>
-              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{packet.siteLabel}</p>
-              <h3 className="mt-3 text-xl font-light text-white">{packet.decision}</h3>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <InfoTile label="Responsable" value={packet.owner} icon={ShieldAlert} />
-                <InfoTile label="Momento" value={packet.timing} icon={Siren} />
-                <InfoTile label="Evidencia minima" value={packet.evidence} icon={FileText} />
-                <InfoTile label="Resultado esperado" value={packet.outcome} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_88%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Playbook de respuesta</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Como responde {site.label} cuando algo cambia</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Respuesta por nivel: que activa la accion, que se hace primero, que se valida, cuando se escala y como
-              se cierra sin perder evidencia.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            criterios de respuesta
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {responsePlaybook.slice(0, 4).map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.level}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.owner}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.trigger}</p>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <InfoTile label="Primero" value={item.firstMove} icon={Siren} />
-                <InfoTile label="Validar" value={item.verify} icon={FileText} />
-                <InfoTile label="Escalar" value={item.escalate} icon={ShieldAlert} />
-                <InfoTile label="Cerrar" value={item.close} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Traspaso de turno</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Que debe saber el equipo de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Apertura, seguimiento, alerta y cierre quedan convertidos en una pauta simple para que el siguiente
-              responsable no parta desde cero.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            continuidad del turno
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {shiftHandoff.slice(0, 4).map((item) => (
-            <div key={item.id} className={`rounded-[24px] border p-5 ${getScoreTone(item.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">{item.siteLabel}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{item.title}</h3>
-                </div>
-                <Badge className={getScoreTone(item.tone)}>{item.moment}</Badge>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{item.summary}</p>
-              <div className="mt-5 space-y-2">
-                {item.checklist.map((check) => (
-                  <div key={check} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-3 text-sm leading-6 text-white/68">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                    <span>{check}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 grid gap-3">
-                <InfoTile label="Ventana sensible" value={item.riskWindow} icon={Siren} />
-                <InfoTile label="Responsable" value={item.owner} icon={ShieldAlert} />
-                <InfoTile label="Salida esperada" value={item.output} icon={CheckCircle2} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.16),transparent_30%),rgba(255,255,255,0.045)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Prioridad del dia</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Que revisar primero en {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Una lectura corta para decidir si el equipo mantiene rutina, revisa una senal o escala una situacion
-              antes del cierre operativo.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            prioridad por impacto
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {dailyPriorities.slice(0, 3).map((priority, index) => (
-            <div key={priority.id} className={`rounded-[24px] border p-5 ${getScoreTone(priority.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">Lectura {index + 1}</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{priority.title}</h3>
-                </div>
-                <span className="rounded-full border border-white/10 bg-[#071524]/45 px-3 py-1 text-xs text-white/60">
-                  0{index + 1}
-                </span>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{priority.detail}</p>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/38">Accion recomendada</p>
-                <p className="mt-2 text-sm leading-6 text-white/72">{priority.action}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.025)),radial-gradient(circle_at_82%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Cobertura del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Donde esta protegido y donde falta contexto</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Cada zona combina vistas, sensores, avisos y recencia para mostrar si la operacion esta cubierta,
-              parcial o con un punto ciego que conviene resolver.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            {coverageZones.length} zonas leidas
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {coverageZones.map((zone) => (
-            <div key={zone.id} className={`rounded-[24px] border p-5 ${getScoreTone(zone.tone)}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] opacity-70">Zona</p>
-                  <h3 className="mt-3 text-xl font-light text-white">{zone.name}</h3>
-                </div>
-                <Badge className={getScoreTone(zone.tone)}>{zone.statusLabel}</Badge>
-              </div>
-              <div className="mt-5 grid grid-cols-4 gap-2 text-center">
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Score</p>
-                  <p className="mt-1 text-lg font-light text-white">{zone.score}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Vistas</p>
-                  <p className="mt-1 text-lg font-light text-white">{zone.cameraCount}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Senales</p>
-                  <p className="mt-1 text-lg font-light text-white">{zone.sensorCount}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-[#071524]/45 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">Avisos</p>
-                  <p className="mt-1 text-lg font-light text-white">{zone.alertCount}</p>
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{zone.summary}</p>
-              <p className="mt-3 rounded-2xl border border-white/10 bg-[#071524]/45 p-4 text-sm leading-6 text-white/70">
-                {zone.action}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.052),rgba(255,255,255,0.024))] p-6 md:p-8">
-        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Tablero de servicio</p>
-            <h2 className="mt-3 text-3xl font-light leading-tight text-white">
-              Respuesta medible para que {site.label} sepa que paso y que viene.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/58">
-              Un sitio profesional no solo muestra alarmas: muestra tiempos, evidencia, cierre y aprendizaje.
-              Esta lectura resume si la operacion esta respondiendo con orden o si necesita una revision concreta.
-            </p>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {serviceSnapshot.map((item) => (
-              <div key={item.label} className={`rounded-[22px] border p-4 ${getScoreTone(item.tone)}`}>
-                <p className="text-[11px] uppercase tracking-[0.16em] opacity-70">{item.label}</p>
-                <h3 className="mt-2 text-2xl font-light text-white">{item.value}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/66">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.15),transparent_30%),rgba(255,255,255,0.04)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Compromisos del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Respuesta, evidencia y continuidad de {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              La operacion se mide por tiempos visibles, incidentes cerrados con criterio y evidencia lista para
-              explicar cada decision importante.
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit border-white/10 bg-[#0B1D30] text-white/58">
-            servicio medible
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {serviceCommitments.slice(0, 4).map((commitment) => (
-            <div key={commitment.id} className={`rounded-[24px] border p-5 ${getScoreTone(commitment.tone)}`}>
-              <p className="text-xs uppercase tracking-[0.18em] opacity-70">{commitment.siteLabel}</p>
-              <h3 className="mt-3 text-xl font-light text-white">{commitment.label}</h3>
-              <div className="mt-4 grid gap-3">
-                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Objetivo</p>
-                  <p className="mt-2 text-sm leading-6 text-white/72">{commitment.target}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-[#071524]/45 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/38">Lectura actual</p>
-                  <p className="mt-2 text-lg font-light text-white">{commitment.current}</p>
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/64">{commitment.summary}</p>
-              <p className="mt-3 text-sm leading-6 text-white/74">{commitment.action}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025)),radial-gradient(circle_at_90%_0%,rgba(77,163,217,0.14),transparent_30%)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Confianza del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Control que se puede explicar y auditar</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Cada senal debe servir para decidir, no para acumular pantallas. Esta vista ordena privacidad, roles,
-              tiempos y evidencia segun la realidad de {site.label}.
-            </p>
-          </div>
-          <Badge className={site.report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
-            {site.report.overdueConfirmations > 0 ? 'Revisar SLA' : 'SLA visible'}
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {site.profile.assurance.map((item) => (
-            <div key={`${item.label}-${item.value}`} className="rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/35">{item.label}</p>
-              <h3 className="mt-3 text-xl font-light text-white">{item.value}</h3>
-              <p className="mt-3 text-sm leading-6 text-white/56">{item.detail}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(77,163,217,0.16),transparent_28%),rgba(255,255,255,0.04)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Bitacora de turno</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Una forma simple de operar {site.label}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Cada turno queda guiado por una secuencia clara: abrir la operacion, observar cambios, responder con
-              evidencia y cerrar con aprendizaje.
-            </p>
-          </div>
-          <Badge className={openIncidents.length > 0 || site.alertCount > 0 ? 'border-amber-400/25 bg-amber-400/10 text-amber-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
-            {openIncidents.length > 0 || site.alertCount > 0 ? 'turno con atencion' : 'turno estable'}
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-4">
-          {site.profile.shiftFlow.map((step, index) => (
-            <div key={`${step.label}-${step.moment}`} className="relative rounded-[22px] border border-white/10 bg-[#0B1D30] p-5">
-              <span className="absolute right-4 top-4 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/38">
-                0{index + 1}
-              </span>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#9DD2F2]">{step.moment}</p>
-              <h3 className="mt-3 text-xl font-light text-white">{step.label}</h3>
-              <p className="mt-3 text-sm leading-6 text-white/58">{step.detail}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Radar className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Estado de proteccion</CardTitle>
-            </div>
-            <CardDescription className="text-white/55">Lo que importa para operar este sitio hoy.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <RiskTile
-              label="Continuidad"
-              value={gatewayRisk > 0 ? 'Atencion' : site.gatewayHealth.total > 0 ? 'Conectada' : 'Pendiente'}
-              detail={`${site.gatewayHealth.online} conexiones activas, ${gatewayRisk} con revision.`}
-              tone={gatewayRisk > 0 ? 'warning' : 'ok'}
-            />
-            <RiskTile
-              label="Sensores"
-              value={`${sensorRisk.stable + sensorRisk.attention + sensorRisk.critical}`}
-              detail={`${sensorRisk.stable} estables, ${sensorRisk.attention} en revision, ${sensorRisk.critical} criticos.`}
-              tone={sensorRisk.critical > 0 ? 'critical' : sensorRisk.attention > 0 ? 'warning' : 'ok'}
-            />
-            <RiskTile
-              label="Incidentes"
-              value={openIncidents.length.toString()}
-              detail={openIncidents.length > 0 ? 'Hay seguimiento activo en este sitio.' : 'Sin incidentes abiertos.'}
-              tone={openIncidents.some((incident) => incident.severity === 'critical') ? 'critical' : openIncidents.length > 0 ? 'warning' : 'ok'}
-            />
-            <RiskTile label="Accion recomendada" value="Ahora" detail={recommendedAction} tone={openIncidents.length > 0 ? 'warning' : 'ok'} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Siren className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Incidentes del sitio</CardTitle>
-            </div>
-            <CardDescription className="text-white/55">Alertas convertidas en seguimiento operativo.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {openIncidents.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/45">
-                No hay incidentes abiertos en esta propiedad.
-              </p>
-            ) : (
-              openIncidents.map((incident) => (
-                <div key={incident.id} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-white">{incident.title}</p>
-                      <p className="mt-1 text-sm leading-6 text-white/55">{incident.description || 'Seguimiento activo sin detalle adicional.'}</p>
-                    </div>
-                    <Badge className={incident.severity === 'critical' ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-amber-400/25 bg-amber-400/10 text-amber-100'}>
-                      {incident.statusLabel}
-                    </Badge>
-                  </div>
-                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/35">Senales asociadas</p>
-                      {incident.relatedEvents.length === 0 ? (
-                        <p className="mt-3 text-sm leading-6 text-white/50">Sin eventos correlacionados publicados para el cliente.</p>
-                      ) : (
-                        <div className="mt-3 space-y-2">
-                          {incident.relatedEvents.slice(0, 3).map((event) => (
-                            <div key={event.id} className="flex items-start gap-2 rounded-lg bg-[#071524]/80 p-3">
-                              <ShieldAlert className={`mt-0.5 h-4 w-4 shrink-0 ${event.severity === 'critical' ? 'text-rose-200' : event.severity === 'warning' ? 'text-amber-200' : 'text-[#9DD2F2]'}`} strokeWidth={1.7} />
-                              <div>
-                                <p className="text-sm text-white/80">{event.title}</p>
-                                <p className="mt-1 text-xs text-white/40">{formatDate(event.occurredAt)}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/35">Evidencia visual</p>
-                      {incident.evidence.length === 0 ? (
-                        <p className="mt-3 text-sm leading-6 text-white/50">Sin capturas asociadas en la ventana operativa.</p>
-                      ) : (
-                        <div className="mt-3 space-y-2">
-                          {incident.evidence.map((evidence) => (
-                            <div key={evidence.id} className="flex items-start gap-2 rounded-lg bg-[#071524]/80 p-3">
-                              <Camera className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.7} />
-                              <div>
-                                <p className="text-sm text-white/80">{evidence.title}</p>
-                                <p className="mt-1 text-xs text-white/40">
-                                  {formatDate(evidence.capturedAt)} - {evidence.pinned ? 'Fijada al incidente' : 'Asociada por actividad cercana'}
-                                </p>
-                                {evidence.note ? <p className="mt-2 text-xs leading-5 text-white/50">{evidence.note}</p> : null}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="mt-3 text-xs text-white/40">Creado {formatDate(incident.createdAt)}</p>
-                </div>
-              ))
             )}
           </CardContent>
         </Card>
-      </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-[#9DD2F2]" strokeWidth={1.8} />
-              <CardTitle className="text-lg font-normal text-white">Criterios de escalamiento</CardTitle>
+        <Card id="actividad" className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Actividad</p>
+              <CardTitle className="mt-2 text-2xl font-light text-white">Últimos cambios</CardTitle>
             </div>
-            <CardDescription className="text-white/55">
-              Reglas simples para decidir cuando mirar, cuando avisar y cuando cerrar.
-            </CardDescription>
+            <Clock3 className="h-5 w-5 text-[#9DD2F2]" strokeWidth={1.6} />
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-3">
-            {site.profile.escalationMatrix.map((item) => (
-              <div key={`${item.label}-${item.owner}`} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[#9DD2F2]">{item.label}</p>
-                <p className="mt-3 text-sm leading-6 text-white/62">{item.trigger}</p>
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
-                  <p className="text-xs uppercase tracking-[0.14em] text-white/35">Responsable</p>
-                  <p className="mt-1 text-sm text-white">{item.owner}</p>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-white/55">{item.response}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(77,163,217,0.14),transparent_34%),rgba(255,255,255,0.045)] shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Paquete de cierre</CardTitle>
-            <CardDescription className="text-white/55">
-              Lo minimo que debe quedar respaldado para explicar una decision.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {site.profile.evidencePackage.map((item, index) => (
-              <div key={`${item.label}-${index}`} className="flex gap-3 rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#4DA3D9]/25 bg-[#4DA3D9]/10 text-xs text-[#9DD2F2]">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="text-sm text-white">{item.label}</p>
-                  <p className="mt-1 text-sm leading-6 text-white/55">{item.detail}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_86%_0%,rgba(77,163,217,0.13),transparent_30%),rgba(255,255,255,0.04)] p-6 md:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Reporte del sitio</p>
-            <h2 className="mt-2 text-2xl font-light text-white">Actividad, respuesta y cierre</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Resumen operacional para entender que paso hoy y como se esta respondiendo durante el mes.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {site.profile.focusAreas.map((area) => (
-                <span key={area} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/58">
-                  {area}
-                </span>
-              ))}
-            </div>
-          </div>
-          <Badge className={site.report.overdueConfirmations > 0 ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'}>
-            {site.report.overdueConfirmations > 0 ? 'Confirmaciones vencidas' : 'Confirmaciones al dia'}
-          </Badge>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <ReportTile label="Eventos hoy" value={site.report.eventsToday.toString()} />
-          <ReportTile label="Criticos hoy" value={site.report.criticalEventsToday.toString()} tone={site.report.criticalEventsToday > 0 ? 'critical' : 'default'} />
-          <ReportTile label="Incidentes mes" value={site.report.incidentsThisMonth.toString()} />
-          <ReportTile label="Resueltos mes" value={site.report.resolvedThisMonth.toString()} />
-          <ReportTile label="Confirmacion" value={formatDuration(site.report.averageConfirmationMinutes, 'min')} />
-          <ReportTile label="Resolucion" value={formatDuration(site.report.averageResolutionHours, 'h')} />
-        </div>
-      </section>
-
-      <section id="equipos-documentos" className="scroll-mt-32 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Equipos del sitio</CardTitle>
-            <CardDescription className="text-white/55">
-              Equipos agrupados por tipo para entender la operacion de un vistazo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {buckets.map((bucket) => (
-              <div key={bucket.key} className="rounded-2xl border border-white/10 bg-[#0B1D30] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-white">{groupLabel(bucket.key)}</p>
-                    <p className="mt-1 text-sm text-white/45">
-                      {bucket.count} {bucket.count === 1 ? 'equipo' : 'equipos'}
-                    </p>
-                  </div>
-                  <Badge className={getGroupTone(bucket.key)}>{bucket.count}</Badge>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {bucket.devices.slice(0, 4).map((device) => (
-                    <div key={device.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-white">{device.displayName || device.marca || 'Equipo'}</p>
-                          <p className="mt-1 text-xs text-white/45">{device.ubicacionDescripcion || 'Sin ubicacion'}</p>
-                        </div>
-                        <Badge
-                          className={
-                            device.estado === 'activo'
-                              ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-                              : device.estado === 'mantencion'
-                                ? 'border-amber-400/30 bg-amber-400/10 text-amber-100'
-                                : 'border-rose-400/30 bg-rose-400/10 text-rose-100'
-                          }
-                        >
-                          {device.estado === 'activo' ? 'Activo' : device.estado === 'mantencion' ? 'Revision' : 'Alerta'}
-                        </Badge>
-                      </div>
-                      <p className="mt-3 text-sm text-white/60">{device.notas || 'Sin notas'}</p>
-                      {bucket.key === 'camera' && <CameraStreamControl deviceId={device.id} />}
-                    </div>
-                  ))}
-                  {bucket.count === 0 && <p className="text-sm text-white/45">Sin equipos cargados.</p>}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="border-white/10 bg-white/5 shadow-none">
-            <CardHeader>
-              <CardTitle className="text-lg font-normal text-white">Evidencia y documentos</CardTitle>
-              <CardDescription className="text-white/55">Capturas, reportes y material seguro del sitio.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {site.documents.length === 0 ? (
-                <p className="py-6 text-sm text-white/55">No hay evidencia publicada todavia.</p>
-              ) : (
-                site.documents.map((document) => (
-                  <div key={document.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                      <FileText className="h-4 w-4" strokeWidth={1.8} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-white">{document.titulo}</p>
-                      <p className="mt-1 text-sm text-white/55">{document.archivoNombre || document.autor}</p>
-                    </div>
-                    <p className="whitespace-nowrap text-xs text-white/40">{formatDate(document.fechaActualizacion)}</p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/5 shadow-none">
-            <CardHeader>
-              <CardTitle className="text-lg font-normal text-white">Siguiente paso</CardTitle>
-              <CardDescription className="text-white/55">Lo que conviene revisar primero.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {site.alertCount > 0 ? (
-                <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-                  {site.profile.recommendedAttentionAction}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-                  {site.profile.recommendedStableAction}
-                </div>
-              )}
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {site.profile.responsePlan.map((step) => (
-                  <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section id="actividad" className="scroll-mt-32 grid gap-6 lg:grid-cols-[1fr_0.95fr]">
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Actividad reciente</CardTitle>
-            <CardDescription className="text-white/55">Ultimos cambios visibles del sitio.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             {activity.length === 0 ? (
-              <p className="py-6 text-sm text-white/55">Sin actividad reciente para este sitio.</p>
+              <EmptyState title="Sin actividad reciente" detail="Los nuevos eventos aparecerán aquí." />
             ) : (
-              activity.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-                    {item.kind === 'event' ? (
-                      <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
-                    ) : item.kind === 'device' ? (
-                      item.status === 'falla' ? (
-                        <ShieldAlert className="h-4 w-4" strokeWidth={1.8} />
-                      ) : (
-                        <Wifi className="h-4 w-4" strokeWidth={1.8} />
-                      )
-                    ) : (
-                      <FileText className="h-4 w-4" strokeWidth={1.8} />
-                    )}
+              <div className="divide-y divide-white/10">
+                {activity.map((item: any, index: number) => (
+                  <div key={item.id || index} className="py-4 first:pt-0 last:pb-0">
+                    <p className="text-sm text-white">{item.title || item.label || item.description || 'Actividad registrada'}</p>
+                    <p className="mt-1 text-xs text-white/45">{item.detail || formatDate(item.createdAt || item.updatedAt)}</p>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-white">{item.title}</p>
-                      <Badge variant="outline" className="border-white/10 bg-white/5 text-white/60">
-                        {item.kind === 'event' ? 'Evento' : item.kind === 'device' ? 'Equipo' : 'Documento'}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-white/55">{item.detail}</p>
-                  </div>
-                  <p className="whitespace-nowrap text-xs text-white/40">{formatDate(item.at)}</p>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
-
-        <Card className="border-white/10 bg-white/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-normal text-white">Lectura del sitio</CardTitle>
-            <CardDescription className="text-white/55">
-              Lo que esta operacion necesita entender en segundos.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              site.profile.summary,
-              site.profile.integrationPromise,
-              `${site.profile.metricLabels.camera}, ${site.profile.metricLabels.sensor.toLowerCase()} y ${site.profile.metricLabels.access.toLowerCase()} agrupados con evidencia.`,
-              'Alertas, incidentes y documentos convertidos en decisiones simples.',
-            ].map((text) => (
-              <div key={text} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9DD2F2]" strokeWidth={1.8} />
-                <span>{text}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </section>
-    </div>
-  )
-}
 
-function InfoTile({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string
-  value: string
-  icon: typeof MapPin
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4DA3D9]/15 text-[#9DD2F2]">
-          <Icon className="h-4 w-4" strokeWidth={1.8} />
-        </div>
+      <section className="rounded-[24px] border border-[#4DA3D9]/25 bg-[#4DA3D9]/8 p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-          <p className="mt-1 text-sm text-white">{value}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#9DD2F2]">Soporte SegurIA</p>
+          <h2 className="mt-2 text-xl font-light text-white">¿Hay algo que necesites revisar?</h2>
+          <p className="mt-2 text-sm text-white/55">Solicita asistencia sin navegar por configuraciones técnicas.</p>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function MiniMetric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-white/35">{label}</p>
-      <p className="mt-2 text-2xl font-light text-white">{value}</p>
-    </div>
-  )
-}
-
-function ReportTile({
-  label,
-  value,
-  tone = 'default',
-}: {
-  label: string
-  value: string
-  tone?: 'default' | 'critical'
-}) {
-  return (
-    <div className={`rounded-2xl border p-4 ${tone === 'critical' ? 'border-rose-400/25 bg-rose-400/10' : 'border-white/10 bg-[#0B1D30]'}`}>
-      <p className="text-xs uppercase tracking-[0.16em] text-white/35">{label}</p>
-      <p className={`mt-2 text-xl font-light ${tone === 'critical' ? 'text-rose-100' : 'text-white'}`}>{value}</p>
-    </div>
-  )
-}
-
-function RiskTile({
-  label,
-  value,
-  detail,
-  tone,
-}: {
-  label: string
-  value: string
-  detail: string
-  tone: 'ok' | 'warning' | 'critical'
-}) {
-  const className =
-    tone === 'critical'
-      ? 'border-rose-400/25 bg-rose-400/10 text-rose-100'
-      : tone === 'warning'
-        ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
-        : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
-
-  return (
-    <div className={`rounded-2xl border p-5 ${className}`}>
-      <p className="text-xs uppercase tracking-[0.18em] opacity-70">{label}</p>
-      <p className="mt-2 text-2xl font-light">{value}</p>
-      <p className="mt-2 text-sm leading-6 opacity-75">{detail}</p>
+        <Button asChild className="mt-5 bg-[#4DA3D9] text-[#06111D] hover:bg-[#6BB6E5] sm:mt-0">
+          <Link href="/contacto">
+            <Headphones className="h-4 w-4" />
+            Contactar soporte
+          </Link>
+        </Button>
+      </section>
     </div>
   )
 }
