@@ -1,7 +1,7 @@
 import type {
   PortalOperationalScore,
   PortalSiteSummary,
-} from '@/lib/client-portal'
+} from '@/lib/client-portal/types'
 import { getPortalSensorRisk } from '@/lib/client-portal/devices'
 import { getPortalDashboardTotals } from '@/lib/client-portal/reports'
 
