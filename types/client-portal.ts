@@ -1,34 +1,19 @@
+import type {
+  PortalIncident as CanonicalPortalIncident,
+  PortalSiteSummary,
+} from '@/lib/client-portal'
+import type { Device } from '@/lib/types'
+
 export type PortalTimestamp = Date | string | null | undefined
 
-export interface PortalDevice {
-  id?: string
-  name?: string
-  nombre?: string
-  label?: string
-  tipo?: string
-  status?: string
-  estado?: string
-  statusLabel?: string
-  location?: string
-  ubicacion?: string
-  zone?: string
-  zona?: string
-  updatedAt?: PortalTimestamp
-  lastSeenAt?: PortalTimestamp
-}
+/** Canonical device contract used by the portal domain. */
+export type PortalDevice = Device
 
-export interface PortalIncident {
-  id?: string
-  title?: string
-  type?: string
-  description?: string
-  status?: string
-  statusLabel?: string
-  responsible?: string
-  assignee?: string
-  createdAt?: PortalTimestamp
-  updatedAt?: PortalTimestamp
-}
+/** Canonical site contract returned by the portal data layer. */
+export type PortalSite = PortalSiteSummary
+
+/** Canonical incident contract used by portal feeds and views. */
+export type PortalIncident = CanonicalPortalIncident
 
 export interface PortalActivityItem {
   id?: string
@@ -51,30 +36,6 @@ export interface PortalEvidenceItem {
   action?: string
   createdAt?: PortalTimestamp
   updatedAt?: PortalTimestamp
-}
-
-export interface PortalSiteProfile {
-  summary?: string
-}
-
-export interface PortalSite {
-  propertyId: string
-  name?: string
-  label?: string
-  organizationName?: string
-  address?: string
-  location?: string
-  imageUrl?: string
-  imageAlt?: string
-  status?: string
-  statusLabel?: string
-  lastUpdatedAt?: PortalTimestamp
-  deviceCount?: number
-  cameraCount?: number
-  sensorCount?: number
-  profile?: PortalSiteProfile
-  devices?: PortalDevice[]
-  incidents?: PortalIncident[]
 }
 
 export interface PortalSiteDeviceItem {
