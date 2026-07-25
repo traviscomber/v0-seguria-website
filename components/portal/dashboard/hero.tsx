@@ -12,6 +12,7 @@ interface DashboardHeroProps {
   overallStatus: ClientDashboardView['overallStatus']
   theme: ClientTheme
   siteCount: number
+  imageUrl?: string | null
 }
 
 export function DashboardHero({
@@ -20,10 +21,12 @@ export function DashboardHero({
   overallStatus,
   theme,
   siteCount,
+  imageUrl,
 }: DashboardHeroProps) {
   const isForest = theme.key === 'huilo-huilo'
   const isDairy = theme.key === 'santa-elena'
   const ThemeIcon = isForest ? Trees : isDairy ? Wheat : Sparkles
+  const heroImage = imageUrl || theme.heroImage
 
   const highlights = isForest
     ? [
@@ -44,7 +47,7 @@ export function DashboardHero({
     <section className="group relative min-h-[430px] overflow-hidden rounded-[32px] border border-white/10 shadow-2xl shadow-black/25">
       <div
         className="absolute inset-0 bg-cover bg-center transition duration-1000 group-hover:scale-[1.025]"
-        style={{ backgroundImage: `url('${theme.heroImage}')` }}
+        style={{ backgroundImage: `url('${heroImage}')` }}
       />
       <div className="absolute inset-0 bg-black/25" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/58 to-black/15" />
