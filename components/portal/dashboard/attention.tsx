@@ -43,7 +43,7 @@ export function DashboardAttention({ incidents, alerts }: DashboardAttentionProp
                         {incident.title || incident.type || 'Incidente'}
                       </p>
                       <p className="mt-1 truncate text-xs text-white/45">
-                        {site.label || site.name || 'Propiedad'} · {formatPortalDate(incident.createdAt)}
+                        {site.label || site.location || 'Propiedad'} · {formatPortalDate(incident.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -75,7 +75,7 @@ export function DashboardAttention({ incidents, alerts }: DashboardAttentionProp
                         {getPortalDeviceLabel(device) || 'Equipo con alerta'}
                       </p>
                       <p className="mt-1 text-xs text-white/45">
-                        {site.label || site.name || device.location || device.ubicacion || 'Ubicación disponible en la propiedad'}
+                        {site.label || site.location || device.location || device.ubicacion || 'Ubicación disponible en la propiedad'}
                       </p>
                     </div>
                     <PortalStatusBadge tone={getPortalTone(device.status || device.estado)}>
