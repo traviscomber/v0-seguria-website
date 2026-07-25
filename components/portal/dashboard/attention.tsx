@@ -40,7 +40,7 @@ export function DashboardAttention({ incidents, alerts }: DashboardAttentionProp
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-white">
-                        {incident.title || incident.type || 'Incidente'}
+                        {incident.title || incident.relatedEvents[0]?.type || 'Incidente'}
                       </p>
                       <p className="mt-1 truncate text-xs text-white/45">
                         {site.label || site.name || 'Propiedad'} · {formatPortalDate(incident.createdAt)}
