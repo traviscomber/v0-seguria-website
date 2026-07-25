@@ -4,7 +4,7 @@ import type {
   PortalIncident,
   PortalSensorRisk,
   PortalSiteSummary,
-} from '@/lib/client-portal'
+} from '@/lib/client-portal/types'
 
 const openIncidentStatuses: PortalIncident['status'][] = [
   'new',
