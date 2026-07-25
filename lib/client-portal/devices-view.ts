@@ -1,8 +1,9 @@
 import { getAccessiblePortalSites } from '@/lib/client-portal'
-import { mapPortalSitesToSummaries } from '@/lib/client-portal/site-summary'
 import type { PortalDevice, PortalSite } from '@/types/client-portal'
 
 type PortalUser = Parameters<typeof getAccessiblePortalSites>[0]
+
+type DeviceGroup = 'camera' | 'sensor' | 'alert' | 'access' | 'other'
 
 export interface ClientDevicesView {
   sites: PortalSite[]
@@ -18,13 +19,11 @@ export interface ClientDevicesView {
 }
 
 function isOnline(device: PortalDevice) {
-  return ['activo', 'active', 'online', 'ok'].includes(
-    String(device.estado || device.status || '').toLowerCase()
-  )
+  return device.estado === 'activo'
 }
 
-function getDeviceGroup(device: PortalDevice) {
-  const type = String(device.tipo || '').toLowerCase()
+function getDeviceGroup(device: PortalDevice): DeviceGroup {
+  const type = device.tipo.toLowerCase()
 
   if (type.includes('camara')) return 'camera'
   if (type.includes('sensor') || type.includes('temperatura') || type.includes('movimiento')) return 'sensor'
@@ -34,10 +33,13 @@ function getDeviceGroup(device: PortalDevice) {
   return 'other'
 }
 
+function uniqueDevices(devices: PortalDevice[]) {
+  return [...new Map(devices.map((device) => [device.id, device])).values()]
+}
+
 export async function buildClientDevicesView(user: PortalUser): Promise<ClientDevicesView> {
-  const sites = (await getAccessiblePortalSites(user)) as PortalSite[]
-  const summaries = mapPortalSitesToSummaries(sites)
-  const devices = summaries.flatMap((site) => site.devices || []) as PortalDevice[]
+  const sites = await getAccessiblePortalSites(user)
+  const devices = sites.flatMap((site) => site.devices)
 
   const cameras = devices.filter((device) => getDeviceGroup(device) === 'camera')
   const sensors = devices.filter((device) => getDeviceGroup(device) === 'sensor')
@@ -45,7 +47,7 @@ export async function buildClientDevicesView(user: PortalUser): Promise<ClientDe
   const access = devices.filter((device) => getDeviceGroup(device) === 'access')
   const onlineDevices = devices.filter(isOnline)
   const offlineDevices = devices.filter((device) => !isOnline(device))
-  const attentionRequired = [...offlineDevices, ...alerts]
+  const attentionRequired = uniqueDevices([...offlineDevices, ...alerts])
 
   return {
     sites,
