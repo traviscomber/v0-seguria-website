@@ -1,7 +1,7 @@
 import type {
   PortalOperationalReport,
   PortalSiteSummary,
-} from '@/lib/client-portal'
+} from '@/lib/client-portal/types'
 import {
   getPortalDeviceBuckets,
   isOpenPortalIncident,
