@@ -3,7 +3,6 @@ import {
   getPortalEvidenceGallery,
   getPortalSiteForUser,
 } from '@/lib/client-portal'
-import { mapPortalSiteToSummary } from '@/lib/client-portal/site-summary'
 import type {
   PortalActivityItem,
   PortalDevice,
@@ -35,12 +34,12 @@ export async function buildClientPropertyView(
   user: PortalUser,
   propertyId: string
 ): Promise<ClientPropertyView | null> {
-  const site = (await getPortalSiteForUser(user, propertyId)) as PortalSite | null
+  const site = await getPortalSiteForUser(user, propertyId)
 
   if (!site) return null
 
-  const devices = (site.devices || []) as PortalDevice[]
-  const incidents = ((site.incidents || []) as PortalIncident[])
+  const devices = site.devices as PortalDevice[]
+  const incidents = (site.incidents as PortalIncident[])
     .filter(isOpenIncident)
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
 
@@ -53,14 +52,13 @@ export async function buildClientPropertyView(
   ).length
 
   const devicesWithAttention = Math.max(0, devices.length - activeDevices)
-  const summarySite = mapPortalSiteToSummary(site)
 
   return {
     site,
     devices,
     cameras,
-    activity: getPortalActivityFeed([summarySite as never]).slice(0, 10) as PortalActivityItem[],
-    evidence: getPortalEvidenceGallery(summarySite as never).slice(0, 8) as PortalEvidenceItem[],
+    activity: getPortalActivityFeed([site]).slice(0, 10) as PortalActivityItem[],
+    evidence: getPortalEvidenceGallery(site).slice(0, 8) as PortalEvidenceItem[],
     incidents,
     activeDevices,
     devicesWithAttention,
