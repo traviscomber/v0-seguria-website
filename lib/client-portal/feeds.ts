@@ -1,4 +1,4 @@
-import type { PortalSiteSummary } from '@/lib/client-portal'
+import type { PortalSiteSummary } from '@/lib/client-portal/types'
 
 export function getPortalActivityFeed(sites: PortalSiteSummary[]) {
   const eventActivity = sites.flatMap((site) =>
