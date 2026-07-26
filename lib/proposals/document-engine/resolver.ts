@@ -1,11 +1,11 @@
-import type { ProposalBlock, ProposalDocument, ProposalVariables } from '@/lib/proposals/types'
+import type { ProposalBlock, ProposalDocument, ProposalVariables } from '../types'
 
 const VARIABLE_PATTERN = /{{\s*([a-zA-Z0-9_.-]+)\s*}}/g
 
 export function resolveProposalText(text: string, variables: ProposalVariables): string {
-  return text.replace(VARIABLE_PATTERN, (_match, key: string) => {
+  return text.replace(VARIABLE_PATTERN, (match, key: string) => {
     const value = variables[key]
-    if (value === undefined || value === null) return ''
+    if (value === undefined || value === null || value === '') return match
     return String(value)
   })
 }
