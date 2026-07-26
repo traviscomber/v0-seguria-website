@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowRight, CheckCircle2, Clock3, FileCheck, Send, TrendingUp } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Clock3, FileCheck, Plus, Send, Sparkles, TrendingUp } from 'lucide-react'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { PROPOSAL_BRANDBOOK } from '@/lib/proposals/brandbook'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,9 +68,12 @@ export default async function ProposalsPage() {
   const supabase = createSupabaseAdminClient()
   if (!supabase) {
     return (
-      <div className="glass-card p-8">
-        <h1 className="text-3xl font-light text-white">Pipeline comercial</h1>
-        <p className="mt-3 text-white/60">Falta configurar la conexion segura de datos para leer oportunidades reales.</p>
+      <div className="space-y-6">
+        <ProposalBuilderIntro />
+        <div className="glass-card p-8">
+          <h1 className="text-3xl font-light text-white">Pipeline comercial</h1>
+          <p className="mt-3 text-white/60">Falta configurar la conexion segura de datos para leer oportunidades reales.</p>
+        </div>
       </div>
     )
   }
@@ -82,9 +86,12 @@ export default async function ProposalsPage() {
 
   if (error) {
     return (
-      <div className="glass-card p-8">
-        <h1 className="text-3xl font-light text-white">Pipeline comercial</h1>
-        <p className="mt-3 text-red-200">No se pudo leer oportunidades: {error.message}</p>
+      <div className="space-y-6">
+        <ProposalBuilderIntro />
+        <div className="glass-card p-8">
+          <h1 className="text-3xl font-light text-white">Pipeline comercial</h1>
+          <p className="mt-3 text-red-200">No se pudo leer oportunidades: {error.message}</p>
+        </div>
       </div>
     )
   }
@@ -100,16 +107,24 @@ export default async function ProposalsPage() {
 
   return (
     <div className="space-y-6">
+      <ProposalBuilderIntro />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-[#4DA3D9]">Venta consultiva</p>
           <h1 className="text-3xl font-light text-white">Pipeline comercial</h1>
           <p className="mt-1 text-white/60">Vista real de oportunidades capturadas desde formularios y contacto comercial.</p>
         </div>
-        <Link href="/admin/leads" className="btn-primary inline-flex w-fit items-center gap-2 px-4 py-2.5 text-[15px]">
-          Gestionar leads
-          <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/propuestas/nueva" className="btn-primary inline-flex w-fit items-center gap-2 px-4 py-2.5 text-[15px]">
+            <Plus className="h-4 w-4" strokeWidth={1.5} />
+            Crear propuesta
+          </Link>
+          <Link href="/admin/leads" className="inline-flex w-fit items-center gap-2 rounded-[6px] border border-white/15 bg-white/[0.04] px-4 py-2.5 text-[15px] text-white transition hover:bg-white/10">
+            Gestionar leads
+            <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -122,14 +137,17 @@ export default async function ProposalsPage() {
       <section className="glass-card overflow-hidden">
         <div className="border-b border-white/10 p-5">
           <h2 className="text-xl font-light text-white">Oportunidades reales</h2>
-          <p className="mt-1 text-sm text-white/50">Esta vista no inventa montos ni PDFs; prepara el trabajo comercial desde datos persistidos.</p>
+          <p className="mt-1 text-sm text-white/50">Selecciona una oportunidad y prepara su documento en el nuevo constructor profesional.</p>
         </div>
 
         {leads.length === 0 ? (
           <div className="p-12 text-center">
             <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/30" strokeWidth={1} />
             <p className="text-white/70">Aun no hay oportunidades registradas.</p>
-            <p className="mt-2 text-sm text-white/45">Cuando llegue un formulario o contacto, el pipeline se llenara automaticamente.</p>
+            <p className="mt-2 text-sm text-white/45">Puedes crear una propuesta desde cero mientras llegan nuevos contactos.</p>
+            <Link href="/admin/propuestas/nueva" className="btn-primary mt-5 inline-flex items-center gap-2 px-4 py-2.5 text-sm">
+              <Plus className="h-4 w-4" /> Crear propuesta
+            </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -141,6 +159,7 @@ export default async function ProposalsPage() {
                   <th className="p-4 font-normal">Origen</th>
                   <th className="p-4 font-normal">Estado</th>
                   <th className="p-4 font-normal">Ingreso</th>
+                  <th className="p-4 font-normal">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,6 +181,11 @@ export default async function ProposalsPage() {
                       </span>
                     </td>
                     <td className="p-4 text-sm text-white/50">{formatDate(lead.created_at)}</td>
+                    <td className="p-4">
+                      <Link href={`/admin/propuestas/nueva?lead=${lead.id}`} className="inline-flex items-center gap-1.5 text-sm text-[#9DD2F2] hover:text-white">
+                        Preparar <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -170,6 +194,25 @@ export default async function ProposalsPage() {
         )}
       </section>
     </div>
+  )
+}
+
+function ProposalBuilderIntro() {
+  return (
+    <section className="relative overflow-hidden rounded-[28px] border border-[#4DA3D9]/20 bg-[radial-gradient(circle_at_10%_0%,rgba(77,163,217,0.22),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6">
+      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[#9DD2F2]"><Sparkles className="h-4 w-4" /> Nuevo constructor</p>
+          <h2 className="mt-3 text-2xl font-medium text-white">Propuestas diagramadas automáticamente</h2>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            Sube fotografías, escribe títulos y organiza secciones con vista previa inmediata. El editor bloquea colores, tipografías, layouts y tono según el brandbook {PROPOSAL_BRANDBOOK.version}.
+          </p>
+        </div>
+        <Link href="/admin/propuestas/nueva" className="btn-primary inline-flex shrink-0 items-center gap-2 px-5 py-3 text-[15px]">
+          <Plus className="h-4 w-4" /> Nueva propuesta
+        </Link>
+      </div>
+    </section>
   )
 }
 
