@@ -59,19 +59,19 @@ export function LocaleFooter({ locale }: { locale: Locale }) {
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
                 <Mail size={16} className="text-[#4DA3D9]" />
-                <a href="mailto:contacto@seguria.tech" className="text-sm text-white/50 transition-colors hover:text-white">
-                  contacto@seguria.tech
+                <a href="mailto:info@seguria.tech" className="text-sm text-white/50 transition-colors hover:text-white">
+                  info@seguria.tech
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} className="text-[#4DA3D9]" />
-                <a href="tel:+56912345678" className="text-sm text-white/50 transition-colors hover:text-white">
-                  +56 9 1234 5678
+                <a href="tel:+56928003961" className="text-sm text-white/50 transition-colors hover:text-white">
+                  +56 9 2800 3961
                 </a>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin size={16} className="mt-0.5 text-[#4DA3D9]" />
-                <span className="text-sm text-white/50">Santiago, Chile</span>
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[#4DA3D9]" />
+                <span className="text-sm text-white/50">Av. Vitacura 3439, Of. 602, Vitacura, Santiago, Chile</span>
               </li>
             </ul>
           </div>
@@ -79,10 +79,17 @@ export function LocaleFooter({ locale }: { locale: Locale }) {
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 md:flex-row">
           <p className="text-sm text-white/40">{copy.rights}</p>
-          <p className="text-sm text-white/35">{copy.line}</p>
+          <a
+            href="https://www.n3uralia.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-white/35 transition-colors hover:text-white/60"
+            aria-label="Visitar N3uralia"
+          >
+            Powered by N3uralia®
+          </a>
         </div>
       </div>
     </footer>
   )
 }
-
