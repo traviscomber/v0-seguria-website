@@ -5,6 +5,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const publicRoutes = [
     '',
     '/soluciones',
+    '/ia-para-camaras',
+    '/deteccion-personas',
+    '/deteccion-vehiculos',
+    '/deteccion-animales',
+    '/deteccion-pumas',
+    '/proteccion-perimetral',
+    '/analitica-video',
+    '/modernizar-camaras-existentes',
     '/campos-inteligentes',
     '/propiedades-inteligentes',
     '/hoteleria-inteligente',
@@ -12,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/contacto',
   ]
 
-  const routes = publicRoutes.flatMap((route) =>
+  return publicRoutes.flatMap((route) =>
     (['es', 'en'] as const).map((locale) => ({
       url: `${baseUrl}/${locale}${route}`,
       lastModified: new Date(),
@@ -26,6 +34,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
       },
     })),
   )
-
-  return routes
 }
