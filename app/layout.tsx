@@ -11,9 +11,9 @@ const montserrat = Montserrat({
 })
 
 const siteUrl = 'https://seguria.tech'
-const siteTitle = 'SegurIA Chile | Sistemas de seguridad integral con inteligencia artificial'
+const siteTitle = 'SegurIA Chile | Seguridad integral, cámaras, redes e IA'
 const siteDescription =
-  'Sistemas de seguridad integral en Chile para campos, empresas, hoteles, condominios y propiedades. Integramos cámaras, alarmas, sensores, control de acceso, monitoreo y automatización con inteligencia artificial.'
+  'Diseñamos e instalamos sistemas de seguridad integral en Chile: cámaras, alarmas, sensores, control de acceso, redes, conectividad satelital de alta velocidad y analítica con inteligencia artificial.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -26,10 +26,12 @@ export const metadata: Metadata = {
   authors: [{ name: 'SegurIA', url: siteUrl }],
   creator: 'SegurIA',
   publisher: 'SegurIA',
-  category: 'Sistemas de seguridad integral',
+  category: 'Sistemas de seguridad integral y conectividad',
   keywords: [
     'sistemas de seguridad Chile',
     'seguridad integral Chile',
+    'instalación de cámaras de seguridad',
+    'instalación de sistemas de seguridad',
     'empresa de seguridad tecnológica Chile',
     'seguridad electrónica Chile',
     'cámaras de seguridad Chile',
@@ -38,13 +40,18 @@ export const metadata: Metadata = {
     'control de acceso',
     'monitoreo de seguridad',
     'inteligencia artificial para seguridad',
+    'reconocimiento de personas vehículos y animales',
+    'conectividad satelital Chile',
+    'internet satelital de alta velocidad',
+    'instalación Starlink Chile',
+    'redes para cámaras de seguridad',
+    'redes inalámbricas rurales',
+    'infraestructura de telecomunicaciones',
     'seguridad para campos',
     'seguridad para empresas',
     'seguridad para hoteles',
     'seguridad para condominios',
-    'seguridad para propiedades',
     'automatización de seguridad',
-    'gestión de incidentes',
     'SegurIA Chile',
   ],
   alternates: {
@@ -114,32 +121,40 @@ export default function RootLayout({
         logo: `${siteUrl}/logo.png`,
         description: siteDescription,
         foundingDate: '2024',
+        telephone: '+56928003961',
+        email: 'info@seguria.tech',
         areaServed: {
           '@type': 'Country',
           name: 'Chile',
         },
         address: {
           '@type': 'PostalAddress',
+          streetAddress: 'Av. Vitacura 3439, Of. 602',
           addressCountry: 'CL',
           addressRegion: 'Región Metropolitana',
-          addressLocality: 'Santiago',
+          addressLocality: 'Vitacura',
         },
         knowsAbout: [
-          'Sistemas de seguridad integral',
+          'Diseño e instalación de sistemas de seguridad integral',
+          'Instalación de cámaras de seguridad',
           'Seguridad electrónica',
-          'Videovigilancia',
-          'Cámaras de seguridad',
+          'Videovigilancia y analítica de video',
+          'Reconocimiento de personas, vehículos, objetos y animales',
           'Alarmas y sensores',
           'Control de acceso',
           'Monitoreo de seguridad',
-          'Automatización',
-          'Inteligencia artificial aplicada a seguridad',
-          'Gestión de incidentes',
+          'Redes cableadas e inalámbricas',
+          'Conectividad satelital de alta velocidad',
+          'Integración de soluciones Starlink',
+          'Infraestructura tecnológica para zonas rurales y remotas',
+          'Automatización e inteligencia artificial aplicada a seguridad',
         ],
         sameAs: ['https://segur-ia.cl'],
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'sales',
+          telephone: '+56928003961',
+          email: 'info@seguria.tech',
           availableLanguage: ['es'],
           areaServed: 'CL',
           url: `${siteUrl}/contacto`,
@@ -148,8 +163,8 @@ export default function RootLayout({
       {
         '@type': 'Service',
         '@id': `${siteUrl}/#service`,
-        name: 'Sistemas de seguridad integral con inteligencia artificial',
-        serviceType: 'Diseño, integración y operación de sistemas de seguridad integral',
+        name: 'Sistemas integrales de seguridad, conectividad e inteligencia artificial',
+        serviceType: 'Diseño, instalación, integración y operación de seguridad, redes y conectividad',
         provider: { '@id': `${siteUrl}/#organization` },
         areaServed: {
           '@type': 'Country',
@@ -160,16 +175,20 @@ export default function RootLayout({
           { '@type': 'BusinessAudience', audienceType: 'Campos y agroindustria' },
           { '@type': 'BusinessAudience', audienceType: 'Hoteles' },
           { '@type': 'BusinessAudience', audienceType: 'Condominios y propiedades' },
+          { '@type': 'BusinessAudience', audienceType: 'Operaciones rurales y remotas' },
         ],
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
-          name: 'Soluciones de seguridad integral',
+          name: 'Soluciones integrales SegurIA',
           itemListElement: [
-            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Cámaras y videovigilancia inteligente' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Diseño e instalación de cámaras y videovigilancia' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Analítica de video y reconocimiento de objetos con IA' } },
             { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Alarmas, sensores y detección de eventos' } },
             { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Control de acceso y protección perimetral' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Diseño e instalación de redes cableadas e inalámbricas' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Conectividad satelital de alta velocidad e integración de Starlink' } },
             { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Monitoreo, automatización y respuesta a incidentes' } },
-            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Integración de sistemas existentes con inteligencia artificial' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Modernización de infraestructura existente' } },
           ],
         },
       },
