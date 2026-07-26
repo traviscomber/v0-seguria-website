@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { ProposalBuilder } from '@/components/admin/proposals/proposal-builder'
+import { ProposalStudio } from '@/components/admin/proposals/proposal-studio'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -35,7 +35,7 @@ export default async function NewProposalPage({ searchParams }: NewProposalPageP
   }
 
   return (
-    <ProposalBuilder
+    <ProposalStudio
       initialClientName={initialClientName}
       initialContext={initialContext}
       leadId={leadId}
