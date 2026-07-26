@@ -1,11 +1,11 @@
-import { PROPOSAL_BRANDBOOK } from '@/lib/proposals/brandbook'
+import { PROPOSAL_BRANDBOOK } from '../brandbook'
 import type {
   ProposalAsset,
   ProposalBlock,
   ProposalDocument,
   ProposalStatus,
   ProposalVariables,
-} from '@/lib/proposals/types'
+} from '../types'
 
 type BuildProposalDocumentInput = {
   title: string
