@@ -26,6 +26,7 @@ export default async function ClientAppPage() {
     site.propertyId,
   ])
   const theme = getClientTheme(...session.user.clientIds, ...organizationIdentifiers)
+  const primaryImage = model.sites.find((site) => Boolean(site.imageUrl))?.imageUrl
 
   return (
     <div
@@ -45,16 +46,16 @@ export default async function ClientAppPage() {
           overallStatus={model.overallStatus}
           theme={theme}
           siteCount={model.sites.length}
+          imageUrl={primaryImage}
         />
 
-        <section aria-label={`Resumen de ${theme.vocabulary.operation}`}>
-          <DashboardStats
-            totals={model.totals}
-            sites={model.sites}
-            alerts={model.alerts}
-            incidents={model.incidents}
-          />
-        </section>
+        <DashboardStats
+          totals={model.totals}
+          sites={model.sites}
+          alerts={model.alerts}
+          incidents={model.incidents}
+          theme={theme}
+        />
 
         <section aria-label={theme.vocabulary.properties}>
           <DashboardProperties sites={model.sites} />
