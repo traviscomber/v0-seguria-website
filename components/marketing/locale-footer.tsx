@@ -26,6 +26,11 @@ export function LocaleFooter({ locale }: { locale: Locale }) {
                 </Link>
               </li>
               <li>
+                <Link href={localizedPath(locale, '/preguntas-frecuentes')} className="text-sm text-white/50 transition-colors hover:text-white">
+                  Preguntas frecuentes
+                </Link>
+              </li>
+              <li>
                 <Link href="/app" className="text-sm text-white/50 transition-colors hover:text-white">
                   {copy.clientPortal}
                 </Link>
