@@ -16,6 +16,7 @@ export function LocaleNavigation({ locale }: { locale: Locale }) {
 
   const links = [
     { href: localizedPath(locale, '/soluciones'), label: copy.nav.solutions },
+    { href: localizedPath(locale, '/preguntas-frecuentes'), label: locale === 'es' ? 'Preguntas frecuentes' : 'FAQ' },
     { href: '/app', label: copy.nav.portal },
   ]
 
@@ -70,4 +71,3 @@ export function LocaleNavigation({ locale }: { locale: Locale }) {
     </nav>
   )
 }
-
