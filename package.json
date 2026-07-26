@@ -1,6 +1,6 @@
 {
   "name": "v0-seguria-website",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:proposal-engine": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/proposals/document-engine/document-engine.test.ts",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:proposal-engine && pnpm build",
     "db:health": "node scripts/database-health.mjs",
     "smoke:client-portal": "node scripts/client-portal-smoke.mjs",
     "smoke:operational": "node scripts/operational-smoke.mjs",
