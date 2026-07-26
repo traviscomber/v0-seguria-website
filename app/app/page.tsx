@@ -58,19 +58,19 @@ export default async function ClientAppPage() {
         />
 
         <section aria-label={theme.vocabulary.properties}>
-          <DashboardProperties sites={model.sites} />
+          <DashboardProperties sites={model.sites} theme={theme} />
         </section>
 
         <section aria-label={`Prioridades de ${theme.vocabulary.operation}`}>
-          <DashboardAttention incidents={model.incidents} alerts={model.alerts} />
+          <DashboardAttention incidents={model.incidents} alerts={model.alerts} theme={theme} />
         </section>
 
         <section aria-label="Vigilancia">
-          <DashboardCameras cameras={model.cameras} />
+          <DashboardCameras cameras={model.cameras} theme={theme} />
         </section>
 
         <section id="actividad" className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <DashboardActivity activity={model.activity} />
+          <DashboardActivity activity={model.activity} theme={theme} />
           <DashboardSupport />
         </section>
       </div>
