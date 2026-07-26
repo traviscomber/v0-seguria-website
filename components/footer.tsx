@@ -112,7 +112,15 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 md:flex-row">
           <p className="text-sm text-white/40">© 2026 SegurIA. Todos los derechos reservados.</p>
-          <p className="text-sm text-white/35">Seguridad integral conectada con inteligencia artificial.</p>
+          <a
+            href="https://www.n3uralia.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-white/35 transition-colors hover:text-white/60"
+            aria-label="Visitar N3uralia"
+          >
+            Powered by N3uralia®
+          </a>
         </div>
       </div>
     </footer>
