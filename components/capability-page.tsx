@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
-import { ArrowRight, CheckCircle2, MessageCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronRight, MessageCircle } from 'lucide-react'
 
 type FAQ = { question: string; answer: string }
 
@@ -12,30 +12,109 @@ type CapabilityPageProps = {
   highlights: string[]
   useCases: { title: string; description: string }[]
   faq: FAQ[]
+  pagePath?: string
+  serviceName?: string
 }
 
+const siteUrl = 'https://seguria.tech'
 const whatsappUrl =
   'https://wa.me/56928003961?text=Hola%20SegurIA%2C%20quisiera%20evaluar%20una%20soluci%C3%B3n%20de%20seguridad%20con%20inteligencia%20artificial.'
 
-export function CapabilityPage({ eyebrow, title, description, highlights, useCases, faq }: CapabilityPageProps) {
-  const faqSchema = {
+export function CapabilityPage({
+  eyebrow,
+  title,
+  description,
+  highlights,
+  useCases,
+  faq,
+  pagePath,
+  serviceName,
+}: CapabilityPageProps) {
+  const canonicalUrl = pagePath ? `${siteUrl}${pagePath}` : siteUrl
+  const schema = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faq.map((item) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: { '@type': 'Answer', text: item.answer },
-    })),
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonicalUrl}#webpage`,
+        url: canonicalUrl,
+        name: title,
+        description,
+        inLanguage: 'es-CL',
+        isPartOf: { '@id': `${siteUrl}/#website` },
+        about: { '@id': `${canonicalUrl}#service` },
+        breadcrumb: { '@id': `${canonicalUrl}#breadcrumb` },
+      },
+      {
+        '@type': 'Service',
+        '@id': `${canonicalUrl}#service`,
+        name: serviceName ?? eyebrow,
+        description,
+        url: canonicalUrl,
+        provider: { '@id': `${siteUrl}/#organization` },
+        areaServed: { '@type': 'Country', name: 'Chile' },
+        audience: useCases.map((item) => ({
+          '@type': 'Audience',
+          audienceType: item.title,
+        })),
+        serviceOutput: highlights,
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${canonicalUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Inicio',
+            item: siteUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Soluciones',
+            item: `${siteUrl}/soluciones`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: eyebrow,
+            item: canonicalUrl,
+          },
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${canonicalUrl}#faq`,
+        mainEntity: faq.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: { '@type': 'Answer', text: item.answer },
+        })),
+      },
+    ],
   }
 
   return (
     <main className="min-h-screen bg-[#0A1B2E]">
       <Navigation />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
 
       <section className="relative overflow-hidden px-6 pb-20 pt-32 lg:px-8">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(77,163,217,0.22),transparent_34%),linear-gradient(180deg,#0A1B2E,#071523)]" />
         <div className="relative mx-auto max-w-6xl">
+          <nav aria-label="Migas de pan" className="mb-8 flex flex-wrap items-center gap-2 text-sm text-white/50">
+            <Link href="/" className="transition-colors hover:text-white">Inicio</Link>
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <Link href="/soluciones" className="transition-colors hover:text-white">Soluciones</Link>
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <span aria-current="page" className="text-white/75">{eyebrow}</span>
+          </nav>
+
           <p className="text-sm uppercase tracking-[0.24em] text-[#9DD2F2]">{eyebrow}</p>
           <h1 className="mt-5 max-w-5xl text-balance text-4xl font-light leading-tight text-white md:text-6xl">{title}</h1>
           <p className="mt-7 max-w-3xl text-lg leading-8 text-white/68 md:text-xl">{description}</p>
