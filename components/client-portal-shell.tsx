@@ -11,58 +11,68 @@ import {
   LogOut,
   Menu,
   Siren,
+  Trees,
   UserRound,
+  Wheat,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import type { ClientTheme } from '@/lib/client-theme'
 import { cn } from '@/lib/utils'
-
-const navItems = [
-  { href: '/app', label: 'Resumen', icon: Home },
-  { href: '/app#propiedades', label: 'Propiedades', icon: Building2 },
-  { href: '/app#incidentes', label: 'Incidentes', icon: Siren },
-  { href: '/app#camaras', label: 'Cámaras', icon: Camera },
-  { href: '/app#actividad', label: 'Actividad', icon: BellRing },
-  { href: '/es/contacto', label: 'Soporte', icon: Headphones },
-]
-
-const quickLinks = [
-  {
-    label: 'Estado general',
-    value: 'Propiedades, alertas e incidentes',
-    href: '/app',
-  },
-  {
-    label: 'Revisar propiedades',
-    value: 'Cámaras, sensores y actividad',
-    href: '/app#propiedades',
-  },
-  {
-    label: 'Ver pendientes',
-    value: 'Alertas e incidentes abiertos',
-    href: '/app#incidentes',
-  },
-  {
-    label: 'Solicitar ayuda',
-    value: 'Contacto directo con SegurIA',
-    href: '/es/contacto',
-  },
-]
 
 export function ClientPortalShell({
   children,
   userName,
   userRole,
+  theme,
 }: {
   children: React.ReactNode
   userName: string
   userRole: string
+  theme: ClientTheme
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [loggingOut, setLoggingOut] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeHash, setActiveHash] = useState('')
+
+  const navItems = useMemo(() => {
+    const propertiesLabel = theme.key === 'huilo-huilo' ? 'Espacios' : theme.key === 'santa-elena' ? 'Predios' : 'Propiedades'
+    const PropertiesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
+
+    return [
+      { href: '/app', label: 'Resumen', icon: Home },
+      { href: '/app#propiedades', label: propertiesLabel, icon: PropertiesIcon },
+      { href: '/app#incidentes', label: 'Incidentes', icon: Siren },
+      { href: '/app#camaras', label: 'Vigilancia', icon: Camera },
+      { href: '/app#actividad', label: 'Actividad', icon: BellRing },
+      { href: '/es/contacto', label: 'Soporte', icon: Headphones },
+    ]
+  }, [theme.key])
+
+  const quickLinks = useMemo(() => [
+    {
+      label: 'Estado general',
+      value: `Resumen de la ${theme.vocabulary.operation}`,
+      href: '/app',
+    },
+    {
+      label: `Revisar ${theme.vocabulary.properties}`,
+      value: theme.key === 'huilo-huilo' ? 'Hoteles, senderos y zonas críticas' : theme.key === 'santa-elena' ? 'Ganado, ordeña y maquinaria' : 'Cámaras, sensores y actividad',
+      href: '/app#propiedades',
+    },
+    {
+      label: 'Ver prioridades',
+      value: `Alertas e incidentes de ${theme.vocabulary.priority}`,
+      href: '/app#incidentes',
+    },
+    {
+      label: 'Solicitar ayuda',
+      value: 'Contacto directo con SegurIA',
+      href: '/es/contacto',
+    },
+  ], [theme])
 
   useEffect(() => {
     const syncHash = () => setActiveHash(window.location.hash)
@@ -93,17 +103,16 @@ export function ClientPortalShell({
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(77,163,217,0.18),_transparent_28%),linear-gradient(180deg,#081624_0%,#0A1B2E_100%)] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081624]/90 backdrop-blur-xl">
+    <div className="min-h-screen text-white" style={{ backgroundColor: theme.pageBackground }}>
+      <header className={`sticky top-0 z-40 border-b border-white/10 ${theme.cardClass} backdrop-blur-2xl`}>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/app" className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] ${theme.accentTextClass}`}>
+              {theme.key === 'huilo-huilo' ? <Trees className="h-5 w-5" /> : theme.key === 'santa-elena' ? <Wheat className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+            </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.22em] text-white/40">Portal de clientes</p>
-              <img
-                src="/seguria-logo.png"
-                alt="SegurIA"
-                className="mt-1 h-7 w-[126px] rounded-[4px] object-contain object-left"
-              />
+              <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">Portal de clientes</p>
+              <p className="mt-0.5 text-sm font-medium text-white">{theme.name}</p>
             </div>
           </Link>
 
@@ -116,8 +125,8 @@ export function ClientPortalShell({
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors',
-                    active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-all',
+                    active ? `bg-white/10 text-white shadow-sm ${theme.accentTextClass}` : 'text-white/60 hover:bg-white/5 hover:text-white'
                   )}
                 >
                   <item.icon className="h-4 w-4" strokeWidth={1.8} />
@@ -129,23 +138,23 @@ export function ClientPortalShell({
 
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 sm:flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4DA3D9]/15 text-[#9DD2F2]">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] ${theme.accentTextClass}`}>
                 <UserRound className="h-4 w-4" />
               </span>
               <div className="min-w-0 text-right">
                 <p className="max-w-40 truncate text-sm text-white">{userName}</p>
-                <p className="text-xs text-white/45">{userRole === 'client' ? 'Cliente' : userRole}</p>
+                <p className="text-xs text-white/45">{userRole === 'client' ? theme.vocabulary.operation : userRole}</p>
               </div>
             </div>
 
-            <Button variant="outline" size="sm" onClick={handleLogout} disabled={loggingOut} className="hidden md:inline-flex">
+            <Button variant="outline" size="sm" onClick={handleLogout} disabled={loggingOut} className="hidden border-white/15 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white md:inline-flex">
               <LogOut className="h-4 w-4" />
               {loggingOut ? 'Cerrando...' : 'Salir'}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="text-white lg:hidden"
               onClick={() => setMobileOpen((value) => !value)}
               aria-label="Abrir menú"
               aria-expanded={mobileOpen}
@@ -168,7 +177,7 @@ export function ClientPortalShell({
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
-                      active ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+                      active ? `bg-white/10 text-white ${theme.accentTextClass}` : 'text-white/70 hover:bg-white/5 hover:text-white'
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -189,18 +198,18 @@ export function ClientPortalShell({
         )}
       </header>
 
-      <section className="border-b border-white/10 bg-[#081624]/55 backdrop-blur">
+      <section className={`border-b border-white/10 ${theme.cardClass} backdrop-blur-xl`}>
         <div className="mx-auto grid max-w-7xl gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[1.05fr_1.95fr] lg:px-8">
           <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 rounded-full border border-[#4DA3D9]/40 bg-[#4DA3D9]/12 p-2 text-[#9FDBFF]">
+              <span className={`mt-0.5 rounded-full border border-white/10 bg-white/[0.06] p-2 ${theme.accentTextClass}`}>
                 <Home className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#9FDBFF]">Tu seguridad</p>
+                <p className={`text-[11px] uppercase tracking-[0.22em] ${theme.accentTextClass}`}>{theme.badge}</p>
                 <p className="mt-1 text-sm text-white">{userName}</p>
                 <p className="mt-1 text-xs leading-5 text-white/55">
-                  Revisa lo importante, entra a tus propiedades y solicita ayuda cuando la necesites.
+                  {theme.description}
                 </p>
               </div>
             </div>
@@ -211,9 +220,9 @@ export function ClientPortalShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-[#4DA3D9]/45 hover:bg-[#4DA3D9]/10"
+                className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]"
               >
-                <p className="text-[11px] uppercase tracking-[0.2em] text-white/45 group-hover:text-[#9FDBFF]">
+                <p className={`text-[11px] uppercase tracking-[0.2em] text-white/45 group-hover:${theme.accentTextClass}`}>
                   {item.label}
                 </p>
                 <p className="mt-2 text-sm leading-5 text-white/78">{item.value}</p>

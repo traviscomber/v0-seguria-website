@@ -1,31 +1,47 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
+
+const siteUrl = 'https://seguria.tech'
+
+const routes = [
+  { path: '', changeFrequency: 'weekly', priority: 1 },
+  { path: '/soluciones', changeFrequency: 'monthly', priority: 0.9 },
+  { path: '/ia-para-camaras', changeFrequency: 'monthly', priority: 0.9 },
+  { path: '/deteccion-personas', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/deteccion-vehiculos', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/deteccion-animales', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/deteccion-pumas', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/proteccion-perimetral', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/analitica-video', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/modernizar-camaras-existentes', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/campos-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/propiedades-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/hoteleria-inteligente', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/integraciones', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/preguntas-frecuentes', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/contacto', changeFrequency: 'yearly', priority: 0.6 },
+] as const
+
+const locales = ['es', 'en'] as const
+
+type SitemapEntry = MetadataRoute.Sitemap[number]
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://seguria.tech'
-  const publicRoutes = [
-    '',
-    '/soluciones',
-    '/campos-inteligentes',
-    '/propiedades-inteligentes',
-    '/hoteleria-inteligente',
-    '/integraciones',
-    '/contacto',
-  ]
+  return routes.flatMap(({ path, changeFrequency, priority }) => {
+    const alternates = {
+      'es-CL': `${siteUrl}/es${path}`,
+      en: `${siteUrl}/en${path}`,
+      'x-default': `${siteUrl}/es${path}`,
+    }
 
-  const routes = publicRoutes.flatMap((route) =>
-    (['es', 'en'] as const).map((locale) => ({
-      url: `${baseUrl}/${locale}${route}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: route === '' ? 1 : route === '/contacto' ? 0.7 : 0.9,
-      alternates: {
-        languages: {
-          es: `${baseUrl}/es${route}`,
-          en: `${baseUrl}/en${route}`,
+    return locales.map(
+      (locale): SitemapEntry => ({
+        url: `${siteUrl}/${locale}${path}`,
+        changeFrequency,
+        priority,
+        alternates: {
+          languages: alternates,
         },
-      },
-    })),
-  )
-
-  return routes
+      }),
+    )
+  })
 }
