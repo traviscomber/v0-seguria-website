@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Activity, AlertTriangle, Camera, Loader2, Sparkles, Upload } from 'lucide-react'
 
+import {
+  selectVisionProvider,
+  visionProviderEndpoint,
+  visionProviderLabel,
+  type VisionProvider,
+} from '@/lib/wildlife/vision-providers'
+
 interface Detection {
   species: string
   confidence: number
@@ -25,34 +32,60 @@ interface VisionResponse {
   message?: string
 }
 
+interface ProviderResponse {
+  providers?: {
+    openai?: {
+      configured?: boolean
+      ready?: boolean
+      status?: string
+      model?: string
+    }
+  }
+}
+
 export function VisionConsole() {
   const [health, setHealth] = useState<VisionResponse | null>(null)
   const [ready, setReady] = useState<VisionResponse | null>(null)
+  const [providers, setProviders] = useState<ProviderResponse | null>(null)
   const [result, setResult] = useState<VisionResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function refreshStatus() {
-    const [healthResponse, readyResponse] = await Promise.all([
+    const [healthResponse, readyResponse, providerResponse] = await Promise.all([
       fetch('/api/vision/health', { cache: 'no-store' }),
       fetch('/api/vision/ready', { cache: 'no-store' }),
+      fetch('/api/vision/providers', { cache: 'no-store' }),
     ])
     setHealth(await healthResponse.json())
     setReady(await readyResponse.json())
+    setProviders(await providerResponse.json())
   }
 
   useEffect(() => {
     void refreshStatus()
   }, [])
 
+  const isOnnxReady = ready?.ok === true
+  const isOpenAiReady = providers?.providers?.openai?.ready === true
+  const selectedProvider: VisionProvider = selectVisionProvider({
+    onnxReady: isOnnxReady,
+    openaiReady: isOpenAiReady,
+    openaiModel: providers?.providers?.openai?.model,
+  })
+  const selectedEndpoint = visionProviderEndpoint(selectedProvider)
+  const providerLabel = visionProviderLabel(
+    selectedProvider,
+    providers?.providers?.openai?.model
+  )
+
   async function submitImage(formData: FormData) {
     const file = formData.get('image')
-    if (!(file instanceof File) || file.size === 0) return
+    if (!(file instanceof File) || file.size === 0 || !selectedEndpoint) return
 
     setLoading(true)
     setResult(null)
     try {
-      const endpoint = ready?.ok === true ? '/api/vision/infer' : '/api/vision/openai/infer'
-      const response = await fetch(endpoint, {
+      const response = await fetch(selectedEndpoint, {
         method: 'POST',
         headers: { 'X-Image-Content-Type': file.type },
         body: await file.arrayBuffer(),
@@ -68,11 +101,9 @@ export function VisionConsole() {
     }
   }
 
-  const isOnnxReady = ready?.ok === true
-
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
           <div className="flex items-center gap-3">
             <Activity className="h-5 w-5 text-[#9DD2F2]" />
@@ -84,29 +115,36 @@ export function VisionConsole() {
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
           <div className="flex items-center gap-3">
-            {isOnnxReady ? (
-              <Camera className="h-5 w-5 text-emerald-300" />
-            ) : (
-              <Sparkles className="h-5 w-5 text-[#9DD2F2]" />
-            )}
+            <Camera className={`h-5 w-5 ${isOnnxReady ? 'text-emerald-300' : 'text-white/30'}`} />
             <div>
-              <p className="text-sm text-white/50">Proveedor de prueba</p>
-              <p className="text-lg text-white">
-                {isOnnxReady ? 'Detector ONNX local' : 'OpenAI Vision temporal'}
-              </p>
+              <p className="text-sm text-white/50">ONNX</p>
+              <p className="text-lg text-white">{isOnnxReady ? 'Listo' : 'No disponible'}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+          <div className="flex items-center gap-3">
+            <Sparkles className={`h-5 w-5 ${isOpenAiReady ? 'text-[#9DD2F2]' : 'text-white/30'}`} />
+            <div>
+              <p className="text-sm text-white/50">OpenAI temporal</p>
+              <p className="text-lg text-white">{isOpenAiReady ? 'Listo' : 'Falta API key'}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {!isOnnxReady && (
-        <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm leading-6 text-amber-100/80">
+      <div className={`flex gap-3 rounded-xl border p-4 text-sm leading-6 ${selectedProvider ? 'border-[#9DD2F2]/20 bg-[#9DD2F2]/[0.06] text-white/75' : 'border-amber-300/20 bg-amber-300/[0.06] text-amber-100/80'}`}>
+        {selectedProvider ? (
+          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#9DD2F2]" />
+        ) : (
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-          <p>
-            El detector ONNX todavía no está listo. Esta prueba usa OpenAI para validar el flujo funcional. Las cajas y confianzas son aproximadas y deben revisarse manualmente.
-          </p>
-        </div>
-      )}
+        )}
+        <p>
+          {selectedProvider
+            ? `Proveedor activo: ${providerLabel}.`
+            : 'No existe un proveedor de inferencia disponible. Configure OPENAI_API_KEY o incorpore un modelo ONNX válido.'}
+        </p>
+      </div>
 
       <form action={submitImage} className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
         <div className="flex items-center gap-3">
@@ -122,11 +160,12 @@ export function VisionConsole() {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             required
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#081827] px-4 py-3 text-sm text-white file:mr-4 file:rounded-md file:border-0 file:bg-[#123A5A] file:px-4 file:py-2 file:text-white"
+            disabled={!selectedProvider}
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#081827] px-4 py-3 text-sm text-white file:mr-4 file:rounded-md file:border-0 file:bg-[#123A5A] file:px-4 file:py-2 file:text-white disabled:opacity-40"
           />
           <button
             type="submit"
-            disabled={loading}
+            disabled={!selectedProvider || loading}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4DA3D9] px-6 py-3 text-sm font-medium text-[#07131f] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
