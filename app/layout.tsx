@@ -87,6 +87,9 @@ export const metadata: Metadata = {
       'max-video-preview': -1,
     },
   },
+  verification: {
+    google: 'NUUN_I0qEnav-wABWmdFEV2i7NDEiDRe28f7nUSe-oE',
+  },
   other: {
     'geo.region': 'CL',
     'geo.placename': 'Chile',
