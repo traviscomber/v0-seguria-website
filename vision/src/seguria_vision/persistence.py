@@ -28,7 +28,7 @@ class WildlifePersistenceClient:
         self,
         backend_url: str | None,
         backend_token: str | None,
-        timeout_seconds: float = 20.0,
+        timeout_seconds: float = 30.0,
     ) -> None:
         self.backend_url = backend_url.rstrip("/") if backend_url else None
         self.backend_token = backend_token
@@ -38,23 +38,27 @@ class WildlifePersistenceClient:
     def is_configured(self) -> bool:
         return bool(self.backend_url and self.backend_token)
 
-    def _headers(self) -> dict[str, str]:
+    def _authorization_headers(self) -> dict[str, str]:
         if not self.is_configured:
             raise PersistenceConfigurationError(
                 "VISION_BACKEND_URL and VISION_BACKEND_TOKEN are required for persistence"
             )
-        return {
-            "Authorization": f"Bearer {self.backend_token}",
-            "Content-Type": "application/json",
-        }
+        return {"Authorization": f"Bearer {self.backend_token}"}
 
-    def persist_analysis(self, request: WildlifePersistenceRequest) -> PersistenceResult:
+    def persist_analysis(
+        self,
+        request: WildlifePersistenceRequest,
+        image: bytes,
+        content_type: str,
+        filename: str = "vision-evidence",
+    ) -> PersistenceResult:
         assert self.backend_url is not None
         try:
             response = httpx.post(
                 f"{self.backend_url}/api/internal/wildlife/vision-events",
-                headers=self._headers(),
-                json=request.model_dump(mode="json"),
+                headers=self._authorization_headers(),
+                data={"payload": request.model_dump_json()},
+                files={"evidence": (filename, image, content_type)},
                 timeout=self.timeout_seconds,
             )
             response.raise_for_status()
@@ -77,7 +81,7 @@ class WildlifePersistenceClient:
         try:
             response = httpx.post(
                 f"{self.backend_url}/api/internal/wildlife/reviews",
-                headers=self._headers(),
+                headers={**self._authorization_headers(), "Content-Type": "application/json"},
                 json=request.model_dump(mode="json"),
                 timeout=self.timeout_seconds,
             )
