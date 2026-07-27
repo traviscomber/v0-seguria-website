@@ -1,6 +1,6 @@
 begin;
 
-create or replace function private.persist_wildlife_vision_event(
+create or replace function public.persist_wildlife_vision_event(
   p_observation jsonb,
   p_evidence jsonb,
   p_analysis jsonb,
@@ -151,7 +151,9 @@ begin
 end;
 $$;
 
-revoke all on function private.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) from public;
-grant execute on function private.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) from public;
+revoke all on function public.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) from anon;
+revoke all on function public.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) from authenticated;
+grant execute on function public.persist_wildlife_vision_event(jsonb, jsonb, jsonb, jsonb) to service_role;
 
 commit;
