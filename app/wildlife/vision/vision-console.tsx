@@ -1,22 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Activity, AlertTriangle, Camera, Loader2, Upload } from 'lucide-react'
+import { Activity, AlertTriangle, Camera, Loader2, Sparkles, Upload } from 'lucide-react'
 
 interface Detection {
   species: string
   confidence: number
   box: { x1: number; y1: number; x2: number; y2: number }
+  description?: string
 }
 
 interface VisionResponse {
   ok?: boolean
   status?: string
+  provider?: string
   model_version?: string
   detections_count?: number
   detections?: Detection[]
+  scene_summary?: string
+  operational_risks?: string[]
+  limitations?: string[]
   detail?: unknown
   error?: string
+  message?: string
 }
 
 export function VisionConsole() {
@@ -45,18 +51,24 @@ export function VisionConsole() {
     setLoading(true)
     setResult(null)
     try {
-      const response = await fetch('/api/vision/infer', {
+      const endpoint = ready?.ok === true ? '/api/vision/infer' : '/api/vision/openai/infer'
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'X-Image-Content-Type': file.type },
         body: await file.arrayBuffer(),
       })
       setResult(await response.json())
+    } catch (error) {
+      setResult({
+        error: 'vision_request_failed',
+        message: error instanceof Error ? error.message : 'No fue posible ejecutar el análisis.',
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const isReady = ready?.ok === true
+  const isOnnxReady = ready?.ok === true
 
   return (
     <div className="space-y-6">
@@ -72,18 +84,29 @@ export function VisionConsole() {
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
           <div className="flex items-center gap-3">
-            {isReady ? (
+            {isOnnxReady ? (
               <Camera className="h-5 w-5 text-emerald-300" />
             ) : (
-              <AlertTriangle className="h-5 w-5 text-amber-300" />
+              <Sparkles className="h-5 w-5 text-[#9DD2F2]" />
             )}
             <div>
-              <p className="text-sm text-white/50">Modelo</p>
-              <p className="text-lg text-white">{isReady ? 'Listo para inferencia' : 'No disponible'}</p>
+              <p className="text-sm text-white/50">Proveedor de prueba</p>
+              <p className="text-lg text-white">
+                {isOnnxReady ? 'Detector ONNX local' : 'OpenAI Vision temporal'}
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      {!isOnnxReady && (
+        <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm leading-6 text-amber-100/80">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+          <p>
+            El detector ONNX todavía no está listo. Esta prueba usa OpenAI para validar el flujo funcional. Las cajas y confianzas son aproximadas y deben revisarse manualmente.
+          </p>
+        </div>
+      )}
 
       <form action={submitImage} className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
         <div className="flex items-center gap-3">
@@ -103,7 +126,7 @@ export function VisionConsole() {
           />
           <button
             type="submit"
-            disabled={!isReady || loading}
+            disabled={loading}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4DA3D9] px-6 py-3 text-sm font-medium text-[#07131f] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -114,18 +137,44 @@ export function VisionConsole() {
 
       {result && (
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
-          <h2 className="text-xl font-light text-white">Resultado</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-light text-white">Resultado</h2>
+            {result.provider && (
+              <span className="rounded-full border border-[#9DD2F2]/20 bg-[#9DD2F2]/10 px-3 py-1 text-xs text-[#9DD2F2]">
+                {result.provider} · {result.model_version}
+              </span>
+            )}
+          </div>
+
+          {result.scene_summary && (
+            <p className="mt-4 text-sm leading-7 text-white/65">{result.scene_summary}</p>
+          )}
+
           {result.detections?.length ? (
             <div className="mt-4 space-y-3">
               {result.detections.map((detection, index) => (
-                <div key={`${detection.species}-${index}`} className="flex items-center justify-between rounded-lg bg-black/20 px-4 py-3">
-                  <span className="text-white">{detection.species}</span>
-                  <span className="text-[#9DD2F2]">{Math.round(detection.confidence * 100)}%</span>
+                <div key={`${detection.species}-${index}`} className="rounded-lg bg-black/20 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white">{detection.species}</span>
+                    <span className="text-[#9DD2F2]">{Math.round(detection.confidence * 100)}%</span>
+                  </div>
+                  {detection.description && (
+                    <p className="mt-2 text-sm text-white/50">{detection.description}</p>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
             <pre className="mt-4 overflow-auto rounded-lg bg-black/25 p-4 text-xs text-white/70">{JSON.stringify(result, null, 2)}</pre>
+          )}
+
+          {!!result.operational_risks?.length && (
+            <div className="mt-5 rounded-lg border border-amber-300/15 bg-amber-300/[0.05] p-4">
+              <p className="text-sm font-medium text-amber-100">Riesgos observados</p>
+              <ul className="mt-2 space-y-1 text-sm text-amber-100/65">
+                {result.operational_risks.map((risk) => <li key={risk}>• {risk}</li>)}
+              </ul>
+            </div>
           )}
         </div>
       )}
