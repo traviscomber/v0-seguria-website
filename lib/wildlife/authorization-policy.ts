@@ -1,6 +1,8 @@
 export const WILDLIFE_ROLES = [
   'owner',
   'admin',
+  'manager',
+  'staff',
   'operator',
   'technician',
   'viewer',
@@ -21,6 +23,17 @@ export type WildlifeCapability = (typeof WILDLIFE_CAPABILITIES)[number]
 const ROLE_CAPABILITIES: Record<WildlifeRole, readonly WildlifeCapability[]> = {
   owner: WILDLIFE_CAPABILITIES,
   admin: WILDLIFE_CAPABILITIES,
+  manager: [
+    'observation:create',
+    'observation:read',
+    'evidence:read-original',
+    'review:write',
+  ],
+  staff: [
+    'observation:create',
+    'observation:read',
+    'evidence:read-original',
+  ],
   operator: [
     'observation:create',
     'observation:read',
