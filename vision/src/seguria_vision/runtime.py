@@ -87,11 +87,16 @@ class OnnxModelRuntime:
 
     def load(self, force: bool = False) -> ModelMetadata:
         with self._lock:
-            if self.is_ready and not force:
-                assert self._metadata is not None
+            model = Path(self.model_path)
+            current_path = str(model)
+            if (
+                self.is_ready
+                and not force
+                and self._metadata is not None
+                and self._metadata.path == current_path
+            ):
                 return self._metadata
 
-            model = Path(self.model_path)
             if not model.is_file():
                 self._session = None
                 self._metadata = None
@@ -99,7 +104,7 @@ class OnnxModelRuntime:
                 raise ModelLoadError(self._error)
 
             try:
-                session = self._session_factory(str(model), self.providers)
+                session = self._session_factory(current_path, self.providers)
                 inputs = session.get_inputs()
                 outputs = session.get_outputs()
             except ModelLoadError as exc:
@@ -114,14 +119,18 @@ class OnnxModelRuntime:
                 raise ModelLoadError(self._error) from exc
 
             if not inputs:
+                self._session = None
+                self._metadata = None
                 self._error = "ONNX model exposes no inputs"
                 raise ModelLoadError(self._error)
             if not outputs:
+                self._session = None
+                self._metadata = None
                 self._error = "ONNX model exposes no outputs"
                 raise ModelLoadError(self._error)
 
             metadata = ModelMetadata(
-                path=str(model),
+                path=current_path,
                 providers=tuple(session.get_providers()),
                 input_names=tuple(item.name for item in inputs),
                 output_names=tuple(item.name for item in outputs),
@@ -132,7 +141,6 @@ class OnnxModelRuntime:
             return metadata
 
     def run(self, input_feed: dict[str, Any]) -> list[Any]:
-        if not self.is_ready:
-            self.load()
+        self.load()
         assert self._session is not None
         return self._session.run(None, input_feed)
