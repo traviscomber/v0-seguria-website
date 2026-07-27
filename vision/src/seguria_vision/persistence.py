@@ -57,7 +57,7 @@ class WildlifePersistenceClient:
             response = httpx.post(
                 f"{self.backend_url}/api/internal/wildlife/vision-events",
                 headers=self._authorization_headers(),
-                data={"payload": request.model_dump_json()},
+                data={"metadata": request.model_dump_json()},
                 files={"evidence": (filename, image, content_type)},
                 timeout=self.timeout_seconds,
             )
