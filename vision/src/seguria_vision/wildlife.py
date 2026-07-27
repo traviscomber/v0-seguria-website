@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from .contracts import Detection, ReviewStatus, RiskLevel, Species, VisionEvent
+from .rules import evaluate_security_rules, highest_rule_risk
 
 
 class ObservationSource(StrEnum):
@@ -43,6 +44,7 @@ class WildlifeAnalysisPayload(BaseModel):
     maximum_confidence: Annotated[float, Field(ge=0, le=1)]
     review_status: ReviewStatus
     risk_level: RiskLevel
+    triggered_rules: list[dict[str, object]] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
 
 
@@ -86,6 +88,11 @@ def detections_to_event(
     if not detections:
         return None
     strongest = max(detections, key=lambda detection: detection.confidence)
+    triggered_rules = evaluate_security_rules(detections)
+    rule_risk = highest_rule_risk(triggered_rules)
+    review_status = determine_review_status(strongest.confidence, review_threshold)
+    if any(rule.requires_review for rule in triggered_rules):
+        review_status = ReviewStatus.PENDING
     return VisionEvent(
         camera_id=context.camera_id,
         site_id=str(context.site_id),
@@ -93,11 +100,14 @@ def detections_to_event(
         ended_at=max(detection.frame_timestamp for detection in detections),
         species=strongest.species,
         confidence=strongest.confidence,
-        risk_level=classify_risk(strongest.species, strongest.confidence),
+        risk_level=rule_risk or classify_risk(strongest.species, strongest.confidence),
         detections_count=len(detections),
-        review_status=determine_review_status(strongest.confidence, review_threshold),
+        review_status=review_status,
         model_version=strongest.model_version,
-        metadata={"source": context.source.value},
+        metadata={
+            "source": context.source.value,
+            "triggered_rules_count": len(triggered_rules),
+        },
     )
 
 
@@ -112,6 +122,7 @@ def build_persistence_request(
 ) -> WildlifePersistenceRequest:
     event = detections_to_event(detections, context, review_threshold)
     strongest = max(detections, key=lambda detection: detection.confidence) if detections else None
+    triggered_rules = evaluate_security_rules(detections)
     reference = context.external_reference or (
         f"vision:{context.camera_id}:{sha256(image).hexdigest()[:24]}"
     )
@@ -119,6 +130,18 @@ def build_persistence_request(
     risk_level = event.risk_level if event else RiskLevel.LOW
     status = "review_required" if review_status == ReviewStatus.PENDING else "analyzed"
     detected_at = strongest.frame_timestamp if strongest else datetime.now(timezone.utc)
+    serialized_rules = [
+        {
+            "rule_id": rule.rule_id,
+            "name": rule.name,
+            "risk_level": rule.risk_level.value,
+            "detection_id": rule.detection_id,
+            "species": rule.species.value,
+            "confidence": rule.confidence,
+            "requires_review": rule.requires_review,
+        }
+        for rule in triggered_rules
+    ]
     return WildlifePersistenceRequest(
         context=context,
         observation={
@@ -145,6 +168,7 @@ def build_persistence_request(
             maximum_confidence=strongest.confidence if strongest else 0,
             review_status=review_status,
             risk_level=risk_level,
+            triggered_rules=serialized_rules,
             limitations=["Automatic detection requires human review for consequential action."],
         ),
         audit_event={
@@ -157,6 +181,7 @@ def build_persistence_request(
                 "model_version": model_version,
                 "review_status": review_status.value,
                 "risk_level": risk_level.value,
+                "triggered_rules": serialized_rules,
             },
         },
     )
