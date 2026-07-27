@@ -12,6 +12,16 @@ export const maxDuration = 60
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+const triggeredRuleSchema = z.object({
+  rule_id: z.string().min(1).max(100),
+  name: z.string().min(1).max(300),
+  risk_level: z.enum(['low', 'medium', 'high', 'critical']),
+  detection_id: z.string().uuid(),
+  species: z.string().min(1).max(100),
+  confidence: z.number().min(0).max(1),
+  requires_review: z.boolean(),
+})
+
 const payloadSchema = z.object({
   context: z.object({
     organization_id: z.string().uuid(),
@@ -49,6 +59,7 @@ const payloadSchema = z.object({
     maximum_confidence: z.number().min(0).max(1),
     review_status: z.enum(['not_required', 'pending', 'confirmed', 'rejected', 'uncertain']),
     risk_level: z.enum(['low', 'medium', 'high', 'critical']),
+    triggered_rules: z.array(triggeredRuleSchema).max(100).default([]),
     limitations: z.array(z.string().max(1000)).max(20),
   }),
   audit_event: z.object({
@@ -60,7 +71,10 @@ const payloadSchema = z.object({
 })
 
 function unauthorized() {
-  return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  return NextResponse.json(
+    { error: 'unauthorized' },
+    { status: 401 }
+  )
 }
 
 function hasValidInternalToken(request: Request) {
@@ -189,12 +203,15 @@ export async function POST(request: Request) {
     storage_path: storagePath,
   }
 
-  const { data, error } = await supabase.rpc('persist_wildlife_vision_event', {
-    p_observation: metadata.observation,
-    p_evidence: evidencePayload,
-    p_analysis: metadata.analysis,
-    p_audit_event: metadata.audit_event,
-  })
+  const { data, error } = await supabase.rpc(
+    'persist_wildlife_vision_event',
+    {
+      p_observation: metadata.observation,
+      p_evidence: evidencePayload,
+      p_analysis: metadata.analysis,
+      p_audit_event: metadata.audit_event,
+    }
+  )
 
   if (error) {
     if (!uploadError) {
