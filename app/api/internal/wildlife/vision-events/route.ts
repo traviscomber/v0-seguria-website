@@ -60,10 +60,7 @@ const payloadSchema = z.object({
 })
 
 function unauthorized() {
-  return NextResponse.json(
-    { error: 'unauthorized' },
-    { status: 401 }
-  )
+  return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 }
 
 function hasValidInternalToken(request: Request) {
@@ -192,15 +189,12 @@ export async function POST(request: Request) {
     storage_path: storagePath,
   }
 
-  const { data, error } = await supabase.schema('private').rpc(
-    'persist_wildlife_vision_event',
-    {
-      p_observation: metadata.observation,
-      p_evidence: evidencePayload,
-      p_analysis: metadata.analysis,
-      p_audit_event: metadata.audit_event,
-    }
-  )
+  const { data, error } = await supabase.rpc('persist_wildlife_vision_event', {
+    p_observation: metadata.observation,
+    p_evidence: evidencePayload,
+    p_analysis: metadata.analysis,
+    p_audit_event: metadata.audit_event,
+  })
 
   if (error) {
     if (!uploadError) {
