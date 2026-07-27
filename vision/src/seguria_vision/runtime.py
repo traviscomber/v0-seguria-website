@@ -29,6 +29,7 @@ class InferenceSession(Protocol):
 
 
 SessionFactory = Callable[[str, list[str] | None], InferenceSession]
+TensorShape = tuple[int | str | None, ...]
 
 
 class ModelLoadError(RuntimeError):
@@ -41,6 +42,10 @@ class ModelMetadata:
     providers: tuple[str, ...]
     input_names: tuple[str, ...]
     output_names: tuple[str, ...]
+    input_shapes: tuple[TensorShape, ...]
+    output_shapes: tuple[TensorShape, ...]
+    input_types: tuple[str, ...]
+    output_types: tuple[str, ...]
 
 
 class OnnxModelRuntime:
@@ -134,6 +139,10 @@ class OnnxModelRuntime:
                 providers=tuple(session.get_providers()),
                 input_names=tuple(item.name for item in inputs),
                 output_names=tuple(item.name for item in outputs),
+                input_shapes=tuple(tuple(item.shape) for item in inputs),
+                output_shapes=tuple(tuple(item.shape) for item in outputs),
+                input_types=tuple(item.type for item in inputs),
+                output_types=tuple(item.type for item in outputs),
             )
             self._session = session
             self._metadata = metadata
