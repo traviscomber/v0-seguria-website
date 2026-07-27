@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, status
 
 from .config import settings
+from .runtime import ModelLoadError, OnnxModelRuntime
 
 app = FastAPI(
     title=settings.service_name,
@@ -11,13 +11,27 @@ app = FastAPI(
     description="Edge-first computer vision service for SegurIA.",
 )
 
+model_runtime = OnnxModelRuntime(settings.model_path)
+
 
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def model_is_ready() -> bool:
-    return Path(settings.model_path).is_file()
+def readiness_payload() -> dict[str, object]:
+    metadata = model_runtime.metadata
+    return {
+        "ok": model_runtime.is_ready,
+        "status": "ready" if model_runtime.is_ready else "not_ready",
+        "service": settings.service_name,
+        "model_version": settings.model_version,
+        "model_path": settings.model_path,
+        "providers": list(metadata.providers) if metadata else [],
+        "inputs": list(metadata.input_names) if metadata else [],
+        "outputs": list(metadata.output_names) if metadata else [],
+        "error": model_runtime.error,
+        "timestamp": utc_timestamp(),
+    }
 
 
 @app.get("/health")
@@ -34,21 +48,16 @@ def health() -> dict[str, str | bool]:
 
 
 @app.get("/ready")
-def readiness() -> dict[str, str | bool]:
-    ready = model_is_ready()
-    payload: dict[str, str | bool] = {
-        "ok": ready,
-        "status": "ready" if ready else "not_ready",
-        "service": settings.service_name,
-        "model_version": settings.model_version,
-        "model_path": settings.model_path,
-        "timestamp": utc_timestamp(),
-    }
+def readiness() -> dict[str, object]:
+    model_runtime.model_path = settings.model_path
 
-    if not ready:
+    try:
+        model_runtime.load()
+    except ModelLoadError:
+        payload = readiness_payload()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=payload,
         )
 
-    return payload
+    return readiness_payload()
