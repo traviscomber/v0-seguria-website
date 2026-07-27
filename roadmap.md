@@ -15,8 +15,8 @@ A block may be marked `[x]` only after its functional commit has deployed to Ver
 - Objective: Wildlife Intelligence evidence intake MVP end to end
 - GitHub objective: #17
 - Related MVP issue: #16
-- Current phase: 0 — autonomous execution bootstrap
-- Current priority: verify the bootstrap deployments, then consolidate tenancy and site ownership
+- Current phase: 1 — architecture and tenancy consolidation
+- Current priority: verify the canonical organization, membership and site authorization model
 - Overall state: IN PROGRESS
 
 ## Phase 0 — Autonomous execution bootstrap
@@ -24,9 +24,9 @@ A block may be marked `[x]` only after its functional commit has deployed to Ver
 - [x] Create GitHub objective #17.
 - [x] Define scope, execution rules, limits and closure criteria in `AUTONOMOUS_WORK_OBJECTIVE.md`.
 - [x] Create `roadmap.md` as the principal execution board.
-- [-] Verify Vercel deployment for commit `846103012f185966f4476ee03d448940afc72a6c`.
-- [ ] Verify Vercel deployment for this roadmap bootstrap commit.
-- [ ] Record both deployment identifiers and final states.
+- [x] Verify Vercel deployment for commit `846103012f185966f4476ee03d448940afc72a6c`.
+- [x] Verify Vercel deployment for roadmap bootstrap commit `fa85fdce37111f95570a1945406697441ab890f8`.
+- [x] Record both deployment identifiers and final states.
 
 ### Preserved
 
@@ -38,16 +38,18 @@ A block may be marked `[x]` only after its functional commit has deployed to Ver
 ### Verification performed
 
 - GitHub write to `main` succeeded for `AUTONOMOUS_WORK_OBJECTIVE.md`.
-- `roadmap.md` created as a separate commit, in accordance with the commit protocol.
+- `roadmap.md` was created as a separate commit, in accordance with the commit protocol.
+- Objective deployment `dpl_DrDLqJGPaLeWgoBSXaHRoKspt7BP` reached `READY` in production.
+- Roadmap deployment `dpl_3dkMG6ExzYBtqGwmrY19fCNbCYq5` reached `READY` in production.
+- Production aliases were assigned without alias errors.
 
 ### Pending
 
-- Resolve Vercel project/team identifiers and verify both bootstrap deployments reach `READY`.
-- Begin Phase 1 after bootstrap deployment verification.
+- Begin Phase 1 tenancy and architecture consolidation.
 
 ## Phase 1 — Architecture and tenancy consolidation
 
-- [ ] Verify the repository's production-facing organization and membership resolution.
+- [-] Verify the repository's production-facing organization and membership resolution.
 - [ ] Verify the actual use of `operations` and `user_operations`.
 - [ ] Verify the current relationship between organizations and `properties`.
 - [ ] Identify legacy paths based on `properties.user_id`.
@@ -202,16 +204,19 @@ A block may be marked `[x]` only after its functional commit has deployed to Ver
 
 ## Execution log
 
-### 2026-07-27 — Bootstrap started
+### 2026-07-27 — Bootstrap completed
 
-Functional/document commit:
+Commits:
 
 - `846103012f185966f4476ee03d448940afc72a6c` — `docs: define autonomous work objective`
+- `fa85fdce37111f95570a1945406697441ab890f8` — `chore(roadmap): initialize autonomous execution board`
 
 Verification:
 
-- GitHub commit to `main`: succeeded.
-- Vercel deployment: pending verification.
+- Both GitHub commits to `main` succeeded.
+- Deployment `dpl_DrDLqJGPaLeWgoBSXaHRoKspt7BP` for the objective document reached production `READY`.
+- Deployment `dpl_3dkMG6ExzYBtqGwmrY19fCNbCYq5` for the roadmap reached production `READY`.
+- No alias error was reported.
 
 Data preserved:
 
@@ -219,6 +224,6 @@ Data preserved:
 
 Next priority:
 
-1. Verify Vercel deployment state for the objective document.
-2. Verify deployment state for the roadmap commit.
-3. Audit and consolidate tenancy in Phase 1.
+1. Trace production-facing organization and membership resolution in the repository.
+2. Confirm `operations`, `user_operations` and `properties` relationships.
+3. Produce the smallest safe tenancy consolidation change.
