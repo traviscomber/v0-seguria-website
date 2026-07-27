@@ -1,5 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/vision/health",
+      "destination": "/api/vision?mode=health"
+    },
+    {
+      "source": "/api/vision/ready",
+      "destination": "/api/vision?mode=ready"
+    },
+    {
+      "source": "/api/vision/infer",
+      "destination": "/api/vision"
+    }
+  ],
   "crons": [
     {
       "path": "/api/monitor/operations",
