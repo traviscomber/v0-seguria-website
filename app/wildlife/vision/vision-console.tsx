@@ -176,7 +176,7 @@ export function VisionConsole() {
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4DA3D9] px-6 py-3 text-sm font-medium text-[#07131f] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Analizar imagen
+            {loading ? 'Analizando...' : 'Analizar imagen'}
           </button>
         </div>
       </form>
