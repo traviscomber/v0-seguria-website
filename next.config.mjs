@@ -10,7 +10,7 @@ const securityHeaders = [
       "object-src 'none'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.vercel.app",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.vercel.app https://inaturalist-open-data.s3.amazonaws.com",
       "font-src 'self' data:",
       "connect-src 'self' https: wss:",
       "media-src 'self' blob: https:",
@@ -60,6 +60,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '*.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'inaturalist-open-data.s3.amazonaws.com',
       },
     ],
   },
