@@ -1,0 +1,106 @@
+name: Wildlife GBIF validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum GBIF occurrence records to inspect
+        required: false
+        default: "500"
+  schedule:
+    - cron: "15 9 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/wildlife/**"
+      - "package.json"
+      - ".github/workflows/wildlife-gbif-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wildlife-gbif-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-gbif-dataset:
+    name: Validate licenses and inspect GBIF records
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate media license rules
+        run: pnpm test:wildlife-licenses
+
+      - name: Resolve record limit
+        id: parameters
+        shell: bash
+        run: |
+          limit="${{ github.event.inputs.limit }}"
+          if [[ -z "$limit" ]]; then
+            limit="500"
+          fi
+          if ! [[ "$limit" =~ ^[0-9]+$ ]] || (( limit < 1 || limit > 2000 )); then
+            echo "Invalid limit: $limit. Expected an integer from 1 to 2000." >&2
+            exit 1
+          fi
+          echo "limit=$limit" >> "$GITHUB_OUTPUT"
+
+      - name: Run GBIF dry-run
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          node scripts/wildlife/import-gbif-huilo-huilo.mjs \
+            --limit=${{ steps.parameters.outputs.limit }} \
+            | tee artifacts/gbif-dry-run-summary.json
+
+      - name: Validate summary contract
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises'
+
+          const raw = await readFile('artifacts/gbif-dry-run-summary.json', 'utf8')
+          const summary = JSON.parse(raw)
+
+          for (const field of ['records', 'media', 'license_compatible_media']) {
+            if (!Number.isInteger(summary[field]) || summary[field] < 0) {
+              throw new Error(`Invalid ${field}: ${summary[field]}`)
+            }
+          }
+
+          if (summary.mode !== 'dry-run') {
+            throw new Error(`Unexpected execution mode: ${summary.mode}`)
+          }
+
+          if (summary.media < summary.license_compatible_media) {
+            throw new Error('Compatible media count cannot exceed total media count')
+          }
+
+          console.log('GBIF summary contract is valid')
+          NODE
+
+      - name: Publish validation summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: gbif-dry-run-${{ github.run_id }}
+          path: artifacts/gbif-dry-run-summary.json
+          if-no-files-found: error
+          retention-days: 30
