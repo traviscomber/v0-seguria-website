@@ -34,6 +34,70 @@ SegurIA Vision está entrenada para reconocer y clasificar la fauna nativa de Ch
 | **Chinchilla** | Chinchilla chilena | Roedor | Nativa, Protegida |
 | **Vizcacha** | Vizcacha | Roedor | Nativa |
 
+### Aves Chilenas (45+ Especies)
+
+#### Raptores
+- **Cóndor Andino** | Andean Condor - Emblemática, Protegida, En Peligro
+- **Águila Arpía** | Harpy Eagle - Depredador Apex
+- **Halcón Peregrino** | Peregrine Falcon - Cazador de Aves
+- **Gavilán** | Hawk - Depredador Pequeño
+- **Búho/Lechuza** | Owl - Nocturno, Depredador
+
+#### Loros
+- **Loro Tricahue** | Tricahue Parrot - Especie Amenazada
+- **Loro Austral** | Austral Parakeet - Nativo del Sur
+- **Loro Cabeza Roja** | Red-headed Parrot
+- **Loro Verde** | Green Parrot
+
+#### Aves Acuáticas
+- **Flamencos** (Andino, Chileno) | Flamingos - Especies Amenazadas
+- **Ganso Colorada** | Upland Goose
+- **Pato Silvestre** | Wild Duck
+- **Cisne Cuello Negro** | Black-necked Swan
+- **Cormorán** | Cormorant
+- **Gaviota** | Gull
+- **Gaviotín** | Tern
+- **Pelícano** | Pelican
+- **Garza** | Heron
+- **Pingüinos** (Magallanes, Humboldt) | Penguins - Especies Vulnerables
+
+#### Otras Aves
+- **Carpintero Magallánico** | Woodpecker
+- **Ave Desconocida** | Unknown Bird
+
+### Anfibios Chilenos (7 Especies)
+
+| Especie | Nombres Alternativos | Clasificación | Distribución |
+|---------|-------------------|-----------------|--------|
+| **Rana Chilena** | Chilean Frog | Amphibio | Sur de Chile |
+| **Rana Arbóricola** | Tree Frog | Amphibio Arboreal | Sur |
+| **Rana de Darwin** | Darwin Frog | Amphibio Único | Sur, Amenazada |
+| **Rana Granuda** | Bumpy Toad | Amphibio | Nativa |
+| **Sapo Chileno** | Chilean Toad | Amphibio | Centro-Sur |
+| **Sapo Espinoso** | Spiny Toad | Amphibio | Patagonia |
+| **Anfibio Desconocido** | Unknown Amphibian | - | Clasificación Abierta |
+
+### Insectos y Artrópodos (16 Categorías)
+
+| Categoría | Ejemplos Comunes | Notas |
+|-----------|-----------------|-------|
+| **Mariposa** | Butterflies | Polinizador, Indicador Ecológico |
+| **Escarabajo** | Beetles | Fauna Terrestre Diversa |
+| **Abeja** | Bee | Polinizador Crítico |
+| **Avispa** | Wasp | Depredador de Insectos |
+| **Hormiga** | Ant | Controlador de Plagas |
+| **Libélula** | Dragonfly | Indicador de Agua Limpia |
+| **Saltamontes** | Grasshopper | Herbívoro |
+| **Langosta** | Locust | Plaga Potencial |
+| **Cucaracha** | Cockroach | Especie Invasora |
+| **Chinche** | True Bug | Depredador/Parásito |
+| **Mosca** | Fly | Vector de Enfermedades |
+| **Mosquito** | Mosquito | Vector de Enfermedades |
+| **Araña** | Spider | Depredador de Insectos |
+| **Escorpión** | Scorpion | Arachnida, Venenoso |
+| **Ciempiés** | Centipede | Arachnida Terrestre |
+| **Insecto Desconocido** | Unknown Insect | Clasificación Abierta |
+
 ### Fauna Común (No-Silvestre)
 
 - **Livestock** (Ganado): Vacas, Caballos, Ovejas, Cabras, Cerdos, Alpacas, Llamas
@@ -43,22 +107,39 @@ SegurIA Vision está entrenada para reconocer y clasificar la fauna nativa de Ch
 ## Casos de Uso
 
 ### Operaciones de Seguridad en Ganadería
-Detectar depredadores (Puma, Culpeo) cerca del ganado y alertar automáticamente.
+Detectar depredadores (Puma, Culpeo) cerca del ganado y alertar automáticamente. Proteger livestock de predadores.
 
 ### Conservación de Fauna Protegida
-Monitorear Huemul, Vicuña, y Chinchilla en áreas protegidas.
+Monitorear Huemul, Vicuña, Chinchilla, Rana de Darwin, Loro Tricahue, Flamencos en áreas protegidas.
 
 ### Control de Especies Invasoras
-Identificar Coipu y tomar acciones de control.
+Identificar Coipu, Langostas, Cucarachas y tomar acciones de control biológico.
 
 ### Investigación Ecológica
-Registrar avistamientos de fauna silvestre para estudios poblacionales.
+Registrar avistamientos de fauna silvestre (mamíferos, aves, anfibios, insectos) para estudios poblacionales y biodiversidad.
+
+### Monitoreo de Ecosistemas
+Usar presencia de especies indicadoras (Libélulas = agua limpia, Abejas = polinización, Raptores = equilibrio ecológico).
+
+### Educación Ambiental
+Identificar fauna silvestre chilena para programas educativos y de conciencia ecológica.
 
 ## Confiabilidad
 
-- **Alta Confianza (>85%)**: Puma, Huemul, Guanaco, Ñandú, Ganado
-- **Confianza Media (70-85%)**: Pudu, Culpeo, Zorro Chilla, Gato Montés
-- **Baja Confianza (<70%)**: Chinchilla, Vizcacha (tamaño muy pequeño dificulta detección)
+### Alta Confianza (>85%)
+- **Mamíferos grandes**: Puma, Huemul, Guanaco, Ñandú, Ganado
+- **Aves grandes**: Cóndor, Pingüinos, Flamencos, Cisnes
+- **Raptores**: Águila Arpía, Halcón Peregrino
+
+### Confianza Media (70-85%)
+- **Mamíferos medianos**: Pudu, Culpeo, Zorro Chilla, Gato Montés
+- **Aves medianas**: Loros, Cormorán, Gaviota
+- **Insectos grandes**: Libélulas, Arañas, Escorpiones
+
+### Baja Confianza (<70%)
+- **Mamíferos pequeños**: Chinchilla, Vizcacha (tamaño muy pequeño dificulta detección)
+- **Anfibios**: Ranas pequeñas, Sapos (mimetismo, tamaño)
+- **Insectos pequeños**: Mosquitos, Chinches, Moscas (tamaño microscópico)
 
 ## Limitaciones
 
