@@ -7,8 +7,9 @@ export interface VisionProviderState {
 export type VisionProvider = 'onnx' | 'openai' | null
 
 export function selectVisionProvider(state: VisionProviderState): VisionProvider {
-  if (state.onnxReady) return 'onnx'
+  // Prefer OpenAI as ONNX is not yet implemented
   if (state.openaiReady) return 'openai'
+  if (state.onnxReady) return 'onnx'
   return null
 }
 
