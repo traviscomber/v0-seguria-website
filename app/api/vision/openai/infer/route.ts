@@ -1,5 +1,3 @@
-import 'server-only'
-
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -77,10 +75,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
   }
 
-  const model = process.env.OPENAI_VISION_MODEL || 'gpt-5-mini'
+  const model = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini'
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -88,94 +86,28 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       model,
-      input: [
+      response_format: { type: 'json_object' },
+      messages: [
         {
-          role: 'developer',
-          content: [
-            {
-              type: 'input_text',
-              text:
-                'You are the temporary visual analysis provider for SegurIA Vision. Identify only visible people, vehicles and animals relevant to operational security in facilities that work with animals. Bounding boxes must be normalized to 0..1 using the full image. Do not invent hidden objects. Use unknown_animal when species is uncertain. Confidence is visual confidence, not safety severity.',
-            },
-          ],
+          role: 'system',
+          content:
+            'You are the visual analysis provider for SegurIA Vision. Identify only visible people, vehicles and animals relevant to operational security in facilities that work with animals. Bounding boxes must be normalized to 0..1 using the full image dimensions. Do not invent hidden objects. Use unknown_animal when species is uncertain. Confidence is visual confidence (0 to 1). Return ONLY valid JSON with keys: detections (array), scene_summary (string), operational_risks (array of strings), limitations (array of strings).',
         },
         {
           role: 'user',
           content: [
             {
-              type: 'input_text',
-              text: 'Analyze this image for operational animal-security detections and return the required structured result.',
+              type: 'text',
+              text: 'Analyze this image for operational animal-security detections. Return JSON with: detections (each with species, confidence, box {x1,y1,x2,y2}, description), scene_summary, operational_risks, limitations.',
             },
             {
-              type: 'input_image',
-              image_url: imageUrl,
-              detail: 'high',
+              type: 'image_url',
+              image_url: { url: imageUrl, detail: 'high' },
             },
           ],
         },
       ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'seguria_vision_analysis',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['detections', 'scene_summary', 'operational_risks', 'limitations'],
-            properties: {
-              detections: {
-                type: 'array',
-                maxItems: 30,
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  required: ['species', 'confidence', 'box', 'description'],
-                  properties: {
-                    species: {
-                      type: 'string',
-                      enum: [
-                        'person',
-                        'vehicle',
-                        'cat',
-                        'dog',
-                        'fox',
-                        'puma',
-                        'livestock',
-                        'unknown_animal',
-                      ],
-                    },
-                    confidence: { type: 'number', minimum: 0, maximum: 1 },
-                    box: {
-                      type: 'object',
-                      additionalProperties: false,
-                      required: ['x1', 'y1', 'x2', 'y2'],
-                      properties: {
-                        x1: { type: 'number', minimum: 0, maximum: 1 },
-                        y1: { type: 'number', minimum: 0, maximum: 1 },
-                        x2: { type: 'number', minimum: 0, maximum: 1 },
-                        y2: { type: 'number', minimum: 0, maximum: 1 },
-                      },
-                    },
-                    description: { type: 'string', maxLength: 300 },
-                  },
-                },
-              },
-              scene_summary: { type: 'string', maxLength: 800 },
-              operational_risks: {
-                type: 'array',
-                maxItems: 10,
-                items: { type: 'string', maxLength: 300 },
-              },
-              limitations: {
-                type: 'array',
-                maxItems: 10,
-                items: { type: 'string', maxLength: 300 },
-              },
-            },
-          },
-        },
-      },
+      max_tokens: 2000,
     }),
   })
 
@@ -190,14 +122,40 @@ export async function POST(request: Request) {
     )
   }
 
-  const outputText = extractOutputText(payload)
+  const outputText = payload.output?.[0]?.content?.[0]?.text
+    ?? (payload as unknown as { choices?: Array<{ message?: { content?: string } }> }).choices?.[0]?.message?.content
+    ?? null
   if (!outputText) {
     return NextResponse.json({ error: 'openai_empty_output' }, { status: 502 })
   }
 
+  const speciesAliases: Record<string, string> = {
+    cougar: 'puma',
+    'mountain lion': 'puma',
+    lion: 'puma',
+    leopard: 'unknown_animal',
+    jaguar: 'unknown_animal',
+    bear: 'unknown_animal',
+    wolf: 'unknown_animal',
+    coyote: 'fox',
+    cow: 'livestock',
+    horse: 'livestock',
+    sheep: 'livestock',
+    goat: 'livestock',
+    pig: 'livestock',
+    cattle: 'livestock',
+  }
+
   let analysis: z.infer<typeof analysisSchema>
   try {
-    analysis = analysisSchema.parse(JSON.parse(outputText))
+    const raw = JSON.parse(outputText)
+    if (Array.isArray(raw.detections)) {
+      raw.detections = raw.detections.map((d: Record<string, unknown>) => ({
+        ...d,
+        species: speciesAliases[(d.species as string)?.toLowerCase()] ?? d.species,
+      }))
+    }
+    analysis = analysisSchema.parse(raw)
   } catch (error) {
     return NextResponse.json(
       {
