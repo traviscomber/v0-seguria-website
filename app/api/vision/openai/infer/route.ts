@@ -9,25 +9,80 @@ const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 const detectionSchema = z.object({
   species: z.enum([
+    // Personas y vehículos
     'person',
     'vehicle',
+    // Mamíferos domésticos
     'cat',
     'dog',
+    // Mamíferos silvestres - Carnívoros
     'puma',
-    'huemul',
-    'pudu',
-    'guanaco',
-    'vicuña',
-    'ñandú',
-    'fox',
     'culpeo',
     'zorro_chilla',
     'zorro_gris_chileno',
     'gato_montés',
+    // Mamíferos silvestres - Ungulados
+    'huemul',
+    'pudu',
+    'guanaco',
+    'vicuña',
+    // Mamíferos silvestres - Otros
     'coipu',
     'chinchilla',
     'vizcacha',
+    'fox',
     'livestock',
+    // Aves chilenas
+    'condor',
+    'aguila_harpia',
+    'halcon_peregrino',
+    'loro_tricahue',
+    'loro_austral',
+    'loro_cabeza_roja',
+    'carpintero_magallanico',
+    'loro_verde',
+    'gavilan',
+    'buho',
+    'lechuza',
+    'flamenco_andino',
+    'flamenco_chileno',
+    'gansa_colorada',
+    'pato_silvestre',
+    'cisne_cuello_negro',
+    'cormorant',
+    'gaviota',
+    'gaviotín',
+    'pelicano',
+    'garza',
+    'pinguino_de_magallanes',
+    'pinguino_de_humboldt',
+    'ave_desconocida',
+    // Anfibios chilenos
+    'rana_chilena',
+    'rana_arboricola',
+    'rana_de_darwin',
+    'sapo_chileno',
+    'sapo_espinoso',
+    'rana_granuda',
+    'anfibio_desconocido',
+    // Insectos y artrópodos
+    'mariposa',
+    'escarabajo',
+    'abeja',
+    'avispa',
+    'hormiga',
+    'libélula',
+    'saltamontes',
+    'langosta',
+    'cucaracha',
+    'chinche',
+    'mosca',
+    'mosquito',
+    'araña',
+    'escorpion',
+    'cienpies',
+    'insecto_desconocido',
+    // Categoría general
     'unknown_animal',
   ]),
   confidence: z.number().min(0).max(1),
@@ -102,20 +157,34 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'system',
-          content: `You are SegurIA Vision, an expert wildlife analysis system for Chilean fauna and operational security. You specialize in identifying Chilean native animals including:
-- Large fauna: Puma (Cougar), Huemul (Andean deer), Guanaco, Vicuña, Ñandú (Rhea)
-- Small fauna: Pudu (dwarf deer), Culpeo (native fox), Zorro Chilla, Zorro Gris Chileno, Gato Montés, Coipu, Chinchilla, Vizcacha
-- Also detect: People, vehicles, livestock, dogs, cats, and common species
+          content: `You are SegurIA Vision, an expert wildlife analysis system for comprehensive Chilean fauna and operational security. You specialize in identifying:
 
-INSTRUCTIONS:
-1. Identify ONLY visible animals/people/vehicles in the image
-2. Use provided species names exactly as listed above
-3. Normalize bounding boxes to 0..1 range (top-left and bottom-right coordinates)
-4. Return confidence as 0-1 scale based on visual clarity
-5. Describe each detection with behavior/context/security relevance
-6. Return ONLY valid JSON with required keys: detections, scene_summary, operational_risks, limitations
-7. Do NOT invent hidden or occluded objects
-8. Use "unknown_animal" ONLY when completely uncertain about species`,
+MAMÍFEROS:
+- Carnívoros: Puma, Culpeo, Zorro Chilla, Zorro Gris Chileno, Gato Montés
+- Ungulados: Huemul, Pudu, Guanaco, Vicuña
+- Otros: Coipu, Chinchilla, Vizcacha, Ñandú, livestock
+
+AVES CHILENAS (45+ especies):
+- Raptores: Cóndor, Águila Arpía, Halcón Peregrino, Gavilán, Búho, Lechuza
+- Loros: Loro Tricahue, Loro Austral, Loro Cabeza Roja, Loro Verde
+- Acuáticas: Flamencos, Ganso Colorada, Pato, Cisne Cuello Negro, Cormorán, Gaviota, Gaviotín, Pelícano, Garza, Pingüinos
+
+ANFIBIOS CHILENOS:
+- Ranas: Rana Chilena, Rana Arbóricola, Rana de Darwin, Rana Granuda
+- Sapos: Sapo Chileno, Sapo Espinoso
+
+INSECTOS Y ARTRÓPODOS:
+- Mariposas, Escarabajos, Abejas, Avispas, Hormigas, Libélulas, Saltamontes, Langostas, Cucarachas, Chinches, Moscas, Mosquitos, Arañas, Escorpiones, Ciempiés
+
+INSTRUCCIONES:
+1. Identificar SOLO animales/personas/vehículos visibles
+2. Usar nombres de especies exactamente como se listan
+3. Normalizar bounding boxes a rango 0..1 (esquina superior-izquierda e inferior-derecha)
+4. Confianza como escala 0-1 basada en claridad visual
+5. Describir cada detección con comportamiento/contexto/relevancia de seguridad
+6. Retornar SOLO JSON válido con claves: detections, scene_summary, operational_risks, limitations
+7. NO inventar objetos ocultos o fuera de vista
+8. Usar "unknown_animal" SOLO cuando completamente incierto`,
         },
         {
           role: 'user',
@@ -212,6 +281,107 @@ INSTRUCTIONS:
     alpaca: 'livestock',
     llama: 'livestock',
     donkey: 'livestock',
+    // Aves - Raptores
+    condor: 'condor',
+    condór: 'condor',
+    'andean condor': 'condor',
+    'aguila harpia': 'aguila_harpia',
+    'harpy eagle': 'aguila_harpia',
+    'halcon peregrino': 'halcon_peregrino',
+    'peregrine falcon': 'halcon_peregrino',
+    gavilan: 'gavilan',
+    hawk: 'gavilan',
+    buho: 'buho',
+    owl: 'buho',
+    lechuza: 'lechuza',
+    'barn owl': 'lechuza',
+    // Aves - Loros
+    'loro tricahue': 'loro_tricahue',
+    'tricahue parrot': 'loro_tricahue',
+    'loro austral': 'loro_austral',
+    'austral parakeet': 'loro_austral',
+    'loro cabeza roja': 'loro_cabeza_roja',
+    'red-headed parrot': 'loro_cabeza_roja',
+    'loro verde': 'loro_verde',
+    'green parrot': 'loro_verde',
+    parrot: 'loro_verde',
+    // Aves - Acuáticas
+    'flamenco andino': 'flamenco_andino',
+    'andean flamingo': 'flamenco_andino',
+    'flamenco chileno': 'flamenco_chileno',
+    'chilean flamingo': 'flamenco_chileno',
+    flamingo: 'flamenco_chileno',
+    'ganso colorada': 'gansa_colorada',
+    'upland goose': 'gansa_colorada',
+    'pato silvestre': 'pato_silvestre',
+    'wild duck': 'pato_silvestre',
+    duck: 'pato_silvestre',
+    'cisne cuello negro': 'cisne_cuello_negro',
+    'black-necked swan': 'cisne_cuello_negro',
+    swan: 'cisne_cuello_negro',
+    cormorant: 'cormorant',
+    cormorán: 'cormorant',
+    gaviota: 'gaviota',
+    gull: 'gaviota',
+    seagull: 'gaviota',
+    gaviotín: 'gaviotín',
+    tern: 'gaviotín',
+    pelicano: 'pelicano',
+    pelican: 'pelicano',
+    garza: 'garza',
+    heron: 'garza',
+    'pingüino de magallanes': 'pinguino_de_magallanes',
+    'magellanic penguin': 'pinguino_de_magallanes',
+    'pingüino de humboldt': 'pinguino_de_humboldt',
+    'humboldt penguin': 'pinguino_de_humboldt',
+    penguin: 'pinguino_de_magallanes',
+    woodpecker: 'carpintero_magallanico',
+    'carpintero magallánico': 'carpintero_magallanico',
+    // Anfibios
+    'rana chilena': 'rana_chilena',
+    'chilean frog': 'rana_chilena',
+    'rana arbóricola': 'rana_arboricola',
+    'tree frog': 'rana_arboricola',
+    'rana de darwin': 'rana_de_darwin',
+    'darwin frog': 'rana_de_darwin',
+    'rana granuda': 'rana_granuda',
+    'bumpy toad': 'rana_granuda',
+    'sapo chileno': 'sapo_chileno',
+    'chilean toad': 'sapo_chileno',
+    'sapo espinoso': 'sapo_espinoso',
+    'spiny toad': 'sapo_espinoso',
+    toad: 'sapo_chileno',
+    frog: 'rana_chilena',
+    // Insectos
+    mariposa: 'mariposa',
+    butterfly: 'mariposa',
+    escarabajo: 'escarabajo',
+    beetle: 'escarabajo',
+    abeja: 'abeja',
+    bee: 'abeja',
+    avispa: 'avispa',
+    wasp: 'avispa',
+    hormiga: 'hormiga',
+    ant: 'hormiga',
+    libélula: 'libélula',
+    dragonfly: 'libélula',
+    saltamontes: 'saltamontes',
+    grasshopper: 'saltamontes',
+    langosta: 'langosta',
+    locust: 'langosta',
+    cucaracha: 'cucaracha',
+    cockroach: 'cucaracha',
+    chinche: 'chinche',
+    'true bug': 'chinche',
+    mosca: 'mosca',
+    fly: 'mosca',
+    mosquito: 'mosquito',
+    araña: 'araña',
+    spider: 'araña',
+    escorpion: 'escorpion',
+    scorpion: 'escorpion',
+    ciempies: 'cienpies',
+    centipede: 'cienpies',
     // Non-Chilean animals
     leopard: 'unknown_animal',
     jaguar: 'unknown_animal',
