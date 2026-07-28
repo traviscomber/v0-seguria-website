@@ -146,7 +146,14 @@ export function VisionConsole() {
         </p>
       </div>
 
-      <form action={submitImage} className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const formData = new FormData(e.currentTarget)
+          void submitImage(formData)
+        }}
+        className="rounded-xl border border-white/10 bg-white/[0.04] p-6"
+      >
         <div className="flex items-center gap-3">
           <Upload className="h-5 w-5 text-[#9DD2F2]" />
           <div>
