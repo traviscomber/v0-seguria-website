@@ -218,7 +218,6 @@ INSTRUCTIONS:
     bear: 'unknown_animal',
     wolf: 'unknown_animal',
     coyote: 'zorro_chilla',
-    lion: 'puma',
   }
 
   let analysis: z.infer<typeof analysisSchema>
@@ -235,10 +234,10 @@ INSTRUCTIONS:
           confidence: typeof d.confidence === 'number' ? Math.min(1, Math.max(0, d.confidence)) : 0.5,
           box: d.box && typeof d.box === 'object' 
             ? {
-                x1: Math.min(1, Math.max(0, Number(d.box?.x1) || 0)),
-                y1: Math.min(1, Math.max(0, Number(d.box?.y1) || 0)),
-                x2: Math.min(1, Math.max(0, Number(d.box?.x2) || 1)),
-                y2: Math.min(1, Math.max(0, Number(d.box?.y2) || 1)),
+                x1: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.x1) || 0)),
+                y1: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.y1) || 0)),
+                x2: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.x2) || 1)),
+                y2: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.y2) || 1)),
               }
             : { x1: 0, y1: 0, x2: 1, y2: 1 },
           description: String(d.description || '').substring(0, 300),
