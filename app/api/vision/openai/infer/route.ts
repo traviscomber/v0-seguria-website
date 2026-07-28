@@ -224,12 +224,39 @@ INSTRUCTIONS:
   let analysis: z.infer<typeof analysisSchema>
   try {
     const raw = JSON.parse(outputText)
+    
+    // Normalize detections
     if (Array.isArray(raw.detections)) {
-      raw.detections = raw.detections.map((d: Record<string, unknown>) => ({
-        ...d,
-        species: speciesAliases[(d.species as string)?.toLowerCase()] ?? d.species,
-      }))
+      raw.detections = raw.detections
+        .filter((d: Record<string, unknown>) => d && typeof d === 'object')
+        .map((d: Record<string, unknown>) => ({
+          species: speciesAliases[(d.species as string)?.toLowerCase().trim()] 
+            ?? (d.species as string)?.toLowerCase().trim(),
+          confidence: typeof d.confidence === 'number' ? Math.min(1, Math.max(0, d.confidence)) : 0.5,
+          box: d.box && typeof d.box === 'object' 
+            ? {
+                x1: Math.min(1, Math.max(0, Number(d.box?.x1) || 0)),
+                y1: Math.min(1, Math.max(0, Number(d.box?.y1) || 0)),
+                x2: Math.min(1, Math.max(0, Number(d.box?.x2) || 1)),
+                y2: Math.min(1, Math.max(0, Number(d.box?.y2) || 1)),
+              }
+            : { x1: 0, y1: 0, x2: 1, y2: 1 },
+          description: String(d.description || '').substring(0, 300),
+        }))
     }
+    
+    // Normalize string arrays
+    if (!Array.isArray(raw.operational_risks)) {
+      raw.operational_risks = typeof raw.operational_risks === 'string'
+        ? [raw.operational_risks]
+        : []
+    }
+    if (!Array.isArray(raw.limitations)) {
+      raw.limitations = typeof raw.limitations === 'string'
+        ? [raw.limitations]
+        : []
+    }
+    
     analysis = analysisSchema.parse(raw)
   } catch (error) {
     return NextResponse.json(
