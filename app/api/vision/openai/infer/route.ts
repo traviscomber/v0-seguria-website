@@ -13,8 +13,20 @@ const detectionSchema = z.object({
     'vehicle',
     'cat',
     'dog',
-    'fox',
     'puma',
+    'huemul',
+    'pudu',
+    'guanaco',
+    'vicuña',
+    'ñandú',
+    'fox',
+    'culpeo',
+    'zorro_chilla',
+    'zorro_gris_chileno',
+    'gato_montés',
+    'coipu',
+    'chinchilla',
+    'vizcacha',
     'livestock',
     'unknown_animal',
   ]),
@@ -90,15 +102,27 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'system',
-          content:
-            'You are the visual analysis provider for SegurIA Vision. Identify only visible people, vehicles and animals relevant to operational security in facilities that work with animals. Bounding boxes must be normalized to 0..1 using the full image dimensions. Do not invent hidden objects. Use unknown_animal when species is uncertain. Confidence is visual confidence (0 to 1). Return ONLY valid JSON with keys: detections (array), scene_summary (string), operational_risks (array of strings), limitations (array of strings).',
+          content: `You are SegurIA Vision, an expert wildlife analysis system for Chilean fauna and operational security. You specialize in identifying Chilean native animals including:
+- Large fauna: Puma (Cougar), Huemul (Andean deer), Guanaco, Vicuña, Ñandú (Rhea)
+- Small fauna: Pudu (dwarf deer), Culpeo (native fox), Zorro Chilla, Zorro Gris Chileno, Gato Montés, Coipu, Chinchilla, Vizcacha
+- Also detect: People, vehicles, livestock, dogs, cats, and common species
+
+INSTRUCTIONS:
+1. Identify ONLY visible animals/people/vehicles in the image
+2. Use provided species names exactly as listed above
+3. Normalize bounding boxes to 0..1 range (top-left and bottom-right coordinates)
+4. Return confidence as 0-1 scale based on visual clarity
+5. Describe each detection with behavior/context/security relevance
+6. Return ONLY valid JSON with required keys: detections, scene_summary, operational_risks, limitations
+7. Do NOT invent hidden or occluded objects
+8. Use "unknown_animal" ONLY when completely uncertain about species`,
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Analyze this image for operational animal-security detections. Return JSON with: detections (each with species, confidence, box {x1,y1,x2,y2}, description), scene_summary, operational_risks, limitations.',
+              text: 'Analyze this image for Chilean fauna and security detections. Identify species precisely. Return JSON with detections array (each with species, confidence 0-1, normalized box coordinates, description), scene_summary, operational_risks list, and limitations.',
             },
             {
               type: 'image_url',
@@ -130,31 +154,108 @@ export async function POST(request: Request) {
   }
 
   const speciesAliases: Record<string, string> = {
+    // Puma variations
     cougar: 'puma',
     'mountain lion': 'puma',
+    'mountain puma': 'puma',
+    leon: 'puma',
     lion: 'puma',
-    leopard: 'unknown_animal',
-    jaguar: 'unknown_animal',
-    bear: 'unknown_animal',
-    wolf: 'unknown_animal',
-    coyote: 'fox',
+    // Huemul variations
+    huemul: 'huemul',
+    'andean deer': 'huemul',
+    'south andean deer': 'huemul',
+    // Pudu variations
+    pudu: 'pudu',
+    'dwarf deer': 'pudu',
+    'northern pudu': 'pudu',
+    // Guanaco variations
+    guanaco: 'guanaco',
+    guanaca: 'guanaco',
+    // Vicuña variations
+    vicuña: 'vicuña',
+    vicuna: 'vicuña',
+    // Ñandú variations
+    ñandú: 'ñandú',
+    nandu: 'ñandú',
+    rhea: 'ñandú',
+    // Fox variations - Culpeo
+    culpeo: 'culpeo',
+    'culpeo fox': 'culpeo',
+    'andean fox': 'culpeo',
+    // Fox variations - Chilla
+    chilla: 'zorro_chilla',
+    'zorro chilla': 'zorro_chilla',
+    // Fox variations - Grey
+    'zorro gris': 'zorro_gris_chileno',
+    'grey fox chilean': 'zorro_gris_chileno',
+    // General fox
+    fox: 'fox',
+    'wild dog': 'fox',
+    // Gato Montés
+    'gato montés': 'gato_montés',
+    'gato montes': 'gato_montés',
+    'wildcat': 'gato_montés',
+    // Coipu
+    coipu: 'coipu',
+    nutria: 'coipu',
+    // Chinchilla
+    chinchilla: 'chinchilla',
+    // Vizcacha
+    vizcacha: 'vizcacha',
+    // Livestock variations
     cow: 'livestock',
+    cattle: 'livestock',
     horse: 'livestock',
     sheep: 'livestock',
     goat: 'livestock',
     pig: 'livestock',
-    cattle: 'livestock',
+    alpaca: 'livestock',
+    llama: 'livestock',
+    donkey: 'livestock',
+    // Non-Chilean animals
+    leopard: 'unknown_animal',
+    jaguar: 'unknown_animal',
+    bear: 'unknown_animal',
+    wolf: 'unknown_animal',
+    coyote: 'zorro_chilla',
   }
 
   let analysis: z.infer<typeof analysisSchema>
   try {
     const raw = JSON.parse(outputText)
+    
+    // Normalize detections
     if (Array.isArray(raw.detections)) {
-      raw.detections = raw.detections.map((d: Record<string, unknown>) => ({
-        ...d,
-        species: speciesAliases[(d.species as string)?.toLowerCase()] ?? d.species,
-      }))
+      raw.detections = raw.detections
+        .filter((d: Record<string, unknown>) => d && typeof d === 'object')
+        .map((d: Record<string, unknown>) => ({
+          species: speciesAliases[(d.species as string)?.toLowerCase().trim()] 
+            ?? (d.species as string)?.toLowerCase().trim(),
+          confidence: typeof d.confidence === 'number' ? Math.min(1, Math.max(0, d.confidence)) : 0.5,
+          box: d.box && typeof d.box === 'object' 
+            ? {
+                x1: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.x1) || 0)),
+                y1: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.y1) || 0)),
+                x2: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.x2) || 1)),
+                y2: Math.min(1, Math.max(0, Number((d.box as Record<string, unknown>)?.y2) || 1)),
+              }
+            : { x1: 0, y1: 0, x2: 1, y2: 1 },
+          description: String(d.description || '').substring(0, 300),
+        }))
     }
+    
+    // Normalize string arrays
+    if (!Array.isArray(raw.operational_risks)) {
+      raw.operational_risks = typeof raw.operational_risks === 'string'
+        ? [raw.operational_risks]
+        : []
+    }
+    if (!Array.isArray(raw.limitations)) {
+      raw.limitations = typeof raw.limitations === 'string'
+        ? [raw.limitations]
+        : []
+    }
+    
     analysis = analysisSchema.parse(raw)
   } catch (error) {
     return NextResponse.json(
