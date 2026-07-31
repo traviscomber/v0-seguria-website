@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, AlertTriangle, Camera, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
+import { Activity, AlertTriangle, Camera, CheckCircle2, ImageIcon, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
 
 import {
   selectVisionProvider,
@@ -26,6 +26,7 @@ type VisionResponse = {
   camera_id?: string | null
   zone_label?: string | null
   captured_at?: string | null
+  evidence_stored?: boolean
   detections_count?: number
   detections?: Detection[]
   scene_summary?: string
@@ -51,6 +52,7 @@ type CameraRecord = {
 
 type BatchResult = {
   filename: string
+  previewUrl: string
   state: 'processing' | 'completed' | 'failed'
   result?: VisionResponse
 }
@@ -64,6 +66,14 @@ type CaptureMetadata = {
 
 const MAX_BATCH_SIZE = 20
 const MANUAL_CAMERA = '__manual__'
+
+const SPECIES_LABELS: Record<string, string> = {
+  person: 'Persona', vehicle: 'Vehículo', cat: 'Gato', dog: 'Perro', puma: 'Puma',
+  huemul: 'Huemul', pudu: 'Pudú', guanaco: 'Guanaco', vicuña: 'Vicuña', ñandú: 'Ñandú',
+  fox: 'Zorro', culpeo: 'Culpeo', zorro_chilla: 'Zorro chilla',
+  zorro_gris_chileno: 'Zorro gris chileno', gato_montés: 'Gato montés', coipu: 'Coipo',
+  chinchilla: 'Chinchilla', vizcacha: 'Vizcacha', livestock: 'Ganado', unknown_animal: 'Animal no identificado',
+}
 
 export function VisionConsole() {
   const [health, setHealth] = useState<VisionResponse | null>(null)
@@ -85,7 +95,6 @@ export function VisionConsole() {
       setHealth(await healthResponse.json())
       setReady(await readyResponse.json())
       setProviders(await providerResponse.json())
-
       const cameraPayload = await cameraResponse.json()
       if (cameraResponse.ok && cameraPayload.success) {
         const activeCameras = (cameraPayload.data as CameraRecord[]).filter((camera) => camera.active)
@@ -94,17 +103,18 @@ export function VisionConsole() {
       } else {
         setCameraLoadError(cameraPayload.error || 'No fue posible cargar las cámaras registradas.')
       }
-    }).catch(() => {
-      setCameraLoadError('No fue posible cargar las cámaras registradas.')
-    })
+    }).catch(() => setCameraLoadError('No fue posible cargar las cámaras registradas.'))
   }, [])
+
+  useEffect(() => () => {
+    results.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+  }, [results])
 
   const selectedCamera = useMemo(
     () => cameras.find((camera) => camera.id === selectedCameraId) || null,
     [cameras, selectedCameraId],
   )
   const manualMode = selectedCameraId === MANUAL_CAMERA
-
   const isOnnxReady = ready?.ok === true
   const isOpenAiReady = providers?.providers?.openai?.ready === true
   const selectedProvider: VisionProvider = selectVisionProvider({
@@ -117,8 +127,6 @@ export function VisionConsole() {
 
   async function analyzeFile(file: File, metadata: CaptureMetadata) {
     if (!selectedEndpoint) return
-    setResults((current) => current.map((item) => item.filename === file.name ? { ...item, state: 'processing' } : item))
-
     try {
       const headers: Record<string, string> = {
         'X-Image-Content-Type': file.type,
@@ -129,25 +137,15 @@ export function VisionConsole() {
       if (metadata.zoneLabel) headers['X-Zone-Label'] = encodeURIComponent(metadata.zoneLabel)
       if (metadata.capturedAt) headers['X-Captured-At'] = new Date(metadata.capturedAt).toISOString()
 
-      const response = await fetch(selectedEndpoint, {
-        method: 'POST',
-        headers,
-        body: await file.arrayBuffer(),
-      })
+      const response = await fetch(selectedEndpoint, { method: 'POST', headers, body: await file.arrayBuffer() })
       const payload = await response.json() as VisionResponse
       setResults((current) => current.map((item) => item.filename === file.name
-        ? { ...item, state: response.ok ? 'completed' : 'failed', result: payload }
+        ? { ...item, state: response.ok && payload.job_id ? 'completed' : 'failed', result: payload }
         : item))
+      if (response.ok && payload.job_id) window.dispatchEvent(new Event('wildlife-job-created'))
     } catch (error) {
       setResults((current) => current.map((item) => item.filename === file.name
-        ? {
-            ...item,
-            state: 'failed',
-            result: {
-              error: 'vision_request_failed',
-              message: error instanceof Error ? error.message : 'No fue posible ejecutar el análisis.',
-            },
-          }
+        ? { ...item, state: 'failed', result: { error: 'vision_request_failed', message: error instanceof Error ? error.message : 'No fue posible ejecutar el análisis.' } }
         : item))
     }
   }
@@ -155,160 +153,146 @@ export function VisionConsole() {
   async function submitImages(formData: FormData) {
     const files = formData.getAll('images').filter((item): item is File => item instanceof File && item.size > 0)
     if (!files.length || !selectedEndpoint) return
-
     const metadata: CaptureMetadata = selectedCamera
-      ? {
-          cameraCode: selectedCamera.code,
-          cameraName: selectedCamera.name,
-          zoneLabel: selectedCamera.zone_label || '',
-          capturedAt: String(formData.get('capturedAt') || '').trim(),
-        }
-      : {
-          cameraCode: String(formData.get('cameraCode') || '').trim(),
-          cameraName: String(formData.get('cameraName') || '').trim(),
-          zoneLabel: String(formData.get('zoneLabel') || '').trim(),
-          capturedAt: String(formData.get('capturedAt') || '').trim(),
-        }
+      ? { cameraCode: selectedCamera.code, cameraName: selectedCamera.name, zoneLabel: selectedCamera.zone_label || '', capturedAt: String(formData.get('capturedAt') || '').trim() }
+      : { cameraCode: String(formData.get('cameraCode') || '').trim(), cameraName: String(formData.get('cameraName') || '').trim(), zoneLabel: String(formData.get('zoneLabel') || '').trim(), capturedAt: String(formData.get('capturedAt') || '').trim() }
 
+    results.forEach((item) => URL.revokeObjectURL(item.previewUrl))
     const selectedFiles = files.slice(0, MAX_BATCH_SIZE)
     setLoading(true)
-    setResults(selectedFiles.map((file) => ({ filename: file.name, state: 'processing' })))
-
+    setResults(selectedFiles.map((file) => ({ filename: file.name, previewUrl: URL.createObjectURL(file), state: 'processing' })))
     for (const file of selectedFiles) await analyzeFile(file, metadata)
     setLoading(false)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatusCard icon={<Activity className="h-5 w-5 text-[#9DD2F2]" />} label="Servicio" value={health?.ok ? 'Activo' : 'Sin respuesta'} />
-        <StatusCard icon={<Camera className={`h-5 w-5 ${isOnnxReady ? 'text-emerald-300' : 'text-white/30'}`} />} label="ONNX" value={isOnnxReady ? 'Listo' : 'No disponible'} />
-        <StatusCard icon={<Sparkles className={`h-5 w-5 ${isOpenAiReady ? 'text-[#9DD2F2]' : 'text-white/30'}`} />} label="OpenAI" value={isOpenAiReady ? 'Listo' : 'Falta API key'} />
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatusCard icon={<Activity className="h-4 w-4" />} label="Servicio" value={health?.ok ? 'Operativo' : 'Sin respuesta'} active={Boolean(health?.ok)} />
+        <StatusCard icon={<Camera className="h-4 w-4" />} label="Motor local" value={isOnnxReady ? 'Disponible' : 'No disponible'} active={isOnnxReady} />
+        <StatusCard icon={<Sparkles className="h-4 w-4" />} label="Motor IA" value={isOpenAiReady ? providerLabel : 'No disponible'} active={isOpenAiReady} />
       </div>
 
-      <div className={`flex gap-3 rounded-xl border p-4 text-sm leading-6 ${selectedProvider ? 'border-[#9DD2F2]/20 bg-[#9DD2F2]/[0.06] text-white/75' : 'border-amber-300/20 bg-amber-300/[0.06] text-amber-100/80'}`}>
-        {selectedProvider ? <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#9DD2F2]" /> : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />}
-        <p>{selectedProvider ? `Proveedor activo: ${providerLabel}.` : 'No existe un proveedor de inferencia disponible.'}</p>
-      </div>
-
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          void submitImages(new FormData(event.currentTarget))
-        }}
-        className="rounded-xl border border-white/10 bg-white/[0.04] p-6"
-      >
-        <div className="flex items-center gap-3">
-          <Upload className="h-5 w-5 text-[#9DD2F2]" />
-          <div>
-            <h2 className="text-xl font-light text-white">Carga por lote</h2>
-            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes. La cámara y fecha se aplican al lote completo.</p>
+      <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1d2c] shadow-2xl shadow-black/20">
+        <div className="border-b border-white/10 px-5 py-4 sm:px-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8fc8ea]">Nueva revisión</p>
+              <h2 className="mt-1 text-2xl font-light text-white">Analizar evidencia</h2>
+              <p className="mt-1 text-sm text-white/50">Carga fotografías, asigna cámara y conserva el resultado para validación científica.</p>
+            </div>
+            <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs ${selectedProvider ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-300/10 text-amber-100'}`}>
+              {selectedProvider ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+              {selectedProvider ? 'Sistema listo' : 'Sin proveedor disponible'}
+            </div>
           </div>
         </div>
 
-        {cameraLoadError && (
-          <p className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-sm text-amber-100/80">{cameraLoadError}</p>
-        )}
+        <form onSubmit={(event) => { event.preventDefault(); void submitImages(new FormData(event.currentTarget)) }} className="p-5 sm:p-6">
+          {cameraLoadError && <p className="mb-4 rounded-xl border border-amber-300/20 bg-amber-300/[0.05] p-3 text-sm text-amber-100/80">{cameraLoadError}</p>}
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <label className="space-y-1 text-sm text-white/60">
-            <span>Cámara registrada</span>
-            <select
-              value={selectedCameraId}
-              onChange={(event) => setSelectedCameraId(event.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none"
-            >
-              <option value="">Sin cámara asociada</option>
-              {cameras.map((camera) => (
-                <option key={camera.id} value={camera.id}>
-                  {camera.code} · {camera.name}{camera.zone_label ? ` · ${camera.zone_label}` : ''}
-                </option>
-              ))}
-              <option value={MANUAL_CAMERA}>Ingreso manual</option>
-            </select>
-          </label>
-          <label className="space-y-1 text-sm text-white/60">
-            <span>Fecha de captura</span>
-            <input name="capturedAt" type="datetime-local" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
-          </label>
-        </div>
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-4">
+              <label className="block text-sm text-white/65">
+                <span className="mb-2 block">Cámara o punto de captura</span>
+                <select value={selectedCameraId} onChange={(event) => setSelectedCameraId(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#071622] px-4 py-3.5 text-white outline-none transition focus:border-[#68b4e3]/50">
+                  <option value="">Sin cámara asociada</option>
+                  {cameras.map((camera) => <option key={camera.id} value={camera.id}>{camera.code} · {camera.name}{camera.zone_label ? ` · ${camera.zone_label}` : ''}</option>)}
+                  <option value={MANUAL_CAMERA}>Ingresar cámara manualmente</option>
+                </select>
+              </label>
 
-        {selectedCamera && (
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-[#9DD2F2]/15 bg-[#9DD2F2]/[0.04] px-4 py-3 text-sm text-white/65">
-            <span><strong className="font-medium text-white">{selectedCamera.code}</strong> · {selectedCamera.name}</span>
-            {selectedCamera.zone_label && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {selectedCamera.zone_label}</span>}
-          </div>
-        )}
+              {selectedCamera && (
+                <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-[#68b4e3]/15 bg-[#68b4e3]/[0.05] px-4 py-3 text-sm text-white/65">
+                  <span><strong className="font-medium text-white">{selectedCamera.code}</strong> · {selectedCamera.name}</span>
+                  {selectedCamera.zone_label && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{selectedCamera.zone_label}</span>}
+                </div>
+              )}
 
-        {manualMode && (
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <label className="space-y-1 text-sm text-white/60">
-              <span>Código manual</span>
-              <input name="cameraCode" maxLength={80} placeholder="CAM-HH-001" required className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
-            </label>
-            <label className="space-y-1 text-sm text-white/60">
-              <span>Nombre manual</span>
-              <input name="cameraName" maxLength={160} placeholder="Sendero norte" required className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
-            </label>
-            <label className="space-y-1 text-sm text-white/60">
-              <span>Zona manual</span>
-              <input name="zoneLabel" maxLength={160} placeholder="Reserva norte" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+              {manualMode && (
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Field name="cameraCode" label="Código" placeholder="CAM-HH-001" required />
+                  <Field name="cameraName" label="Nombre" placeholder="Sendero norte" required />
+                  <Field name="zoneLabel" label="Zona" placeholder="Reserva norte" />
+                </div>
+              )}
+            </div>
+
+            <label className="block text-sm text-white/65">
+              <span className="mb-2 block">Fecha y hora de captura</span>
+              <input name="capturedAt" type="datetime-local" className="w-full rounded-xl border border-white/10 bg-[#071622] px-4 py-3.5 text-white outline-none transition focus:border-[#68b4e3]/50" />
             </label>
           </div>
-        )}
 
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row">
-          <input
-            name="images"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            required
-            disabled={!selectedProvider || loading}
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#081827] px-4 py-3 text-sm text-white file:mr-4 file:rounded-md file:border-0 file:bg-[#123A5A] file:px-4 file:py-2 file:text-white disabled:opacity-40"
-          />
-          <button
-            type="submit"
-            disabled={!selectedProvider || loading}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4DA3D9] px-6 py-3 text-sm font-medium text-[#07131f] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? 'Procesando lote...' : 'Analizar imágenes'}
-          </button>
-        </div>
-      </form>
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">
+            <label className="group flex min-h-28 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.025] px-6 py-5 text-center transition hover:border-[#68b4e3]/40 hover:bg-[#68b4e3]/[0.04]">
+              <input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple required disabled={!selectedProvider || loading} className="sr-only" />
+              <span>
+                <ImageIcon className="mx-auto h-7 w-7 text-[#8fc8ea]" />
+                <span className="mt-2 block text-sm font-medium text-white">Seleccionar fotografías</span>
+                <span className="mt-1 block text-xs text-white/40">JPG, PNG o WebP · máximo {MAX_BATCH_SIZE} archivos</span>
+              </span>
+            </label>
+            <button type="submit" disabled={!selectedProvider || loading} className="inline-flex min-h-28 items-center justify-center gap-2 rounded-2xl bg-[#58a9db] px-8 text-sm font-semibold text-[#06131d] transition hover:bg-[#76bce7] disabled:cursor-not-allowed disabled:opacity-40">
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              {loading ? 'Analizando...' : 'Analizar y guardar'}
+            </button>
+          </div>
+        </form>
+      </section>
 
       {results.length > 0 && (
-        <section className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
-          <h2 className="text-xl font-light text-white">Resultados del lote</h2>
-          <div className="mt-5 space-y-4">
+        <section className="space-y-3">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8fc8ea]">Resultado reciente</p>
+              <h2 className="mt-1 text-xl font-light text-white">Evidencia procesada</h2>
+            </div>
+            <span className="text-xs text-white/35">{results.length} archivo{results.length === 1 ? '' : 's'}</span>
+          </div>
+
+          <div className="space-y-4">
             {results.map((item) => (
-              <article key={item.filename} className="rounded-xl bg-black/20 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="font-medium text-white">{item.filename}</p>
-                  <span className="text-xs text-white/50">{item.state === 'processing' ? 'Procesando' : item.state === 'completed' ? 'Completado' : 'Falló'}</span>
-                </div>
-                {item.state === 'processing' && <Loader2 className="mt-4 h-5 w-5 animate-spin text-[#9DD2F2]" />}
-                {(item.result?.zone_label || item.result?.captured_at) && (
-                  <p className="mt-3 text-xs text-white/40">
-                    {[item.result.zone_label, item.result.captured_at ? new Date(item.result.captured_at).toLocaleString('es-CL') : null].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-                {item.result?.scene_summary && <p className="mt-4 text-sm leading-6 text-white/60">{item.result.scene_summary}</p>}
-                {!!item.result?.detections?.length && (
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {item.result.detections.map((detection, index) => (
-                      <div key={`${detection.species}-${index}`} className="rounded-lg bg-white/[0.04] px-3 py-2">
-                        <div className="flex justify-between gap-3 text-sm">
-                          <span className="text-white">{detection.species}</span>
-                          <span className="text-[#9DD2F2]">{Math.round(detection.confidence * 100)}%</span>
-                        </div>
-                        {detection.description && <p className="mt-1 text-xs text-white/40">{detection.description}</p>}
-                      </div>
-                    ))}
+              <article key={item.filename} className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1d2c]">
+                <div className="grid lg:grid-cols-[320px_1fr]">
+                  <div className="relative min-h-64 bg-black/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.previewUrl} alt={item.filename} className="h-full min-h-64 w-full object-contain" />
+                    <div className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-xs text-white/80 backdrop-blur">{item.filename}</div>
                   </div>
-                )}
-                {item.result?.message && <p className="mt-4 text-sm text-red-100/75">{item.result.message}</p>}
+
+                  <div className="p-5 sm:p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.15em] text-white/35">Estado</p>
+                        <p className={`mt-1 text-sm font-medium ${item.state === 'completed' ? 'text-emerald-200' : item.state === 'failed' ? 'text-red-200' : 'text-[#8fc8ea]'}`}>
+                          {item.state === 'processing' ? 'Procesando evidencia' : item.state === 'completed' ? 'Guardado y listo para revisión' : 'No fue posible completar el análisis'}
+                        </p>
+                      </div>
+                      {item.result?.job_id && <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs text-white/45">ID {item.result.job_id.slice(0, 8)}</span>}
+                    </div>
+
+                    {item.state === 'processing' && <Loader2 className="mt-8 h-6 w-6 animate-spin text-[#8fc8ea]" />}
+                    {item.result?.scene_summary && <p className="mt-5 text-base leading-7 text-white/72">{item.result.scene_summary}</p>}
+
+                    {!!item.result?.detections?.length && (
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {item.result.detections.map((detection, index) => (
+                          <div key={`${detection.species}-${index}`} className="rounded-xl border border-white/8 bg-white/[0.035] p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-medium text-white">{SPECIES_LABELS[detection.species] || detection.species}</span>
+                              <span className="rounded-full bg-[#68b4e3]/10 px-2.5 py-1 text-xs font-medium text-[#9bd3f3]">{Math.round(detection.confidence * 100)}%</span>
+                            </div>
+                            {detection.description && <p className="mt-2 text-sm leading-6 text-white/48">{detection.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {(item.result?.zone_label || item.result?.captured_at) && <p className="mt-5 text-xs text-white/35">{[item.result.zone_label, item.result.captured_at ? new Date(item.result.captured_at).toLocaleString('es-CL') : null].filter(Boolean).join(' · ')}</p>}
+                    {item.result?.message && <p className="mt-5 rounded-xl border border-red-300/15 bg-red-300/[0.04] p-3 text-sm text-red-100/80">{item.result.message}</p>}
+                  </div>
+                </div>
               </article>
             ))}
           </div>
@@ -318,14 +302,18 @@ export function VisionConsole() {
   )
 }
 
-function StatusCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Field({ name, label, placeholder, required = false }: { name: string; label: string; placeholder: string; required?: boolean }) {
+  return <label className="block text-sm text-white/60"><span className="mb-1.5 block">{label}</span><input name={name} placeholder={placeholder} required={required} className="w-full rounded-xl border border-white/10 bg-[#071622] px-3 py-3 text-white outline-none focus:border-[#68b4e3]/50" /></label>
+}
+
+function StatusCard({ icon, label, value, active }: { icon: React.ReactNode; label: string; value: string; active: boolean }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+    <div className="rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3">
       <div className="flex items-center gap-3">
-        {icon}
-        <div>
-          <p className="text-sm text-white/50">{label}</p>
-          <p className="text-lg text-white">{value}</p>
+        <span className={active ? 'text-[#8fc8ea]' : 'text-white/25'}>{icon}</span>
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">{label}</p>
+          <p className="truncate text-sm text-white/75">{value}</p>
         </div>
       </div>
     </div>
