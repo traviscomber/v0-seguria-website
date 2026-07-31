@@ -15,12 +15,12 @@ export function selectVisionProvider(state: VisionProviderState): VisionProvider
 
 export function visionProviderEndpoint(provider: VisionProvider): string | null {
   if (provider === 'onnx') return '/api/vision/infer'
-  if (provider === 'openai') return '/api/vision/openai/infer'
+  if (provider === 'openai') return '/api/vision/openai/infer-with-metadata'
   return null
 }
 
 export function visionProviderLabel(provider: VisionProvider, openaiModel?: string): string {
   if (provider === 'onnx') return 'Detector ONNX local'
-  if (provider === 'openai') return `OpenAI Vision temporal${openaiModel ? ` · ${openaiModel}` : ''}`
-  return 'Ningún proveedor configurado'
+  if (provider === 'openai') return `OpenAI Vision + EXIF${openaiModel ? ` · ${openaiModel}` : ''}`
+  return 'Ningun proveedor configurado'
 }
