@@ -5,6 +5,7 @@ import { ArrowLeft, Eye } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
+import { VisionMetrics } from './vision-metrics'
 
 export default async function WildlifeVisionPage() {
   const supabase = await createSupabaseServerClient()
@@ -37,6 +38,7 @@ export default async function WildlifeVisionPage() {
         </div>
 
         <div className="mt-8 space-y-8">
+          <VisionMetrics />
           <VisionConsole />
           <VisionJobHistory />
         </div>
