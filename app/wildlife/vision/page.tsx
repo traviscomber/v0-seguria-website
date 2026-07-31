@@ -53,7 +53,9 @@ export default async function WildlifeVisionPage() {
         <div className="mt-8 space-y-8">
           <VisionMetrics />
           <CameraRegistry />
-          <TerritorialActivity />
+          <div id="territorial-map" className="scroll-mt-6">
+            <TerritorialActivity />
+          </div>
           <VisionConsole />
           <ImageMetadataActivity />
           <VisionJobHistory />
