@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
 import { PilotEvaluation } from './pilot-evaluation'
 import { TerritorialActivity } from './territorial-activity'
+import { TerritorialMetadataValidation } from './territorial-metadata-validation'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
 import { VisionMetrics } from './vision-metrics'
@@ -45,6 +46,7 @@ export default async function WildlifeVisionPage() {
           <CameraRegistry />
           <VisionConsole />
           <TerritorialActivity />
+          <TerritorialMetadataValidation />
           <VisionJobHistory />
           <PilotEvaluation />
         </div>
