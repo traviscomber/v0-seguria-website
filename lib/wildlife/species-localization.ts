@@ -1,34 +1,46 @@
 export type SpeciesLocalization = {
   label: string
   scientificName?: string
+  priority?: 'focus' | 'operational' | 'support'
 }
 
 const SPECIES_LOCALIZATION: Record<string, SpeciesLocalization> = {
-  person: { label: 'Persona', scientificName: 'Homo sapiens' },
-  vehicle: { label: 'Vehículo' },
-  cat: { label: 'Gato doméstico', scientificName: 'Felis catus' },
-  dog: { label: 'Perro', scientificName: 'Canis lupus familiaris' },
-  puma: { label: 'Puma', scientificName: 'Puma concolor' },
-  huemul: { label: 'Huemul', scientificName: 'Hippocamelus bisulcus' },
-  pudu: { label: 'Pudú', scientificName: 'Pudu puda' },
-  guanaco: { label: 'Guanaco', scientificName: 'Lama guanicoe' },
-  vicuña: { label: 'Vicuña', scientificName: 'Vicugna vicugna' },
-  'ñandú': { label: 'Ñandú', scientificName: 'Rhea pennata' },
-  fox: { label: 'Zorro no determinado', scientificName: 'Lycalopex sp.' },
-  culpeo: { label: 'Zorro culpeo', scientificName: 'Lycalopex culpaeus' },
-  zorro_chilla: { label: 'Zorro chilla', scientificName: 'Lycalopex griseus' },
-  zorro_gris_chileno: { label: 'Zorro gris chileno', scientificName: 'Lycalopex griseus' },
-  gato_montés: { label: 'Guiña', scientificName: 'Leopardus guigna' },
-  coipu: { label: 'Coipo', scientificName: 'Myocastor coypus' },
-  chinchilla: { label: 'Chinchilla', scientificName: 'Chinchilla lanigera' },
-  vizcacha: { label: 'Vizcacha', scientificName: 'Lagidium viscacia' },
-  livestock: { label: 'Ganado' },
-  unknown_animal: { label: 'Animal no identificado' },
-  empty_frame: { label: 'Imagen sin fauna' },
+  huemul: { label: 'Huemul', scientificName: 'Hippocamelus bisulcus', priority: 'focus' },
+  pudu: { label: 'Pudú', scientificName: 'Pudu puda', priority: 'focus' },
+  puma: { label: 'Puma', scientificName: 'Puma concolor', priority: 'focus' },
+  culpeo: { label: 'Zorro culpeo', scientificName: 'Lycalopex culpaeus', priority: 'focus' },
+  zorro_chilla: { label: 'Zorro chilla', scientificName: 'Lycalopex griseus', priority: 'focus' },
+  zorro_gris_chileno: { label: 'Zorro gris chileno', scientificName: 'Lycalopex griseus', priority: 'focus' },
+  fox: { label: 'Zorro no determinado', scientificName: 'Lycalopex sp.', priority: 'focus' },
+  guina: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
+  gato_montes: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
+  gato_montés: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
+  coipo: { label: 'Coipo', scientificName: 'Myocastor coypus', priority: 'focus' },
+  coipu: { label: 'Coipo', scientificName: 'Myocastor coypus', priority: 'focus' },
+  person: { label: 'Persona', scientificName: 'Homo sapiens', priority: 'operational' },
+  vehicle: { label: 'Vehículo', priority: 'operational' },
+  dog: { label: 'Perro', scientificName: 'Canis lupus familiaris', priority: 'operational' },
+  cat: { label: 'Gato doméstico', scientificName: 'Felis catus', priority: 'operational' },
+  livestock: { label: 'Ganado', priority: 'operational' },
+  bird_unknown: { label: 'Ave no determinada', priority: 'support' },
+  empty_frame: { label: 'Imagen sin fauna', priority: 'support' },
+  unknown_animal: { label: 'Animal no identificado', priority: 'support' },
+  guanaco: { label: 'Guanaco', scientificName: 'Lama guanicoe', priority: 'support' },
+  vicuna: { label: 'Vicuña', scientificName: 'Vicugna vicugna', priority: 'support' },
+  vicuña: { label: 'Vicuña', scientificName: 'Vicugna vicugna', priority: 'support' },
+  nandu: { label: 'Ñandú', scientificName: 'Rhea pennata', priority: 'support' },
+  ñandú: { label: 'Ñandú', scientificName: 'Rhea pennata', priority: 'support' },
+  chinchilla: { label: 'Chinchilla', scientificName: 'Chinchilla lanigera', priority: 'support' },
+  vizcacha: { label: 'Vizcacha', scientificName: 'Lagidium viscacia', priority: 'support' },
 }
 
 function normalizeSpeciesCode(value: string) {
-  return value.trim().toLowerCase().replace(/[\s-]+/g, '_')
+  return value
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
 }
 
 export function getSpeciesLocalization(value: string | null | undefined): SpeciesLocalization {
