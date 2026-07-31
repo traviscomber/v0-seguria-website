@@ -4,6 +4,7 @@ import { ArrowLeft, Eye } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { VisionConsole } from './vision-console'
+import { VisionJobHistory } from './vision-job-history'
 
 export default async function WildlifeVisionPage() {
   const supabase = await createSupabaseServerClient()
@@ -23,7 +24,7 @@ export default async function WildlifeVisionPage() {
             </div>
             <h1 className="mt-3 text-4xl font-light tracking-tight">SegurIA Vision</h1>
             <p className="mt-3 max-w-2xl text-white/60">
-              Estado del motor de visión y prueba controlada de imágenes para operaciones que trabajan con animales.
+              Análisis asistido de cámaras trampa, procesamiento por lote y validación humana trazable.
             </p>
           </div>
           <Link
@@ -31,12 +32,13 @@ export default async function WildlifeVisionPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Cola de revisión
+            Cola de revisión de dataset
           </Link>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-8">
           <VisionConsole />
+          <VisionJobHistory />
         </div>
       </div>
     </main>
