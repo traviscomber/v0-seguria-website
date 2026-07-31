@@ -11,16 +11,8 @@ const reviewSchema = z.object({
   correctedScientificName: z.string().trim().max(200).optional().nullable(),
   notes: z.string().trim().max(1000).optional().nullable(),
 }).superRefine((value, context) => {
-  if (
-    value.reviewStatus === 'corrected'
-    && !value.correctedCommonName
-    && !value.correctedScientificName
-  ) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['correctedCommonName'],
-      message: 'Debe indicar el nombre común o científico corregido.',
-    })
+  if (value.reviewStatus === 'corrected' && !value.correctedCommonName && !value.correctedScientificName) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['correctedCommonName'], message: 'Debe indicar el nombre común o científico corregido.' })
   }
 })
 
@@ -38,25 +30,25 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('wildlife_inference_jobs')
-    .select('id, original_filename, mime_type, byte_size, provider, model_name, status, review_status, result_json, error_code, error_message, corrected_common_name, corrected_scientific_name, review_notes, reviewed_at, created_at, updated_at')
+    .select('id, original_filename, mime_type, byte_size, provider, model_name, status, review_status, result_json, error_code, error_message, corrected_common_name, corrected_scientific_name, review_notes, camera_id, zone_label, captured_at, reviewed_at, created_at, updated_at, wildlife_cameras(code, name, zone_label)')
     .eq('submitted_by_user_id', auth.user.id)
     .order('created_at', { ascending: false })
     .limit(limit)
 
   const reviewStatus = request.nextUrl.searchParams.get('review_status')
-  if (reviewStatus && REVIEW_STATUSES.includes(reviewStatus as typeof REVIEW_STATUSES[number])) {
-    query = query.eq('review_status', reviewStatus)
-  }
+  if (reviewStatus && REVIEW_STATUSES.includes(reviewStatus as typeof REVIEW_STATUSES[number])) query = query.eq('review_status', reviewStatus)
 
   const status = request.nextUrl.searchParams.get('status')
-  if (status && ['queued', 'processing', 'completed', 'failed'].includes(status)) {
-    query = query.eq('status', status)
-  }
+  if (status && ['queued', 'processing', 'completed', 'failed'].includes(status)) query = query.eq('status', status)
 
   const species = request.nextUrl.searchParams.get('species')?.trim().toLowerCase()
-  if (species) {
-    query = query.or(`corrected_common_name.ilike.%${species}%,corrected_scientific_name.ilike.%${species}%,result_json->detections.cs.[{"species":"${species}"}]`)
-  }
+  if (species) query = query.or(`corrected_common_name.ilike.%${species}%,corrected_scientific_name.ilike.%${species}%,result_json->detections.cs.[{"species":"${species}"}]`)
+
+  const zone = request.nextUrl.searchParams.get('zone')?.trim()
+  if (zone) query = query.ilike('zone_label', `%${zone}%`)
+
+  const cameraId = request.nextUrl.searchParams.get('camera_id')
+  if (cameraId && z.string().uuid().safeParse(cameraId).success) query = query.eq('camera_id', cameraId)
 
   const { data, error } = await query
   if (error) {
@@ -72,9 +64,7 @@ export async function PATCH(request: NextRequest) {
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
   const parsed = reviewSchema.safeParse(await request.json())
-  if (!parsed.success) {
-    return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Revisión inválida.' }, { status: 400 })
-  }
+  if (!parsed.success) return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Revisión inválida.' }, { status: 400 })
 
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
