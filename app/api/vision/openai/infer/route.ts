@@ -10,8 +10,10 @@ export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const STORAGE_BUCKET = 'wildlife-evidence'
-const PROMPT_VERSION = 'seguria-vision-v7-huilo-huilo-verifier'
-const PIPELINE_VERSION = 'vision-pipeline-v8-confusion-verifier'
+const PROMPT_VERSION = 'seguria-vision-v8-gpt5-mini'
+const PIPELINE_VERSION = 'vision-pipeline-v9-gpt5-mini'
+const PRIMARY_MODEL = 'gpt-5-mini'
+const FALLBACK_MODEL = 'gpt-4o-mini'
 const MAX_RETRIES = 2
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
@@ -238,7 +240,7 @@ function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
-async function fetchOpenAiWithRetry(apiKey: string, body: unknown) {
+async function fetchOpenAiWithRetry(apiKey: string, body: Record<string, unknown>) {
   let lastResponse: Response | null = null
   let lastPayload: OpenAiPayload = {}
 
@@ -261,9 +263,22 @@ async function fetchOpenAiWithRetry(apiKey: string, body: unknown) {
   return { response: lastResponse as Response, payload: lastPayload, retryCount: MAX_RETRIES }
 }
 
-async function verifyConfusableSpecies(apiKey: string, model: string, imageUrl: string) {
-  const body = {
-    model,
+async function requestWithFallback(apiKey: string, body: Record<string, unknown>) {
+  const primary = await fetchOpenAiWithRetry(apiKey, { ...body, model: PRIMARY_MODEL })
+  if (primary.response.ok) return { ...primary, model: PRIMARY_MODEL, fallbackUsed: false }
+
+  const shouldFallback = [400, 404, 422].includes(primary.response.status)
+  if (!shouldFallback) return { ...primary, model: PRIMARY_MODEL, fallbackUsed: false }
+
+  const fallbackBody = { ...body, model: FALLBACK_MODEL }
+  delete fallbackBody.max_completion_tokens
+  fallbackBody.max_tokens = body.max_completion_tokens
+  const fallback = await fetchOpenAiWithRetry(apiKey, fallbackBody)
+  return { ...fallback, model: FALLBACK_MODEL, fallbackUsed: true }
+}
+
+async function verifyConfusableSpecies(apiKey: string, imageUrl: string) {
+  const body: Record<string, unknown> = {
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -278,13 +293,13 @@ async function verifyConfusableSpecies(apiKey: string, model: string, imageUrl: 
         ],
       },
     ],
-    max_tokens: 700,
+    max_completion_tokens: 1400,
   }
 
-  const { response, payload, retryCount } = await fetchOpenAiWithRetry(apiKey, body)
-  if (!response.ok) return { verification: null, retryCount }
-  const content = payload.choices?.[0]?.message?.content
-  if (!content) return { verification: null, retryCount }
+  const requested = await requestWithFallback(apiKey, body)
+  if (!requested.response.ok) return { verification: null, retryCount: requested.retryCount, model: requested.model, fallbackUsed: requested.fallbackUsed }
+  const content = requested.payload.choices?.[0]?.message?.content
+  if (!content) return { verification: null, retryCount: requested.retryCount, model: requested.model, fallbackUsed: requested.fallbackUsed }
 
   try {
     const raw = JSON.parse(content) as Record<string, unknown>
@@ -295,9 +310,9 @@ async function verifyConfusableSpecies(apiKey: string, model: string, imageUrl: 
       description: String(raw.description || '').slice(0, 300),
       scene_summary: String(raw.scene_summary || '').slice(0, 500),
     })
-    return { verification, retryCount }
+    return { verification, retryCount: requested.retryCount, model: requested.model, fallbackUsed: requested.fallbackUsed }
   } catch {
-    return { verification: null, retryCount }
+    return { verification: null, retryCount: requested.retryCount, model: requested.model, fallbackUsed: requested.fallbackUsed }
   }
 }
 
@@ -478,7 +493,6 @@ export async function POST(request: NextRequest) {
   if (!quota.allowed) return NextResponse.json({ error: 'monthly_quota_exceeded', limit: quota.limit, used: quota.used }, { status: 429 })
 
   const startedAt = new Date()
-  const model = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini'
   const unitCost = Number(process.env.OPENAI_VISION_ESTIMATED_COST_USD)
   const estimatedCostUsd = Number.isFinite(unitCost) && unitCost >= 0 ? unitCost : null
   const filename = safeHeader(request, 'x-image-filename', 240)?.replace(/[\\/\0]/g, '_') || 'camera-trap-image'
@@ -495,8 +509,7 @@ export async function POST(request: NextRequest) {
   if (!evidence) return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
 
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
-  const body = {
-    model,
+  const body: Record<string, unknown> = {
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -511,10 +524,11 @@ export async function POST(request: NextRequest) {
         ],
       },
     ],
-    max_tokens: 2000,
+    max_completion_tokens: 4000,
   }
 
-  const first = await fetchOpenAiWithRetry(apiKey, body)
+  const first = await requestWithFallback(apiKey, body)
+  const model = first.model
   if (!first.response.ok) {
     const completedAt = new Date()
     const message = first.payload.error?.message || `OpenAI returned ${first.response.status}`
@@ -526,7 +540,7 @@ export async function POST(request: NextRequest) {
       processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(),
       errorCode: 'openai_request_failed', errorMessage: message,
     })
-    return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId }, { status: 502 })
+    return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId, model_version: model }, { status: 502 })
   }
 
   const outputText = first.payload.choices?.[0]?.message?.content
@@ -543,9 +557,13 @@ export async function POST(request: NextRequest) {
   }
 
   let verificationRetryCount = 0
+  let verificationModel = model
+  let verificationFallbackUsed = false
   if (needsVerification(analysis.detections)) {
-    const verified = await verifyConfusableSpecies(apiKey, model, imageUrl)
+    const verified = await verifyConfusableSpecies(apiKey, imageUrl)
     verificationRetryCount = verified.retryCount
+    verificationModel = verified.model
+    verificationFallbackUsed = verified.fallbackUsed
     analysis = applyVerification(analysis, verified.verification)
   }
 
@@ -574,6 +592,11 @@ export async function POST(request: NextRequest) {
     job_id: jobId,
     provider: 'openai',
     model_version: model,
+    requested_model: PRIMARY_MODEL,
+    fallback_model: FALLBACK_MODEL,
+    fallback_used: first.fallbackUsed,
+    verification_model: verificationModel,
+    verification_fallback_used: verificationFallbackUsed,
     prompt_version: PROMPT_VERSION,
     pipeline_version: PIPELINE_VERSION,
     retry_count: first.retryCount + verificationRetryCount,
