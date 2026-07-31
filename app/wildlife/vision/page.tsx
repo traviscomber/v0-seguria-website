@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { ArrowLeft, Eye } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { CameraRegistry } from './camera-registry'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
 import { VisionMetrics } from './vision-metrics'
@@ -39,6 +40,7 @@ export default async function WildlifeVisionPage() {
 
         <div className="mt-8 space-y-8">
           <VisionMetrics />
+          <CameraRegistry />
           <VisionConsole />
           <VisionJobHistory />
         </div>
