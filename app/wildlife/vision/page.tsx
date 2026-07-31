@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft, Eye, MapPin } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
@@ -32,20 +32,29 @@ export default async function WildlifeVisionPage() {
               Analisis asistido de camaras trampa, procesamiento por lote y validacion humana trazable.
             </p>
           </div>
-          <Link
-            href="/wildlife/review"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Cola de revision de dataset
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="#territorial-map"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#68b4e3]/25 bg-[#68b4e3]/[0.06] px-4 py-3 text-sm text-[#9bd3f3] hover:bg-[#68b4e3]/[0.1]"
+            >
+              <MapPin className="h-4 w-4" />
+              Ver mapa territorial
+            </a>
+            <Link
+              href="/wildlife/review"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Cola de revision de dataset
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8 space-y-8">
           <VisionMetrics />
           <CameraRegistry />
-          <VisionConsole />
           <TerritorialActivity />
+          <VisionConsole />
           <ImageMetadataActivity />
           <VisionJobHistory />
           <PilotEvaluation />
