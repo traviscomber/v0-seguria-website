@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Activity, AlertTriangle, Camera, Loader2, Sparkles, Upload } from 'lucide-react'
+import { Activity, AlertTriangle, Camera, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
 
 import {
   selectVisionProvider,
@@ -23,6 +23,9 @@ type VisionResponse = {
   provider?: string
   model_version?: string
   job_id?: string | null
+  camera_id?: string | null
+  zone_label?: string | null
+  captured_at?: string | null
   detections_count?: number
   detections?: Detection[]
   scene_summary?: string
@@ -42,6 +45,13 @@ type BatchResult = {
   filename: string
   state: 'processing' | 'completed' | 'failed'
   result?: VisionResponse
+}
+
+type CaptureMetadata = {
+  cameraCode: string
+  cameraName: string
+  zoneLabel: string
+  capturedAt: string
 }
 
 const MAX_BATCH_SIZE = 20
@@ -75,17 +85,23 @@ export function VisionConsole() {
   const selectedEndpoint = visionProviderEndpoint(selectedProvider)
   const providerLabel = visionProviderLabel(selectedProvider, providers?.providers?.openai?.model)
 
-  async function analyzeFile(file: File) {
+  async function analyzeFile(file: File, metadata: CaptureMetadata) {
     if (!selectedEndpoint) return
     setResults((current) => current.map((item) => item.filename === file.name ? { ...item, state: 'processing' } : item))
 
     try {
+      const headers: Record<string, string> = {
+        'X-Image-Content-Type': file.type,
+        'X-Image-Filename': encodeURIComponent(file.name),
+      }
+      if (metadata.cameraCode) headers['X-Camera-Code'] = encodeURIComponent(metadata.cameraCode)
+      if (metadata.cameraName) headers['X-Camera-Name'] = encodeURIComponent(metadata.cameraName)
+      if (metadata.zoneLabel) headers['X-Zone-Label'] = encodeURIComponent(metadata.zoneLabel)
+      if (metadata.capturedAt) headers['X-Captured-At'] = new Date(metadata.capturedAt).toISOString()
+
       const response = await fetch(selectedEndpoint, {
         method: 'POST',
-        headers: {
-          'X-Image-Content-Type': file.type,
-          'X-Image-Filename': encodeURIComponent(file.name),
-        },
+        headers,
         body: await file.arrayBuffer(),
       })
       const payload = await response.json() as VisionResponse
@@ -110,12 +126,18 @@ export function VisionConsole() {
     const files = formData.getAll('images').filter((item): item is File => item instanceof File && item.size > 0)
     if (!files.length || !selectedEndpoint) return
 
+    const metadata: CaptureMetadata = {
+      cameraCode: String(formData.get('cameraCode') || '').trim(),
+      cameraName: String(formData.get('cameraName') || '').trim(),
+      zoneLabel: String(formData.get('zoneLabel') || '').trim(),
+      capturedAt: String(formData.get('capturedAt') || '').trim(),
+    }
     const selectedFiles = files.slice(0, MAX_BATCH_SIZE)
     setLoading(true)
     setResults(selectedFiles.map((file) => ({ filename: file.name, state: 'processing' })))
 
     for (const file of selectedFiles) {
-      await analyzeFile(file)
+      await analyzeFile(file, metadata)
     }
 
     setLoading(false)
@@ -145,10 +167,33 @@ export function VisionConsole() {
           <Upload className="h-5 w-5 text-[#9DD2F2]" />
           <div>
             <h2 className="text-xl font-light text-white">Carga por lote</h2>
-            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes JPEG, PNG o WebP. Máximo 12 MB cada una.</p>
+            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes. Los metadatos se aplican al lote completo.</p>
           </div>
         </div>
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row">
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <label className="space-y-1 text-sm text-white/60">
+            <span>Código de cámara</span>
+            <input name="cameraCode" maxLength={80} placeholder="CAM-HH-001" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+          </label>
+          <label className="space-y-1 text-sm text-white/60">
+            <span>Nombre de cámara</span>
+            <input name="cameraName" maxLength={160} placeholder="Sendero norte" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+          </label>
+          <label className="space-y-1 text-sm text-white/60">
+            <span>Zona</span>
+            <div className="relative">
+              <MapPin className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-white/30" />
+              <input name="zoneLabel" maxLength={160} placeholder="Reserva norte" className="w-full rounded-lg border border-white/10 bg-[#081827] py-3 pl-10 pr-3 text-white outline-none" />
+            </div>
+          </label>
+          <label className="space-y-1 text-sm text-white/60">
+            <span>Fecha de captura</span>
+            <input name="capturedAt" type="datetime-local" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row">
           <input
             name="images"
             type="file"
@@ -180,6 +225,11 @@ export function VisionConsole() {
                   <span className="text-xs text-white/50">{item.state === 'processing' ? 'Procesando' : item.state === 'completed' ? 'Completado' : 'Falló'}</span>
                 </div>
                 {item.state === 'processing' && <Loader2 className="mt-4 h-5 w-5 animate-spin text-[#9DD2F2]" />}
+                {(item.result?.zone_label || item.result?.captured_at) && (
+                  <p className="mt-3 text-xs text-white/40">
+                    {[item.result.zone_label, item.result.captured_at ? new Date(item.result.captured_at).toLocaleString('es-CL') : null].filter(Boolean).join(' · ')}
+                  </p>
+                )}
                 {item.result?.scene_summary && <p className="mt-4 text-sm leading-6 text-white/60">{item.result.scene_summary}</p>}
                 {!!item.result?.detections?.length && (
                   <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
