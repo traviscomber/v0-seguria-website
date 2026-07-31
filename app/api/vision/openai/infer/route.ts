@@ -41,21 +41,23 @@ const detectionSchema = z.object({
     x2: z.number().min(0).max(1),
     y2: z.number().min(0).max(1),
   }),
-  description: z.string().max(300),
+  description: z.string().transform((value) => value.slice(0, 300)),
 })
+
+const boundedText = z.string().transform((value) => value.slice(0, 300))
 
 const analysisSchema = z.object({
   detections: z.array(detectionSchema).max(30),
-  scene_summary: z.string().max(800),
-  operational_risks: z.array(z.string().max(300)).max(10),
-  limitations: z.array(z.string().max(300)).max(10),
+  scene_summary: z.string().transform((value) => value.slice(0, 800)),
+  operational_risks: z.array(boundedText).max(10),
+  limitations: z.array(boundedText).max(10),
 })
 
 const verificationSchema = z.object({
   species: speciesSchema,
   confidence: z.number().min(0).max(1),
-  description: z.string().max(300),
-  scene_summary: z.string().max(500),
+  description: z.string().transform((value) => value.slice(0, 300)),
+  scene_summary: z.string().transform((value) => value.slice(0, 500)),
 })
 
 type OpenAiPayload = {
@@ -180,6 +182,14 @@ function normalizeConfidence(input: unknown, species: DetectionSpecies, context:
   return { confidence: 0.6, source: 'heuristic' as const, modelConfidence: null }
 }
 
+function normalizeStringList(value: unknown) {
+  const list = Array.isArray(value) ? value : typeof value === 'string' ? [value] : []
+  return list
+    .map((item) => String(item || '').trim().slice(0, 300))
+    .filter(Boolean)
+    .slice(0, 10)
+}
+
 function normalizeAnalysis(outputText: string) {
   const raw = JSON.parse(outputText) as Record<string, unknown>
   const sceneSummary = String(raw.scene_summary || '').slice(0, 800)
@@ -187,6 +197,7 @@ function normalizeAnalysis(outputText: string) {
 
   raw.detections = detections
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .slice(0, 30)
     .map((item) => {
       const description = String(item.description || '').slice(0, 300)
       const context = `${description} ${sceneSummary}`
@@ -220,12 +231,8 @@ function normalizeAnalysis(outputText: string) {
   }
 
   raw.scene_summary = sceneSummary || 'Imagen procesada sin resumen disponible.'
-  raw.operational_risks = Array.isArray(raw.operational_risks)
-    ? raw.operational_risks
-    : typeof raw.operational_risks === 'string' ? [raw.operational_risks] : []
-  raw.limitations = Array.isArray(raw.limitations)
-    ? raw.limitations
-    : typeof raw.limitations === 'string' ? [raw.limitations] : []
+  raw.operational_risks = normalizeStringList(raw.operational_risks)
+  raw.limitations = normalizeStringList(raw.limitations)
   return analysisSchema.parse(raw)
 }
 
@@ -344,7 +351,7 @@ function applyVerification(analysis: z.infer<typeof analysisSchema>, verificatio
       primary.species !== verification.species
         ? `La segunda verificacion corrigio ${primary.species} a ${verification.species}.`
         : 'La segunda verificacion confirmo la especie principal.',
-    ],
+    ].slice(0, 10),
   }
 }
 
@@ -514,7 +521,7 @@ export async function POST(request: NextRequest) {
     messages: [
       {
         role: 'system',
-        content: `Eres SegurIA Vision para camaras trampa de Huilo Huilo. Prioriza huemul, pudu, puma, zorro culpeo, zorro chilla, guina y coipo. Usa solo codigos ASCII permitidos. Para huemul vs pudu analiza tamano corporal, longitud de patas y astas: huemul es grande y robusto, con patas largas; machos pueden tener astas desarrolladas y ramificadas. Pudu es muy pequeno y compacto, con patas cortas y astas muy cortas y simples. Cada deteccion debe ser coherente: species, description y scene_summary deben referirse a la misma especie. Devuelve JSON valido con detections, scene_summary, operational_risks y limitations. Todos los textos en espanol ASCII sin tildes.`,
+        content: `Eres SegurIA Vision para camaras trampa de Huilo Huilo. Prioriza huemul, pudu, puma, zorro culpeo, zorro chilla, guina y coipo. Usa solo codigos ASCII permitidos. Para huemul vs pudu analiza tamano corporal, longitud de patas y astas: huemul es grande y robusto, con patas largas; machos pueden tener astas desarrolladas y ramificadas. Pudu es muy pequeno y compacto, con patas cortas y astas muy cortas y simples. Cada deteccion debe ser coherente: species, description y scene_summary deben referirse a la misma especie. Devuelve JSON valido con detections, scene_summary, operational_risks y limitations. Todos los textos en espanol ASCII sin tildes. Cada descripcion, riesgo y limitacion debe tener menos de 300 caracteres.`,
       },
       {
         role: 'user',
@@ -544,15 +551,16 @@ export async function POST(request: NextRequest) {
   }
 
   const outputText = first.payload.choices?.[0]?.message?.content
-  if (!outputText) return NextResponse.json({ error: 'openai_empty_output' }, { status: 502 })
+  if (!outputText) return NextResponse.json({ error: 'openai_empty_output', message: 'El modelo no devolvio un resultado util. Intenta nuevamente.' }, { status: 502 })
 
   let analysis: z.infer<typeof analysisSchema>
   try {
     analysis = normalizeAnalysis(outputText)
   } catch (error) {
+    console.error('Wildlife structured output validation failed:', error)
     return NextResponse.json({
       error: 'openai_invalid_output',
-      message: error instanceof Error ? error.message : 'Salida estructurada invalida.',
+      message: 'La respuesta del modelo no pudo normalizarse. Intenta procesar la imagen nuevamente.',
     }, { status: 502 })
   }
 
@@ -574,7 +582,7 @@ export async function POST(request: NextRequest) {
     detections,
     scene_summary: analysis.scene_summary,
     operational_risks: analysis.operational_risks,
-    limitations: [...analysis.limitations, 'La prediccion requiere validacion humana antes de utilizarse como registro cientifico.'],
+    limitations: [...analysis.limitations, 'La prediccion requiere validacion humana antes de utilizarse como registro cientifico.'].slice(0, 10),
   }
 
   const jobId = await persistJob({
