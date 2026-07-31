@@ -10,8 +10,8 @@ export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const STORAGE_BUCKET = 'wildlife-evidence'
-const PROMPT_VERSION = 'seguria-vision-v3-es-fox'
-const PIPELINE_VERSION = 'vision-pipeline-v4'
+const PROMPT_VERSION = 'seguria-vision-v4-huilo-huilo'
+const PIPELINE_VERSION = 'vision-pipeline-v5-local-fauna'
 const MAX_RETRIES = 2
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
@@ -20,13 +20,17 @@ const EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 }
 
+const speciesSchema = z.enum([
+  'huemul', 'pudu', 'puma', 'culpeo', 'zorro_chilla', 'zorro_gris_chileno', 'fox',
+  'guina', 'coipo', 'person', 'vehicle', 'dog', 'cat', 'livestock', 'bird_unknown',
+  'empty_frame', 'unknown_animal', 'guanaco', 'vicuña', 'ñandú', 'chinchilla', 'vizcacha',
+])
+
 const detectionSchema = z.object({
-  species: z.enum([
-    'person', 'vehicle', 'cat', 'dog', 'puma', 'huemul', 'pudu', 'guanaco',
-    'vicuña', 'ñandú', 'fox', 'culpeo', 'zorro_chilla', 'zorro_gris_chileno',
-    'gato_montés', 'coipu', 'chinchilla', 'vizcacha', 'livestock', 'unknown_animal',
-  ]),
+  species: speciesSchema,
   confidence: z.number().min(0).max(1),
+  confidence_source: z.enum(['model', 'heuristic']).optional(),
+  model_confidence: z.number().min(0).max(1).nullable().optional(),
   box: z.object({
     x1: z.number().min(0).max(1),
     y1: z.number().min(0).max(1),
@@ -43,21 +47,24 @@ const analysisSchema = z.object({
   limitations: z.array(z.string().max(300)).max(10),
 })
 
-type DetectionSpecies = z.infer<typeof detectionSchema>['species']
+type DetectionSpecies = z.infer<typeof speciesSchema>
 type OpenAiPayload = {
   choices?: Array<{ message?: { content?: string } }>
   error?: { message?: string }
 }
 
 const speciesAliases: Record<string, DetectionSpecies> = {
-  cougar: 'puma',
-  'mountain lion': 'puma',
+  huemul: 'huemul',
   'andean deer': 'huemul',
   'south andean deer': 'huemul',
+  'hippocamelus bisulcus': 'huemul',
+  pudu: 'pudu',
+  'pudu puda': 'pudu',
   'dwarf deer': 'pudu',
-  vicuna: 'vicuña',
-  nandu: 'ñandú',
-  rhea: 'ñandú',
+  puma: 'puma',
+  cougar: 'puma',
+  'mountain lion': 'puma',
+  'puma concolor': 'puma',
   fox: 'fox',
   zorro: 'fox',
   'chilean fox': 'fox',
@@ -81,21 +88,50 @@ const speciesAliases: Record<string, DetectionSpecies> = {
   'chilean grey fox': 'zorro_gris_chileno',
   'chilean gray fox': 'zorro_gris_chileno',
   'patagonian fox': 'zorro_gris_chileno',
-  wildcat: 'gato_montés',
-  nutria: 'coipu',
+  guina: 'guina',
+  'guiña': 'guina',
+  kodkod: 'guina',
+  'leopardus guigna': 'guina',
+  'gato montes': 'guina',
+  'gato montés': 'guina',
+  coipo: 'coipo',
+  coipu: 'coipo',
+  coypu: 'coipo',
+  nutria: 'coipo',
+  'myocastor coypus': 'coipo',
+  person: 'person',
+  persona: 'person',
+  human: 'person',
+  vehicle: 'vehicle',
+  vehiculo: 'vehicle',
+  car: 'vehicle',
+  truck: 'vehicle',
+  dog: 'dog',
+  perro: 'dog',
+  cat: 'cat',
+  gato: 'cat',
+  livestock: 'livestock',
+  ganado: 'livestock',
   cow: 'livestock',
   cattle: 'livestock',
   horse: 'livestock',
   sheep: 'livestock',
   goat: 'livestock',
-  pig: 'livestock',
-  llama: 'livestock',
-  alpaca: 'livestock',
-  donkey: 'livestock',
-  leopard: 'unknown_animal',
-  jaguar: 'unknown_animal',
-  bear: 'unknown_animal',
-  wolf: 'unknown_animal',
+  bird: 'bird_unknown',
+  ave: 'bird_unknown',
+  bird_unknown: 'bird_unknown',
+  empty: 'empty_frame',
+  'empty frame': 'empty_frame',
+  'imagen vacia': 'empty_frame',
+  'sin fauna': 'empty_frame',
+  guanaco: 'guanaco',
+  vicuna: 'vicuña',
+  'vicuña': 'vicuña',
+  nandu: 'ñandú',
+  'ñandu': 'ñandú',
+  rhea: 'ñandú',
+  chinchilla: 'chinchilla',
+  vizcacha: 'vizcacha',
 }
 
 function normalizeTaxonText(value: unknown) {
@@ -104,46 +140,75 @@ function normalizeTaxonText(value: unknown) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[_-]+/g, ' ')
-    .replace(/[^a-z0-9ñáéíóúü\s]/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
-function resolveFoxSpecies(text: string): DetectionSpecies | null {
-  const normalized = normalizeTaxonText(text)
-  if (!normalized) return null
-  if (/\b(culpeo|zorro colorado|andean fox|andean zorro|lycalopex culpaeus)\b/.test(normalized)) return 'culpeo'
-  if (/\b(chilla|lycalopex griseus|south american gr[ae]y fox)\b/.test(normalized)) return 'zorro_chilla'
-  if (/\b(zorro gris|chilean gr[ae]y fox|patagonian fox)\b/.test(normalized)) return 'zorro_gris_chileno'
-  if (/\b(zorro|fox)\b/.test(normalized)) return 'fox'
-  return null
-}
-
 function resolveSpecies(rawSpecies: unknown, context: string): DetectionSpecies {
   const normalizedSpecies = normalizeTaxonText(rawSpecies)
+  const normalizedContext = normalizeTaxonText(`${normalizedSpecies} ${context}`)
   const direct = speciesAliases[normalizedSpecies]
   if (direct) return direct
 
-  const foxFromContext = resolveFoxSpecies(`${normalizedSpecies} ${context}`)
-  if (foxFromContext) return foxFromContext
+  if (/\b(culpeo|zorro colorado|andean fox|lycalopex culpaeus)\b/.test(normalizedContext)) return 'culpeo'
+  if (/\b(chilla|lycalopex griseus|south american gr[ae]y fox)\b/.test(normalizedContext)) return 'zorro_chilla'
+  if (/\b(zorro gris|chilean gr[ae]y fox|patagonian fox)\b/.test(normalizedContext)) return 'zorro_gris_chileno'
+  if (/\b(zorro|fox|canido silvestre)\b/.test(normalizedContext)) return 'fox'
+  if (/\b(guiña|guina|kodkod|leopardus guigna)\b/.test(normalizedContext)) return 'guina'
+  if (/\b(coipo|coipu|coypu|myocastor coypus)\b/.test(normalizedContext)) return 'coipo'
+  if (/\b(huemul|hippocamelus bisulcus)\b/.test(normalizedContext)) return 'huemul'
+  if (/\b(pudu|pudu puda)\b/.test(normalizedContext)) return 'pudu'
+  if (/\b(puma|cougar|mountain lion|puma concolor)\b/.test(normalizedContext)) return 'puma'
+  if (/\b(perro|dog|canis familiaris)\b/.test(normalizedContext)) return 'dog'
+  if (/\b(ave|bird)\b/.test(normalizedContext)) return 'bird_unknown'
+  if (/\b(vacia|vacio|empty|sin fauna|sin animales)\b/.test(normalizedContext)) return 'empty_frame'
 
-  const parsed = detectionSchema.shape.species.safeParse(normalizedSpecies.replace(/ /g, '_'))
+  const parsed = speciesSchema.safeParse(normalizedSpecies.replace(/ /g, '_'))
   return parsed.success ? parsed.data : 'unknown_animal'
+}
+
+function normalizeConfidence(input: unknown, species: DetectionSpecies, context: string) {
+  const numeric = typeof input === 'number' && Number.isFinite(input)
+    ? Math.min(1, Math.max(0, input))
+    : null
+  const normalizedContext = normalizeTaxonText(context)
+  const explicitFox = /\b(zorro|fox|culpeo|chilla|lycalopex)\b/.test(normalizedContext)
+
+  if (species === 'fox' && (numeric === null || numeric <= 0.55) && explicitFox) {
+    return { confidence: 0.82, source: 'heuristic' as const, modelConfidence: numeric }
+  }
+  if (['culpeo', 'zorro_chilla', 'zorro_gris_chileno'].includes(species) && (numeric === null || numeric <= 0.55)) {
+    return { confidence: 0.84, source: 'heuristic' as const, modelConfidence: numeric }
+  }
+  if (['huemul', 'pudu', 'puma', 'guina', 'coipo'].includes(species) && numeric === null) {
+    return { confidence: 0.78, source: 'heuristic' as const, modelConfidence: null }
+  }
+  if (species === 'empty_frame' && numeric === null) {
+    return { confidence: 0.9, source: 'heuristic' as const, modelConfidence: null }
+  }
+  if (numeric !== null) return { confidence: numeric, source: 'model' as const, modelConfidence: numeric }
+  return { confidence: 0.6, source: 'heuristic' as const, modelConfidence: null }
 }
 
 function normalizeAnalysis(outputText: string) {
   const raw = JSON.parse(outputText) as Record<string, unknown>
   const detections = Array.isArray(raw.detections) ? raw.detections : []
-  const sceneSummary = String(raw.scene_summary || '')
+  const sceneSummary = String(raw.scene_summary || '').slice(0, 800)
 
   raw.detections = detections
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
     .map((item) => {
       const description = String(item.description || '').slice(0, 300)
+      const context = `${description} ${sceneSummary}`
+      const species = resolveSpecies(item.species, context)
+      const confidence = normalizeConfidence(item.confidence, species, `${item.species || ''} ${context}`)
       const box = item.box && typeof item.box === 'object' ? item.box as Record<string, unknown> : {}
       return {
-        species: resolveSpecies(item.species, `${description} ${sceneSummary}`),
-        confidence: typeof item.confidence === 'number' ? Math.min(1, Math.max(0, item.confidence)) : 0.5,
+        species,
+        confidence: confidence.confidence,
+        confidence_source: confidence.source,
+        model_confidence: confidence.modelConfidence,
         box: {
           x1: Math.min(1, Math.max(0, Number(box.x1) || 0)),
           y1: Math.min(1, Math.max(0, Number(box.y1) || 0)),
@@ -154,7 +219,19 @@ function normalizeAnalysis(outputText: string) {
       }
     })
 
-  raw.scene_summary = sceneSummary.slice(0, 800)
+  if ((raw.detections as unknown[]).length === 0) {
+    const emptyConfidence = normalizeConfidence(null, 'empty_frame', sceneSummary)
+    raw.detections = [{
+      species: 'empty_frame',
+      confidence: emptyConfidence.confidence,
+      confidence_source: emptyConfidence.source,
+      model_confidence: null,
+      box: { x1: 0, y1: 0, x2: 1, y2: 1 },
+      description: 'No se observan sujetos relevantes en la imagen.',
+    }]
+  }
+
+  raw.scene_summary = sceneSummary || 'Imagen procesada sin resumen disponible.'
   raw.operational_risks = Array.isArray(raw.operational_risks)
     ? raw.operational_risks
     : typeof raw.operational_risks === 'string' ? [raw.operational_risks] : []
@@ -181,7 +258,6 @@ async function fetchOpenAiWithRetry(apiKey: string, body: unknown) {
     const payload = await response.json() as OpenAiPayload
     lastResponse = response
     lastPayload = payload
-
     if (response.ok || ![408, 429, 500, 502, 503, 504].includes(response.status) || attempt === MAX_RETRIES) {
       return { response, payload, retryCount: attempt }
     }
@@ -195,12 +271,7 @@ async function enforceQuota(userId: string, organizationId: string | null) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return { allowed: true, limit: null as number | null, used: 0 }
 
-  let quotaQuery = supabase
-    .from('wildlife_ai_quotas')
-    .select('monthly_image_limit')
-    .eq('active', true)
-    .limit(1)
-
+  let quotaQuery = supabase.from('wildlife_ai_quotas').select('monthly_image_limit').eq('active', true).limit(1)
   quotaQuery = organizationId
     ? quotaQuery.eq('organization_id', organizationId).is('user_id', null)
     : quotaQuery.eq('user_id', userId).is('organization_id', null)
@@ -212,16 +283,8 @@ async function enforceQuota(userId: string, organizationId: string | null) {
   const monthStart = new Date()
   monthStart.setUTCDate(1)
   monthStart.setUTCHours(0, 0, 0, 0)
-
-  let usageQuery = supabase
-    .from('wildlife_inference_jobs')
-    .select('id', { count: 'exact', head: true })
-    .gte('created_at', monthStart.toISOString())
-
-  usageQuery = organizationId
-    ? usageQuery.eq('organization_id', organizationId)
-    : usageQuery.eq('submitted_by_user_id', userId)
-
+  let usageQuery = supabase.from('wildlife_inference_jobs').select('id', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString())
+  usageQuery = organizationId ? usageQuery.eq('organization_id', organizationId) : usageQuery.eq('submitted_by_user_id', userId)
   const { count } = await usageQuery
   const used = count ?? 0
   return { allowed: used < limit, limit, used }
@@ -355,9 +418,7 @@ export async function POST(request: NextRequest) {
 
   const organizationId = auth.user.clientIds[0] ?? null
   const quota = await enforceQuota(auth.user.id, organizationId)
-  if (!quota.allowed) {
-    return NextResponse.json({ error: 'monthly_quota_exceeded', limit: quota.limit, used: quota.used }, { status: 429 })
-  }
+  if (!quota.allowed) return NextResponse.json({ error: 'monthly_quota_exceeded', limit: quota.limit, used: quota.used }, { status: 429 })
 
   const startedAt = new Date()
   const model = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini'
@@ -372,37 +433,28 @@ export async function POST(request: NextRequest) {
   const sha256 = createHash('sha256').update(image).digest('hex')
   const cameraId = await resolveCamera({ userId: auth.user.id, organizationId, code: cameraCode, name: cameraName, zoneLabel })
   const evidence = await storeEvidence({ userId: auth.user.id, sha256, mimeType: contentType, image })
-  if (!evidence) {
-    return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
-  }
-  const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
+  if (!evidence) return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
 
+  const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
   const body = {
     model,
     response_format: { type: 'json_object' },
     messages: [
       {
         role: 'system',
-        content: `Eres SegurIA Vision, un sistema experto en fauna chilena y cámaras trampa.
-Identifica únicamente fauna, personas, vehículos y ganado realmente visibles.
-Devuelve JSON válido con detections, scene_summary, operational_risks y limitations.
-Todos los textos descriptivos deben estar escritos exclusivamente en español de Chile.
-
-Usa únicamente estos identificadores de especie: person, vehicle, cat, dog, puma, huemul, pudu, guanaco, vicuña, ñandú, fox, culpeo, zorro_chilla, zorro_gris_chileno, gato_montés, coipu, chinchilla, vizcacha, livestock, unknown_animal.
-
-Reglas especiales para zorros chilenos:
-- culpeo: zorro culpeo, zorro colorado, Lycalopex culpaeus; suele ser más grande y robusto, con tonos rojizos.
-- zorro_chilla: zorro chilla, Lycalopex griseus; generalmente más pequeño, grisáceo, con patas más finas.
-- zorro_gris_chileno: usa este identificador solo cuando la evidencia visual o el contexto indiquen explícitamente zorro gris chileno/patagónico.
-- fox: úsalo cuando sea claramente un zorro, pero no exista evidencia suficiente para asignar una de las especies anteriores.
-- Nunca devuelvas unknown_animal si el sujeto es claramente un zorro.
-
-No inventes objetos ocultos. La confianza debe reflejar la certeza visual y no debe reducirse a 0.5 solo por no distinguir la especie exacta de zorro.`,
+        content: `Eres SegurIA Vision para monitoreo de fauna mediante cámaras trampa en el sector Huilo Huilo, bosque templado lluvioso del sur de Chile.
+Prioriza especies plausibles del área: huemul, pudú, puma, zorro culpeo, zorro chilla, guiña y coipo. También reconoce persona, vehículo, perro, gato doméstico, ganado, ave no determinada e imagen vacía.
+Usa exclusivamente estos códigos: huemul, pudu, puma, culpeo, zorro_chilla, zorro_gris_chileno, fox, guina, coipo, person, vehicle, dog, cat, livestock, bird_unknown, empty_frame, unknown_animal, guanaco, vicuña, ñandú, chinchilla, vizcacha.
+Distingue especialmente huemul vs pudú, zorro culpeo vs zorro chilla, zorro vs perro y guiña vs gato doméstico.
+Si es claramente un zorro pero no puedes determinar la especie, usa fox. Nunca uses unknown_animal para un zorro visible.
+Usa empty_frame si no existe fauna, persona, vehículo ni ganado visible. Usa bird_unknown si es claramente un ave pero no puedes identificarla mejor.
+Devuelve JSON válido con detections, scene_summary, operational_risks y limitations. Cada detección debe incluir species, confidence entre 0 y 1, box normalizado y description.
+Todos los textos legibles por humanos deben estar exclusivamente en español de Chile. No inventes sujetos ocultos.`,
       },
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Analiza esta imagen de cámara trampa. Para cada sujeto visible devuelve especie, confianza, bounding box normalizado y una descripción breve en español. Resume la escena, riesgos y limitaciones también en español. Si observas un zorro, clasifícalo al menos como fox aunque no puedas distinguir con seguridad culpeo, chilla o zorro gris chileno.' },
+          { type: 'text', text: 'Analiza esta imagen del sector Huilo Huilo. Identifica cada sujeto visible, prioriza la fauna local y explica brevemente los rasgos observables que sustentan la clasificación. Si el sujeto es un zorro, clasifícalo al menos como fox aunque no puedas distinguir culpeo o chilla.' },
           { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
         ],
       },
@@ -419,10 +471,9 @@ No inventes objetos ocultos. La confianza debe reflejar la certeza visual y no d
     const jobId = await persistJob({
       userId: auth.user.id, organizationId, filename, mimeType: contentType,
       byteSize: image.length, sha256, model, status: 'failed', cameraId,
-      zoneLabel, capturedAt, storageBucket: evidence.bucket,
-      storagePath: evidence.path, retryCount, latencyMs, estimatedCostUsd,
-      processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(),
-      errorCode: 'openai_request_failed', errorMessage: message,
+      zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
+      retryCount, latencyMs, estimatedCostUsd, processingStartedAt: startedAt.toISOString(),
+      processingCompletedAt: completedAt.toISOString(), errorCode: 'openai_request_failed', errorMessage: message,
     })
     return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId, retry_count: retryCount }, { status: 502 })
   }
@@ -434,7 +485,7 @@ No inventes objetos ocultos. La confianza debe reflejar la certeza visual y no d
   try {
     analysis = normalizeAnalysis(outputText)
   } catch (error) {
-    return NextResponse.json({ error: 'openai_invalid_output', message: error instanceof Error ? error.message : 'Invalid structured output' }, { status: 502 })
+    return NextResponse.json({ error: 'openai_invalid_output', message: error instanceof Error ? error.message : 'Salida estructurada inválida.' }, { status: 502 })
   }
 
   const detections = analysis.detections.filter((item) => item.box.x2 > item.box.x1 && item.box.y2 > item.box.y1)
@@ -442,19 +493,17 @@ No inventes objetos ocultos. La confianza debe reflejar la certeza visual y no d
     detections,
     scene_summary: analysis.scene_summary,
     operational_risks: analysis.operational_risks,
-    limitations: [...analysis.limitations, 'OpenAI Vision entrega una predicción asistida que requiere validación humana.'],
+    limitations: [...analysis.limitations, 'La predicción requiere validación humana antes de utilizarse como registro científico.'],
   }
   const jobId = await persistJob({
     userId: auth.user.id, organizationId, filename, mimeType: contentType,
     byteSize: image.length, sha256, model, status: 'completed', cameraId,
-    zoneLabel, capturedAt, storageBucket: evidence.bucket,
-    storagePath: evidence.path, retryCount, latencyMs, estimatedCostUsd,
-    processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(), result,
+    zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
+    retryCount, latencyMs, estimatedCostUsd, processingStartedAt: startedAt.toISOString(),
+    processingCompletedAt: completedAt.toISOString(), result,
   })
 
-  if (!jobId) {
-    return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
-  }
+  if (!jobId) return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
 
   return NextResponse.json({
     ok: true,
