@@ -7,7 +7,6 @@ import { CameraRegistry } from './camera-registry'
 import { CartographicBaseMap } from './cartographic-base-map'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { PilotEvaluation } from './pilot-evaluation'
-import { TerritorialActivity } from './territorial-activity'
 import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
@@ -55,9 +54,8 @@ export default async function WildlifeVisionPage() {
         <div className="mt-8 space-y-8">
           <VisionMetrics />
           <CameraRegistry />
-          <div id="territorial-map" className="scroll-mt-6 space-y-8">
+          <div id="territorial-map" className="scroll-mt-6">
             <CartographicBaseMap />
-            <TerritorialActivity />
           </div>
           <VisionConsole />
           <ImageMetadataActivity />
