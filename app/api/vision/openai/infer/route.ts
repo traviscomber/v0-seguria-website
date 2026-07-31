@@ -10,8 +10,8 @@ export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const STORAGE_BUCKET = 'wildlife-evidence'
-const PROMPT_VERSION = 'seguria-vision-v6-huilo-huilo-ascii'
-const PIPELINE_VERSION = 'vision-pipeline-v7-ascii-correlation'
+const PROMPT_VERSION = 'seguria-vision-v7-huilo-huilo-verifier'
+const PIPELINE_VERSION = 'vision-pipeline-v8-confusion-verifier'
 const MAX_RETRIES = 2
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
@@ -26,10 +26,12 @@ const speciesSchema = z.enum([
   'empty_frame', 'unknown_animal', 'guanaco', 'vicuna', 'nandu', 'chinchilla', 'vizcacha',
 ])
 
+type DetectionSpecies = z.infer<typeof speciesSchema>
+
 const detectionSchema = z.object({
   species: speciesSchema,
   confidence: z.number().min(0).max(1),
-  confidence_source: z.enum(['model', 'heuristic']).optional(),
+  confidence_source: z.enum(['model', 'heuristic', 'verification']).optional(),
   model_confidence: z.number().min(0).max(1).nullable().optional(),
   box: z.object({
     x1: z.number().min(0).max(1),
@@ -47,11 +49,19 @@ const analysisSchema = z.object({
   limitations: z.array(z.string().max(300)).max(10),
 })
 
-type DetectionSpecies = z.infer<typeof speciesSchema>
+const verificationSchema = z.object({
+  species: speciesSchema,
+  confidence: z.number().min(0).max(1),
+  description: z.string().max(300),
+  scene_summary: z.string().max(500),
+})
+
 type OpenAiPayload = {
   choices?: Array<{ message?: { content?: string } }>
   error?: { message?: string }
 }
+
+type Detection = z.infer<typeof detectionSchema>
 
 const speciesAliases: Record<string, DetectionSpecies> = {
   huemul: 'huemul',
@@ -64,30 +74,16 @@ const speciesAliases: Record<string, DetectionSpecies> = {
   puma: 'puma',
   cougar: 'puma',
   'mountain lion': 'puma',
-  'puma concolor': 'puma',
   fox: 'fox',
   zorro: 'fox',
-  'chilean fox': 'fox',
-  'zorro chileno': 'fox',
-  'south american fox': 'fox',
   culpeo: 'culpeo',
-  'culpeo fox': 'culpeo',
-  'andean fox': 'culpeo',
-  'andean zorro': 'culpeo',
   'zorro culpeo': 'culpeo',
   'zorro colorado': 'culpeo',
   'lycalopex culpaeus': 'culpeo',
   chilla: 'zorro_chilla',
   'zorro chilla': 'zorro_chilla',
-  'chilla fox': 'zorro_chilla',
-  'south american grey fox': 'zorro_chilla',
-  'south american gray fox': 'zorro_chilla',
   'lycalopex griseus': 'zorro_chilla',
   'zorro gris': 'zorro_gris_chileno',
-  'zorro gris chileno': 'zorro_gris_chileno',
-  'chilean grey fox': 'zorro_gris_chileno',
-  'chilean gray fox': 'zorro_gris_chileno',
-  'patagonian fox': 'zorro_gris_chileno',
   guina: 'guina',
   kodkod: 'guina',
   'leopardus guigna': 'guina',
@@ -95,42 +91,29 @@ const speciesAliases: Record<string, DetectionSpecies> = {
   coipo: 'coipo',
   coipu: 'coipo',
   coypu: 'coipo',
-  nutria: 'coipo',
-  'myocastor coypus': 'coipo',
   person: 'person',
   persona: 'person',
-  human: 'person',
   vehicle: 'vehicle',
   vehiculo: 'vehicle',
-  car: 'vehicle',
-  truck: 'vehicle',
   dog: 'dog',
   perro: 'dog',
   cat: 'cat',
   gato: 'cat',
   livestock: 'livestock',
   ganado: 'livestock',
-  cow: 'livestock',
-  cattle: 'livestock',
-  horse: 'livestock',
-  sheep: 'livestock',
-  goat: 'livestock',
   bird: 'bird_unknown',
   ave: 'bird_unknown',
-  bird_unknown: 'bird_unknown',
   empty: 'empty_frame',
   'empty frame': 'empty_frame',
   'imagen vacia': 'empty_frame',
-  'sin fauna': 'empty_frame',
   guanaco: 'guanaco',
   vicuna: 'vicuna',
   nandu: 'nandu',
-  rhea: 'nandu',
   chinchilla: 'chinchilla',
   vizcacha: 'vizcacha',
 }
 
-function normalizeTaxonText(value: unknown) {
+function normalizeText(value: unknown) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -142,33 +125,34 @@ function normalizeTaxonText(value: unknown) {
 }
 
 function explicitSpeciesFromNarrative(context: string): DetectionSpecies | null {
-  const text = normalizeTaxonText(context)
-  if (/\b(pudu|pudu puda)\b/.test(text)) return 'pudu'
-  if (/\b(huemul|hippocamelus bisulcus)\b/.test(text)) return 'huemul'
-  if (/\b(puma|cougar|mountain lion|puma concolor)\b/.test(text)) return 'puma'
-  if (/\b(guina|kodkod|leopardus guigna|gato montes)\b/.test(text)) return 'guina'
-  if (/\b(coipo|coipu|coypu|myocastor coypus)\b/.test(text)) return 'coipo'
-  if (/\b(culpeo|zorro colorado|andean fox|lycalopex culpaeus)\b/.test(text)) return 'culpeo'
-  if (/\b(chilla|lycalopex griseus|south american gr[ae]y fox)\b/.test(text)) return 'zorro_chilla'
-  if (/\b(zorro gris|chilean gr[ae]y fox|patagonian fox)\b/.test(text)) return 'zorro_gris_chileno'
-  if (/\b(zorro|fox|canido silvestre)\b/.test(text)) return 'fox'
-  if (/\b(perro|dog|canis familiaris)\b/.test(text)) return 'dog'
-  if (/\b(ave|bird)\b/.test(text)) return 'bird_unknown'
-  if (/\b(vacia|vacio|empty|sin fauna|sin animales)\b/.test(text)) return 'empty_frame'
+  const text = normalizeText(context)
+  if (/\bhuemul\b|\bhippocamelus bisulcus\b/.test(text)) return 'huemul'
+  if (/\bpudu\b|\bpudu puda\b/.test(text)) return 'pudu'
+  if (/\bpuma\b|\bcougar\b|\bmountain lion\b/.test(text)) return 'puma'
+  if (/\bguina\b|\bkodkod\b|\bleopardus guigna\b/.test(text)) return 'guina'
+  if (/\bcoipo\b|\bcoipu\b|\bcoypu\b/.test(text)) return 'coipo'
+  if (/\bculpeo\b|\bzorro colorado\b|\blycalopex culpaeus\b/.test(text)) return 'culpeo'
+  if (/\bchilla\b|\blycalopex griseus\b/.test(text)) return 'zorro_chilla'
+  if (/\bzorro gris\b|\bpatagonian fox\b/.test(text)) return 'zorro_gris_chileno'
+  if (/\bzorro\b|\bfox\b|\bcanido silvestre\b/.test(text)) return 'fox'
+  if (/\bperro\b|\bdog\b/.test(text)) return 'dog'
+  if (/\bgato\b|\bcat\b/.test(text)) return 'cat'
+  if (/\bave\b|\bbird\b/.test(text)) return 'bird_unknown'
+  if (/\bvacia\b|\bvacio\b|\bempty\b|\bsin fauna\b/.test(text)) return 'empty_frame'
   return null
 }
 
 function resolveSpecies(rawSpecies: unknown, context: string): DetectionSpecies {
-  const normalizedSpecies = normalizeTaxonText(rawSpecies)
+  const normalized = normalizeText(rawSpecies)
+  const direct = speciesAliases[normalized]
   const narrative = explicitSpeciesFromNarrative(context)
-  const direct = speciesAliases[normalizedSpecies]
-  const genericCodes = new Set<DetectionSpecies>(['fox', 'unknown_animal', 'bird_unknown'])
+  const generic = new Set<DetectionSpecies>(['fox', 'unknown_animal', 'bird_unknown'])
 
-  if (narrative && (!direct || genericCodes.has(direct) || narrative === direct)) return narrative
+  if (narrative && (!direct || generic.has(direct) || narrative === direct)) return narrative
   if (direct) return direct
   if (narrative) return narrative
 
-  const parsed = speciesSchema.safeParse(normalizedSpecies.replace(/ /g, '_'))
+  const parsed = speciesSchema.safeParse(normalized.replace(/ /g, '_'))
   return parsed.success ? parsed.data : 'unknown_animal'
 }
 
@@ -176,10 +160,9 @@ function normalizeConfidence(input: unknown, species: DetectionSpecies, context:
   const numeric = typeof input === 'number' && Number.isFinite(input)
     ? Math.min(1, Math.max(0, input))
     : null
-  const text = normalizeTaxonText(context)
-  const explicitFox = /\b(zorro|fox|culpeo|chilla|lycalopex)\b/.test(text)
+  const text = normalizeText(context)
 
-  if (species === 'fox' && (numeric === null || numeric <= 0.55) && explicitFox) {
+  if (species === 'fox' && (numeric === null || numeric <= 0.55) && /\bzorro\b|\bfox\b/.test(text)) {
     return { confidence: 0.82, source: 'heuristic' as const, modelConfidence: numeric }
   }
   if (['culpeo', 'zorro_chilla', 'zorro_gris_chileno'].includes(species) && (numeric === null || numeric <= 0.55)) {
@@ -197,8 +180,8 @@ function normalizeConfidence(input: unknown, species: DetectionSpecies, context:
 
 function normalizeAnalysis(outputText: string) {
   const raw = JSON.parse(outputText) as Record<string, unknown>
-  const detections = Array.isArray(raw.detections) ? raw.detections : []
   const sceneSummary = String(raw.scene_summary || '').slice(0, 800)
+  const detections = Array.isArray(raw.detections) ? raw.detections : []
 
   raw.detections = detections
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
@@ -244,6 +227,13 @@ function normalizeAnalysis(outputText: string) {
   return analysisSchema.parse(raw)
 }
 
+function needsVerification(detections: Detection[]) {
+  return detections.some((item) => [
+    'huemul', 'pudu', 'fox', 'culpeo', 'zorro_chilla', 'zorro_gris_chileno',
+    'dog', 'guina', 'cat', 'unknown_animal',
+  ].includes(item.species))
+}
+
 function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
@@ -271,16 +261,83 @@ async function fetchOpenAiWithRetry(apiKey: string, body: unknown) {
   return { response: lastResponse as Response, payload: lastPayload, retryCount: MAX_RETRIES }
 }
 
+async function verifyConfusableSpecies(apiKey: string, model: string, imageUrl: string) {
+  const body = {
+    model,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `Actua como segundo revisor visual independiente para fauna de Huilo Huilo. Debes elegir una sola especie usando solo rasgos visibles. Usa solo codigos ASCII permitidos. Diferencias criticas: huemul es un ciervo grande, de patas largas y cuerpo robusto; el macho puede tener astas desarrolladas y ramificadas. Pudu es un ciervo muy pequeno, compacto, de patas cortas; sus astas son muy cortas y simples. Zorro tiene hocico fino, orejas triangulares y cola muy peluda; perro domestico presenta morfologia y pelaje variables. Guina es un felino silvestre pequeno con manchas; gato domestico puede tener patrones variados. Devuelve JSON con species, confidence, description y scene_summary. Textos en espanol ASCII, sin tildes.`,
+      },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Verifica la especie principal. No uses el nombre del archivo. Basa la decision solo en anatomia, proporcion corporal, astas, patas, cabeza, cola y pelaje visibles.' },
+          { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
+        ],
+      },
+    ],
+    max_tokens: 700,
+  }
+
+  const { response, payload, retryCount } = await fetchOpenAiWithRetry(apiKey, body)
+  if (!response.ok) return { verification: null, retryCount }
+  const content = payload.choices?.[0]?.message?.content
+  if (!content) return { verification: null, retryCount }
+
+  try {
+    const raw = JSON.parse(content) as Record<string, unknown>
+    const species = resolveSpecies(raw.species, `${raw.description || ''} ${raw.scene_summary || ''}`)
+    const verification = verificationSchema.parse({
+      species,
+      confidence: typeof raw.confidence === 'number' ? raw.confidence : 0.75,
+      description: String(raw.description || '').slice(0, 300),
+      scene_summary: String(raw.scene_summary || '').slice(0, 500),
+    })
+    return { verification, retryCount }
+  } catch {
+    return { verification: null, retryCount }
+  }
+}
+
+function applyVerification(analysis: z.infer<typeof analysisSchema>, verification: z.infer<typeof verificationSchema> | null) {
+  if (!verification || verification.confidence < 0.7 || analysis.detections.length === 0) return analysis
+
+  const primary = analysis.detections[0]
+  const confusable = new Set<DetectionSpecies>([
+    'huemul', 'pudu', 'fox', 'culpeo', 'zorro_chilla', 'zorro_gris_chileno',
+    'dog', 'guina', 'cat', 'unknown_animal',
+  ])
+  if (!confusable.has(primary.species) && !confusable.has(verification.species)) return analysis
+
+  const corrected: Detection = {
+    ...primary,
+    species: verification.species,
+    confidence: verification.confidence,
+    confidence_source: 'verification',
+    model_confidence: primary.confidence,
+    description: verification.description,
+  }
+
+  return {
+    ...analysis,
+    detections: [corrected, ...analysis.detections.slice(1)],
+    scene_summary: verification.scene_summary,
+    limitations: [
+      ...analysis.limitations,
+      primary.species !== verification.species
+        ? `La segunda verificacion corrigio ${primary.species} a ${verification.species}.`
+        : 'La segunda verificacion confirmo la especie principal.',
+    ],
+  }
+}
+
 async function enforceQuota(userId: string, organizationId: string | null) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return { allowed: true, limit: null as number | null, used: 0 }
 
-  let quotaQuery = supabase
-    .from('wildlife_ai_quotas')
-    .select('monthly_image_limit')
-    .eq('active', true)
-    .limit(1)
-
+  let quotaQuery = supabase.from('wildlife_ai_quotas').select('monthly_image_limit').eq('active', true).limit(1)
   quotaQuery = organizationId
     ? quotaQuery.eq('organization_id', organizationId).is('user_id', null)
     : quotaQuery.eq('user_id', userId).is('organization_id', null)
@@ -292,16 +349,8 @@ async function enforceQuota(userId: string, organizationId: string | null) {
   const monthStart = new Date()
   monthStart.setUTCDate(1)
   monthStart.setUTCHours(0, 0, 0, 0)
-
-  let usageQuery = supabase
-    .from('wildlife_inference_jobs')
-    .select('id', { count: 'exact', head: true })
-    .gte('created_at', monthStart.toISOString())
-
-  usageQuery = organizationId
-    ? usageQuery.eq('organization_id', organizationId)
-    : usageQuery.eq('submitted_by_user_id', userId)
-
+  let usageQuery = supabase.from('wildlife_inference_jobs').select('id', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString())
+  usageQuery = organizationId ? usageQuery.eq('organization_id', organizationId) : usageQuery.eq('submitted_by_user_id', userId)
   const { count } = await usageQuery
   const used = count ?? 0
   return { allowed: used < limit, limit, used }
@@ -311,20 +360,14 @@ async function resolveCamera(input: { userId: string; organizationId: string | n
   if (!input.code) return null
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-
-  const { data, error } = await supabase
-    .from('wildlife_cameras')
-    .upsert({
-      organization_id: input.organizationId,
-      created_by_user_id: input.userId,
-      code: input.code,
-      name: input.name || input.code,
-      zone_label: input.zoneLabel,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'created_by_user_id,code' })
-    .select('id')
-    .single()
-
+  const { data, error } = await supabase.from('wildlife_cameras').upsert({
+    organization_id: input.organizationId,
+    created_by_user_id: input.userId,
+    code: input.code,
+    name: input.name || input.code,
+    zone_label: input.zoneLabel,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'created_by_user_id,code' }).select('id').single()
   if (error) {
     console.error('Wildlife camera resolution failed:', error.message)
     return null
@@ -335,14 +378,12 @@ async function resolveCamera(input: { userId: string; organizationId: string | n
 async function storeEvidence(input: { userId: string; sha256: string; mimeType: string; image: Buffer }) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-
   const storagePath = `${input.userId}/${input.sha256}.${EXTENSIONS[input.mimeType]}`
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, input.image, {
     contentType: input.mimeType,
     upsert: true,
     cacheControl: '3600',
   })
-
   if (error) {
     console.error('Wildlife evidence upload failed:', error.message)
     return null
@@ -375,40 +416,34 @@ async function persistJob(input: {
 }) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-
-  const { data, error } = await supabase
-    .from('wildlife_inference_jobs')
-    .upsert({
-      submitted_by_user_id: input.userId,
-      organization_id: input.organizationId,
-      original_filename: input.filename,
-      mime_type: input.mimeType,
-      byte_size: input.byteSize,
-      sha256: input.sha256,
-      provider: 'openai',
-      model_name: input.model,
-      prompt_version: PROMPT_VERSION,
-      pipeline_version: PIPELINE_VERSION,
-      retry_count: input.retryCount,
-      latency_ms: input.latencyMs,
-      estimated_cost_usd: input.estimatedCostUsd,
-      processing_started_at: input.processingStartedAt,
-      processing_completed_at: input.processingCompletedAt,
-      status: input.status,
-      review_status: 'pending',
-      camera_id: input.cameraId,
-      zone_label: input.zoneLabel,
-      captured_at: input.capturedAt,
-      storage_bucket: input.storageBucket,
-      storage_path: input.storagePath,
-      result_json: input.result ?? null,
-      error_code: input.errorCode ?? null,
-      error_message: input.errorMessage ?? null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'submitted_by_user_id,sha256,model_name' })
-    .select('id')
-    .single()
-
+  const { data, error } = await supabase.from('wildlife_inference_jobs').upsert({
+    submitted_by_user_id: input.userId,
+    organization_id: input.organizationId,
+    original_filename: input.filename,
+    mime_type: input.mimeType,
+    byte_size: input.byteSize,
+    sha256: input.sha256,
+    provider: 'openai',
+    model_name: input.model,
+    prompt_version: PROMPT_VERSION,
+    pipeline_version: PIPELINE_VERSION,
+    retry_count: input.retryCount,
+    latency_ms: input.latencyMs,
+    estimated_cost_usd: input.estimatedCostUsd,
+    processing_started_at: input.processingStartedAt,
+    processing_completed_at: input.processingCompletedAt,
+    status: input.status,
+    review_status: 'pending',
+    camera_id: input.cameraId,
+    zone_label: input.zoneLabel,
+    captured_at: input.capturedAt,
+    storage_bucket: input.storageBucket,
+    storage_path: input.storagePath,
+    result_json: input.result ?? null,
+    error_code: input.errorCode ?? null,
+    error_message: input.errorMessage ?? null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'submitted_by_user_id,sha256,model_name' }).select('id').single()
   if (error) {
     console.error('Wildlife inference persistence failed:', error.message)
     return null
@@ -435,7 +470,6 @@ export async function POST(request: NextRequest) {
 
   const contentType = (request.headers.get('x-image-content-type') || '').toLowerCase()
   if (!ALLOWED_MIME_TYPES.has(contentType)) return NextResponse.json({ error: 'unsupported_image_type' }, { status: 422 })
-
   const image = Buffer.from(await request.arrayBuffer())
   if (image.length === 0 || image.length > MAX_IMAGE_BYTES) return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
 
@@ -467,12 +501,12 @@ export async function POST(request: NextRequest) {
     messages: [
       {
         role: 'system',
-        content: `Eres SegurIA Vision para camaras trampa de Huilo Huilo. Prioriza huemul, pudu, puma, zorro culpeo, zorro chilla, guina y coipo. Usa solo estos codigos ASCII: huemul, pudu, puma, culpeo, zorro_chilla, zorro_gris_chileno, fox, guina, coipo, person, vehicle, dog, cat, livestock, bird_unknown, empty_frame, unknown_animal, guanaco, vicuna, nandu, chinchilla, vizcacha. Cada deteccion debe ser coherente: species, description y scene_summary deben referirse a la misma especie. Si describes un pudu, species debe ser pudu. Si describes un huemul, species debe ser huemul. Si describes un zorro, species debe ser culpeo, zorro_chilla, zorro_gris_chileno o fox. Nunca combines el codigo de una especie con la descripcion de otra. Devuelve JSON valido con detections, scene_summary, operational_risks y limitations. Todos los textos deben estar en espanol y usar solo caracteres ASCII, sin tildes ni caracteres especiales.`,
+        content: `Eres SegurIA Vision para camaras trampa de Huilo Huilo. Prioriza huemul, pudu, puma, zorro culpeo, zorro chilla, guina y coipo. Usa solo codigos ASCII permitidos. Para huemul vs pudu analiza tamano corporal, longitud de patas y astas: huemul es grande y robusto, con patas largas; machos pueden tener astas desarrolladas y ramificadas. Pudu es muy pequeno y compacto, con patas cortas y astas muy cortas y simples. Cada deteccion debe ser coherente: species, description y scene_summary deben referirse a la misma especie. Devuelve JSON valido con detections, scene_summary, operational_risks y limitations. Todos los textos en espanol ASCII sin tildes.`,
       },
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Analiza esta imagen del sector Huilo Huilo. Identifica cada sujeto visible y verifica que species coincida exactamente con la descripcion y el resumen. Usa solo ASCII.' },
+          { type: 'text', text: 'Analiza la imagen por rasgos anatomicos visibles. No uses el nombre del archivo como evidencia. Verifica especialmente huemul vs pudu, zorro vs perro y guina vs gato.' },
           { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
         ],
       },
@@ -480,38 +514,22 @@ export async function POST(request: NextRequest) {
     max_tokens: 2000,
   }
 
-  const { response, payload, retryCount } = await fetchOpenAiWithRetry(apiKey, body)
-  const completedAt = new Date()
-  const latencyMs = completedAt.getTime() - startedAt.getTime()
-
-  if (!response.ok) {
-    const message = payload.error?.message || `OpenAI returned ${response.status}`
+  const first = await fetchOpenAiWithRetry(apiKey, body)
+  if (!first.response.ok) {
+    const completedAt = new Date()
+    const message = first.payload.error?.message || `OpenAI returned ${first.response.status}`
     const jobId = await persistJob({
-      userId: auth.user.id,
-      organizationId,
-      filename,
-      mimeType: contentType,
-      byteSize: image.length,
-      sha256,
-      model,
-      status: 'failed',
-      cameraId,
-      zoneLabel,
-      capturedAt,
-      storageBucket: evidence.bucket,
-      storagePath: evidence.path,
-      retryCount,
-      latencyMs,
-      estimatedCostUsd,
-      processingStartedAt: startedAt.toISOString(),
-      processingCompletedAt: completedAt.toISOString(),
-      errorCode: 'openai_request_failed',
-      errorMessage: message,
+      userId: auth.user.id, organizationId, filename, mimeType: contentType,
+      byteSize: image.length, sha256, model, status: 'failed', cameraId,
+      zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
+      retryCount: first.retryCount, latencyMs: completedAt.getTime() - startedAt.getTime(), estimatedCostUsd,
+      processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(),
+      errorCode: 'openai_request_failed', errorMessage: message,
     })
-    return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId, retry_count: retryCount }, { status: 502 })
+    return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId }, { status: 502 })
   }
 
-  const outputText = payload.choices?.[0]?.message?.content
+  const outputText = first.payload.choices?.[0]?.message?.content
   if (!outputText) return NextResponse.json({ error: 'openai_empty_output' }, { status: 502 })
 
   let analysis: z.infer<typeof analysisSchema>
@@ -524,6 +542,15 @@ export async function POST(request: NextRequest) {
     }, { status: 502 })
   }
 
+  let verificationRetryCount = 0
+  if (needsVerification(analysis.detections)) {
+    const verified = await verifyConfusableSpecies(apiKey, model, imageUrl)
+    verificationRetryCount = verified.retryCount
+    analysis = applyVerification(analysis, verified.verification)
+  }
+
+  const completedAt = new Date()
+  const latencyMs = completedAt.getTime() - startedAt.getTime()
   const detections = analysis.detections.filter((item) => item.box.x2 > item.box.x1 && item.box.y2 > item.box.y1)
   const result = {
     detections,
@@ -533,30 +560,14 @@ export async function POST(request: NextRequest) {
   }
 
   const jobId = await persistJob({
-    userId: auth.user.id,
-    organizationId,
-    filename,
-    mimeType: contentType,
-    byteSize: image.length,
-    sha256,
-    model,
-    status: 'completed',
-    cameraId,
-    zoneLabel,
-    capturedAt,
-    storageBucket: evidence.bucket,
-    storagePath: evidence.path,
-    retryCount,
-    latencyMs,
-    estimatedCostUsd,
-    processingStartedAt: startedAt.toISOString(),
-    processingCompletedAt: completedAt.toISOString(),
-    result,
+    userId: auth.user.id, organizationId, filename, mimeType: contentType,
+    byteSize: image.length, sha256, model, status: 'completed', cameraId,
+    zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
+    retryCount: first.retryCount + verificationRetryCount, latencyMs, estimatedCostUsd,
+    processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(), result,
   })
 
-  if (!jobId) {
-    return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
-  }
+  if (!jobId) return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
 
   return NextResponse.json({
     ok: true,
@@ -565,7 +576,7 @@ export async function POST(request: NextRequest) {
     model_version: model,
     prompt_version: PROMPT_VERSION,
     pipeline_version: PIPELINE_VERSION,
-    retry_count: retryCount,
+    retry_count: first.retryCount + verificationRetryCount,
     latency_ms: latencyMs,
     estimated_cost_usd: estimatedCostUsd,
     quota: { limit: quota.limit, used_before_request: quota.used },
@@ -573,6 +584,7 @@ export async function POST(request: NextRequest) {
     zone_label: zoneLabel,
     captured_at: capturedAt,
     evidence_stored: true,
+    verification_applied: needsVerification(detections),
     detections_count: detections.length,
     ...result,
     timestamp: completedAt.toISOString(),
