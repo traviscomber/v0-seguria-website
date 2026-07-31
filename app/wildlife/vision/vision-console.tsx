@@ -10,59 +10,59 @@ import {
   type VisionProvider,
 } from '@/lib/wildlife/vision-providers'
 
-interface Detection {
+type Detection = {
   species: string
   confidence: number
   box: { x1: number; y1: number; x2: number; y2: number }
   description?: string
 }
 
-interface VisionResponse {
+type VisionResponse = {
   ok?: boolean
   status?: string
   provider?: string
   model_version?: string
+  job_id?: string | null
   detections_count?: number
   detections?: Detection[]
   scene_summary?: string
   operational_risks?: string[]
   limitations?: string[]
-  detail?: unknown
   error?: string
   message?: string
 }
 
-interface ProviderResponse {
+type ProviderResponse = {
   providers?: {
-    openai?: {
-      configured?: boolean
-      ready?: boolean
-      status?: string
-      model?: string
-    }
+    openai?: { configured?: boolean; ready?: boolean; status?: string; model?: string }
   }
 }
+
+type BatchResult = {
+  filename: string
+  state: 'processing' | 'completed' | 'failed'
+  result?: VisionResponse
+}
+
+const MAX_BATCH_SIZE = 20
 
 export function VisionConsole() {
   const [health, setHealth] = useState<VisionResponse | null>(null)
   const [ready, setReady] = useState<VisionResponse | null>(null)
   const [providers, setProviders] = useState<ProviderResponse | null>(null)
-  const [result, setResult] = useState<VisionResponse | null>(null)
+  const [results, setResults] = useState<BatchResult[]>([])
   const [loading, setLoading] = useState(false)
 
-  async function refreshStatus() {
-    const [healthResponse, readyResponse, providerResponse] = await Promise.all([
+  useEffect(() => {
+    void Promise.all([
       fetch('/api/vision/health', { cache: 'no-store' }),
       fetch('/api/vision/ready', { cache: 'no-store' }),
       fetch('/api/vision/providers', { cache: 'no-store' }),
-    ])
-    setHealth(await healthResponse.json())
-    setReady(await readyResponse.json())
-    setProviders(await providerResponse.json())
-  }
-
-  useEffect(() => {
-    void refreshStatus()
+    ]).then(async ([healthResponse, readyResponse, providerResponse]) => {
+      setHealth(await healthResponse.json())
+      setReady(await readyResponse.json())
+      setProviders(await providerResponse.json())
+    })
   }, [])
 
   const isOnnxReady = ready?.ok === true
@@ -73,101 +73,89 @@ export function VisionConsole() {
     openaiModel: providers?.providers?.openai?.model,
   })
   const selectedEndpoint = visionProviderEndpoint(selectedProvider)
-  const providerLabel = visionProviderLabel(
-    selectedProvider,
-    providers?.providers?.openai?.model
-  )
+  const providerLabel = visionProviderLabel(selectedProvider, providers?.providers?.openai?.model)
 
-  async function submitImage(formData: FormData) {
-    const file = formData.get('image')
-    if (!(file instanceof File) || file.size === 0 || !selectedEndpoint) return
+  async function analyzeFile(file: File) {
+    if (!selectedEndpoint) return
+    setResults((current) => current.map((item) => item.filename === file.name ? { ...item, state: 'processing' } : item))
 
-    setLoading(true)
-    setResult(null)
     try {
       const response = await fetch(selectedEndpoint, {
         method: 'POST',
-        headers: { 'X-Image-Content-Type': file.type },
+        headers: {
+          'X-Image-Content-Type': file.type,
+          'X-Image-Filename': encodeURIComponent(file.name),
+        },
         body: await file.arrayBuffer(),
       })
-      setResult(await response.json())
+      const payload = await response.json() as VisionResponse
+      setResults((current) => current.map((item) => item.filename === file.name
+        ? { ...item, state: response.ok ? 'completed' : 'failed', result: payload }
+        : item))
     } catch (error) {
-      setResult({
-        error: 'vision_request_failed',
-        message: error instanceof Error ? error.message : 'No fue posible ejecutar el análisis.',
-      })
-    } finally {
-      setLoading(false)
+      setResults((current) => current.map((item) => item.filename === file.name
+        ? {
+            ...item,
+            state: 'failed',
+            result: {
+              error: 'vision_request_failed',
+              message: error instanceof Error ? error.message : 'No fue posible ejecutar el análisis.',
+            },
+          }
+        : item))
     }
+  }
+
+  async function submitImages(formData: FormData) {
+    const files = formData.getAll('images').filter((item): item is File => item instanceof File && item.size > 0)
+    if (!files.length || !selectedEndpoint) return
+
+    const selectedFiles = files.slice(0, MAX_BATCH_SIZE)
+    setLoading(true)
+    setResults(selectedFiles.map((file) => ({ filename: file.name, state: 'processing' })))
+
+    for (const file of selectedFiles) {
+      await analyzeFile(file)
+    }
+
+    setLoading(false)
   }
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="flex items-center gap-3">
-            <Activity className="h-5 w-5 text-[#9DD2F2]" />
-            <div>
-              <p className="text-sm text-white/50">Servicio</p>
-              <p className="text-lg text-white">{health?.ok ? 'Activo' : 'Sin respuesta'}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="flex items-center gap-3">
-            <Camera className={`h-5 w-5 ${isOnnxReady ? 'text-emerald-300' : 'text-white/30'}`} />
-            <div>
-              <p className="text-sm text-white/50">ONNX</p>
-              <p className="text-lg text-white">{isOnnxReady ? 'Listo' : 'No disponible'}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="flex items-center gap-3">
-            <Sparkles className={`h-5 w-5 ${isOpenAiReady ? 'text-[#9DD2F2]' : 'text-white/30'}`} />
-            <div>
-              <p className="text-sm text-white/50">OpenAI temporal</p>
-              <p className="text-lg text-white">{isOpenAiReady ? 'Listo' : 'Falta API key'}</p>
-            </div>
-          </div>
-        </div>
+        <StatusCard icon={<Activity className="h-5 w-5 text-[#9DD2F2]" />} label="Servicio" value={health?.ok ? 'Activo' : 'Sin respuesta'} />
+        <StatusCard icon={<Camera className={`h-5 w-5 ${isOnnxReady ? 'text-emerald-300' : 'text-white/30'}`} />} label="ONNX" value={isOnnxReady ? 'Listo' : 'No disponible'} />
+        <StatusCard icon={<Sparkles className={`h-5 w-5 ${isOpenAiReady ? 'text-[#9DD2F2]' : 'text-white/30'}`} />} label="OpenAI" value={isOpenAiReady ? 'Listo' : 'Falta API key'} />
       </div>
 
       <div className={`flex gap-3 rounded-xl border p-4 text-sm leading-6 ${selectedProvider ? 'border-[#9DD2F2]/20 bg-[#9DD2F2]/[0.06] text-white/75' : 'border-amber-300/20 bg-amber-300/[0.06] text-amber-100/80'}`}>
-        {selectedProvider ? (
-          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#9DD2F2]" />
-        ) : (
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-        )}
-        <p>
-          {selectedProvider
-            ? `Proveedor activo: ${providerLabel}.`
-            : 'No existe un proveedor de inferencia disponible. Configure OPENAI_API_KEY o incorpore un modelo ONNX válido.'}
-        </p>
+        {selectedProvider ? <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#9DD2F2]" /> : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />}
+        <p>{selectedProvider ? `Proveedor activo: ${providerLabel}.` : 'No existe un proveedor de inferencia disponible.'}</p>
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          const formData = new FormData(e.currentTarget)
-          void submitImage(formData)
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submitImages(new FormData(event.currentTarget))
         }}
         className="rounded-xl border border-white/10 bg-white/[0.04] p-6"
       >
         <div className="flex items-center gap-3">
           <Upload className="h-5 w-5 text-[#9DD2F2]" />
           <div>
-            <h2 className="text-xl font-light text-white">Prueba de imagen</h2>
-            <p className="text-sm text-white/55">JPEG, PNG o WebP. Máximo 12 MB.</p>
+            <h2 className="text-xl font-light text-white">Carga por lote</h2>
+            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes JPEG, PNG o WebP. Máximo 12 MB cada una.</p>
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row">
           <input
-            name="image"
+            name="images"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             required
-            disabled={!selectedProvider}
+            disabled={!selectedProvider || loading}
             className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#081827] px-4 py-3 text-sm text-white file:mr-4 file:rounded-md file:border-0 file:bg-[#123A5A] file:px-4 file:py-2 file:text-white disabled:opacity-40"
           />
           <button
@@ -176,54 +164,56 @@ export function VisionConsole() {
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4DA3D9] px-6 py-3 text-sm font-medium text-[#07131f] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? 'Analizando...' : 'Analizar imagen'}
+            {loading ? 'Procesando lote...' : 'Analizar imágenes'}
           </button>
         </div>
       </form>
 
-      {result && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-light text-white">Resultado</h2>
-            {result.provider && (
-              <span className="rounded-full border border-[#9DD2F2]/20 bg-[#9DD2F2]/10 px-3 py-1 text-xs text-[#9DD2F2]">
-                {result.provider} · {result.model_version}
-              </span>
-            )}
-          </div>
-
-          {result.scene_summary && (
-            <p className="mt-4 text-sm leading-7 text-white/65">{result.scene_summary}</p>
-          )}
-
-          {result.detections?.length ? (
-            <div className="mt-4 space-y-3">
-              {result.detections.map((detection, index) => (
-                <div key={`${detection.species}-${index}`} className="rounded-lg bg-black/20 px-4 py-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-white">{detection.species}</span>
-                    <span className="text-[#9DD2F2]">{Math.round(detection.confidence * 100)}%</span>
-                  </div>
-                  {detection.description && (
-                    <p className="mt-2 text-sm text-white/50">{detection.description}</p>
-                  )}
+      {results.length > 0 && (
+        <section className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
+          <h2 className="text-xl font-light text-white">Resultados del lote</h2>
+          <div className="mt-5 space-y-4">
+            {results.map((item) => (
+              <article key={item.filename} className="rounded-xl bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-medium text-white">{item.filename}</p>
+                  <span className="text-xs text-white/50">{item.state === 'processing' ? 'Procesando' : item.state === 'completed' ? 'Completado' : 'Falló'}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <pre className="mt-4 overflow-auto rounded-lg bg-black/25 p-4 text-xs text-white/70">{JSON.stringify(result, null, 2)}</pre>
-          )}
-
-          {!!result.operational_risks?.length && (
-            <div className="mt-5 rounded-lg border border-amber-300/15 bg-amber-300/[0.05] p-4">
-              <p className="text-sm font-medium text-amber-100">Riesgos observados</p>
-              <ul className="mt-2 space-y-1 text-sm text-amber-100/65">
-                {result.operational_risks.map((risk) => <li key={risk}>• {risk}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
+                {item.state === 'processing' && <Loader2 className="mt-4 h-5 w-5 animate-spin text-[#9DD2F2]" />}
+                {item.result?.scene_summary && <p className="mt-4 text-sm leading-6 text-white/60">{item.result.scene_summary}</p>}
+                {!!item.result?.detections?.length && (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {item.result.detections.map((detection, index) => (
+                      <div key={`${detection.species}-${index}`} className="rounded-lg bg-white/[0.04] px-3 py-2">
+                        <div className="flex justify-between gap-3 text-sm">
+                          <span className="text-white">{detection.species}</span>
+                          <span className="text-[#9DD2F2]">{Math.round(detection.confidence * 100)}%</span>
+                        </div>
+                        {detection.description && <p className="mt-1 text-xs text-white/40">{detection.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {item.result?.message && <p className="mt-4 text-sm text-red-100/75">{item.result.message}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
       )}
+    </div>
+  )
+}
+
+function StatusCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+      <div className="flex items-center gap-3">
+        {icon}
+        <div>
+          <p className="text-sm text-white/50">{label}</p>
+          <p className="text-lg text-white">{value}</p>
+        </div>
+      </div>
     </div>
   )
 }
