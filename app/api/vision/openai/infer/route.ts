@@ -10,8 +10,8 @@ export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const STORAGE_BUCKET = 'wildlife-evidence'
-const PROMPT_VERSION = 'seguria-vision-v1'
-const PIPELINE_VERSION = 'vision-pipeline-v2'
+const PROMPT_VERSION = 'seguria-vision-v2-es'
+const PIPELINE_VERSION = 'vision-pipeline-v3'
 const MAX_RETRIES = 2
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
@@ -256,7 +256,12 @@ async function persistJob(input: {
 
 function safeHeader(request: NextRequest, name: string, maxLength: number) {
   const value = request.headers.get(name)?.trim()
-  return value ? decodeURIComponent(value).slice(0, maxLength) : null
+  if (!value) return null
+  try {
+    return decodeURIComponent(value).slice(0, maxLength)
+  } catch {
+    return value.slice(0, maxLength)
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -282,7 +287,7 @@ export async function POST(request: NextRequest) {
   const model = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini'
   const unitCost = Number(process.env.OPENAI_VISION_ESTIMATED_COST_USD)
   const estimatedCostUsd = Number.isFinite(unitCost) && unitCost >= 0 ? unitCost : null
-  const filename = decodeURIComponent(request.headers.get('x-image-filename') || 'camera-trap-image').replace(/[\\/\0]/g, '_').slice(0, 240)
+  const filename = safeHeader(request, 'x-image-filename', 240)?.replace(/[\\/\0]/g, '_') || 'camera-trap-image'
   const cameraCode = safeHeader(request, 'x-camera-code', 80)
   const cameraName = safeHeader(request, 'x-camera-name', 160)
   const zoneLabel = safeHeader(request, 'x-zone-label', 160)
@@ -291,17 +296,26 @@ export async function POST(request: NextRequest) {
   const sha256 = createHash('sha256').update(image).digest('hex')
   const cameraId = await resolveCamera({ userId: auth.user.id, organizationId, code: cameraCode, name: cameraName, zoneLabel })
   const evidence = await storeEvidence({ userId: auth.user.id, sha256, mimeType: contentType, image })
+  if (!evidence) {
+    return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
+  }
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
 
   const body = {
     model,
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: 'You are SegurIA Vision. Identify only visible Chilean fauna, people, vehicles and livestock. Use the allowed species names. Return valid JSON with detections, scene_summary, operational_risks and limitations. Do not invent hidden objects. Use unknown_animal when uncertain.' },
-      { role: 'user', content: [
-        { type: 'text', text: 'Analyze this camera-trap image. Return species, confidence, normalized bounding box and description for each visible subject.' },
-        { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
-      ] },
+      {
+        role: 'system',
+        content: 'Eres SegurIA Vision, un sistema experto en fauna chilena y cámaras trampa. Identifica únicamente fauna, personas, vehículos y ganado realmente visibles. Usa los identificadores de especie permitidos. Devuelve JSON válido con detections, scene_summary, operational_risks y limitations. Todos los textos descriptivos deben estar escritos en español de Chile. No inventes objetos ocultos y usa unknown_animal cuando no exista certeza suficiente.',
+      },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Analiza esta imagen de cámara trampa. Para cada sujeto visible devuelve especie, confianza, bounding box normalizado y una descripción breve en español. Resume la escena, riesgos y limitaciones también en español.' },
+          { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
+        ],
+      },
     ],
     max_tokens: 2000,
   }
@@ -315,8 +329,8 @@ export async function POST(request: NextRequest) {
     const jobId = await persistJob({
       userId: auth.user.id, organizationId, filename, mimeType: contentType,
       byteSize: image.length, sha256, model, status: 'failed', cameraId,
-      zoneLabel, capturedAt, storageBucket: evidence?.bucket || null,
-      storagePath: evidence?.path || null, retryCount, latencyMs, estimatedCostUsd,
+      zoneLabel, capturedAt, storageBucket: evidence.bucket,
+      storagePath: evidence.path, retryCount, latencyMs, estimatedCostUsd,
       processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(),
       errorCode: 'openai_request_failed', errorMessage: message,
     })
@@ -343,10 +357,14 @@ export async function POST(request: NextRequest) {
   const jobId = await persistJob({
     userId: auth.user.id, organizationId, filename, mimeType: contentType,
     byteSize: image.length, sha256, model, status: 'completed', cameraId,
-    zoneLabel, capturedAt, storageBucket: evidence?.bucket || null,
-    storagePath: evidence?.path || null, retryCount, latencyMs, estimatedCostUsd,
+    zoneLabel, capturedAt, storageBucket: evidence.bucket,
+    storagePath: evidence.path, retryCount, latencyMs, estimatedCostUsd,
     processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(), result,
   })
+
+  if (!jobId) {
+    return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
+  }
 
   return NextResponse.json({
     ok: true,
@@ -362,7 +380,7 @@ export async function POST(request: NextRequest) {
     camera_id: cameraId,
     zone_label: zoneLabel,
     captured_at: capturedAt,
-    evidence_stored: Boolean(evidence),
+    evidence_stored: true,
     detections_count: detections.length,
     ...result,
     timestamp: completedAt.toISOString(),
