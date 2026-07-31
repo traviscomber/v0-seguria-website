@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Camera, MapPin, Minus, Plus, RefreshCw, ShieldAlert } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
+import { AlertTriangle, Camera, MapPin, Minus, Plus, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react'
 
 import { getSpeciesLocalization } from '@/lib/wildlife/species-localization'
 
@@ -29,9 +29,13 @@ type MapSighting = {
   camera?: CameraRecord
 }
 
+type PanOffset = { x: number; y: number }
+type DragState = { pointerId: number; x: number; y: number; originX: number; originY: number }
+
 const CENTER = { latitude: -39.905, longitude: -71.913 }
 const VIEWPORT = { width: 960, height: 560 }
 const CONSERVATION_CENTER = { latitude: -39.9378, longitude: -71.9037 }
+const MAX_PAN = 900
 
 const LANDMARKS = [
   { name: 'Hotel Nothofagus', latitude: -39.86924, longitude: -71.91447 },
@@ -63,10 +67,17 @@ function latitudeToWorldY(latitude: number, zoom: number) {
   const radians = latitude * Math.PI / 180
   return (1 - Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI) / 2 * 256 * 2 ** zoom
 }
+function clampPan(value: number) { return Math.max(-MAX_PAN, Math.min(MAX_PAN, value)) }
+function isControlTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('button, select, input, label, a'))
+}
 
 export function CartographicBaseMap() {
   const [layerId, setLayerId] = useState<LayerId>('satellite')
   const [zoom, setZoom] = useState(12)
+  const [pan, setPan] = useState<PanOffset>({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+  const dragRef = useRef<DragState | null>(null)
   const [cameras, setCameras] = useState<CameraRecord[]>([])
   const [jobs, setJobs] = useState<JobRecord[]>([])
   const [speciesFilter, setSpeciesFilter] = useState('all')
@@ -131,8 +142,8 @@ export function CartographicBaseMap() {
   const projection = useMemo(() => {
     const centerX = longitudeToWorldX(CENTER.longitude, zoom)
     const centerY = latitudeToWorldY(CENTER.latitude, zoom)
-    const leftWorld = centerX - VIEWPORT.width / 2
-    const topWorld = centerY - VIEWPORT.height / 2
+    const leftWorld = centerX - VIEWPORT.width / 2 - pan.x
+    const topWorld = centerY - VIEWPORT.height / 2 - pan.y
     return {
       leftWorld,
       topWorld,
@@ -141,7 +152,7 @@ export function CartographicBaseMap() {
         y: latitudeToWorldY(latitude, zoom) - topWorld,
       }),
     }
-  }, [zoom])
+  }, [zoom, pan])
 
   const tiles = useMemo(() => {
     const startX = Math.floor(projection.leftWorld / 256)
@@ -158,6 +169,41 @@ export function CartographicBaseMap() {
     return `${position.x},${position.y}`
   }).join(' ')
   const conservationPosition = projection.point(CONSERVATION_CENTER.latitude, CONSERVATION_CENTER.longitude)
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (isControlTarget(event.target)) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, originX: pan.x, originY: pan.y }
+    setDragging(true)
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    setPan({
+      x: clampPan(drag.originX + event.clientX - drag.x),
+      y: clampPan(drag.originY + event.clientY - drag.y),
+    })
+  }
+
+  function finishDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) return
+    dragRef.current = null
+    setDragging(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+
+  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    if (isControlTarget(event.target)) return
+    event.preventDefault()
+    const direction = event.deltaY < 0 ? 1 : -1
+    setZoom((value) => Math.max(10, Math.min(15, value + direction)))
+  }
+
+  function resetView() {
+    setZoom(12)
+    setPan({ x: 0, y: 0 })
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1d2c]">
@@ -180,8 +226,17 @@ export function CartographicBaseMap() {
       {error && <p className="m-5 rounded-xl border border-red-300/15 bg-red-300/[0.04] p-4 text-sm text-red-100/85 sm:m-6">{error}</p>}
 
       <div className="relative min-h-[620px] overflow-hidden bg-[#071622] sm:min-h-[560px]">
-        <div className="absolute left-1/2 top-1/2 h-[560px] w-[960px] -translate-x-1/2 -translate-y-1/2 overflow-hidden">
-          {tiles.map((tile) => <img key={`${layerId}-${zoom}-${tile.x}-${tile.y}`} src={layer.tileUrl(zoom, tile.x, tile.y)} alt="" draggable={false} className="absolute h-64 w-64 select-none" style={{ left: tile.left, top: tile.top }} />)}
+        <div
+          role="application"
+          aria-label="Mapa interactivo. Arrastra para desplazarte y usa la rueda o controles para acercar y alejar."
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          onWheel={handleWheel}
+          className={`absolute left-1/2 top-1/2 h-[560px] w-[960px] -translate-x-1/2 -translate-y-1/2 touch-none overflow-hidden select-none ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        >
+          {tiles.map((tile) => <img key={`${layerId}-${zoom}-${tile.x}-${tile.y}`} src={layer.tileUrl(zoom, tile.x, tile.y)} alt="" draggable={false} className="pointer-events-none absolute h-64 w-64 select-none" style={{ left: tile.left, top: tile.top }} />)}
 
           <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWPORT.width} ${VIEWPORT.height}`} preserveAspectRatio="none">
             <polygon points={polygonPoints} fill="rgba(245,158,11,.18)" stroke="rgba(251,191,36,.98)" strokeWidth="3" strokeDasharray="9 6" />
@@ -219,7 +274,13 @@ export function CartographicBaseMap() {
           <p className="mt-1 leading-4 text-white/65">Centro de Conservacion del Huemul del Sur.</p>
         </div>
 
-        <div className="absolute bottom-24 right-3 flex flex-col overflow-hidden rounded-xl border border-white/12 bg-[#071622]/94 shadow-xl backdrop-blur sm:bottom-8 sm:right-4"><button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/80 hover:bg-white/[0.07]"><Plus className="h-4 w-4" /></button><button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><Minus className="h-4 w-4" /></button></div>
+        <div className="absolute bottom-24 right-3 flex flex-col overflow-hidden rounded-xl border border-white/12 bg-[#071622]/94 shadow-xl backdrop-blur sm:bottom-8 sm:right-4">
+          <button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/80 hover:bg-white/[0.07]"><Plus className="h-4 w-4" /></button>
+          <button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><Minus className="h-4 w-4" /></button>
+          <button type="button" aria-label="Volver al centro del mapa" onClick={resetView} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><RotateCcw className="h-4 w-4" /></button>
+        </div>
+
+        <div className="pointer-events-none absolute left-1/2 top-1/2 rounded-lg bg-black/55 px-3 py-2 text-xs text-white/75 opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
         <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/12 bg-[#071622]/96 p-3 shadow-xl backdrop-blur sm:bottom-4 sm:left-4 sm:right-auto sm:w-[320px]">
           <div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white">Leyenda y estado</p><span className="text-[11px] text-white/60">{filteredSightings.length} avistamientos</span></div>
