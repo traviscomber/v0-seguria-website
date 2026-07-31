@@ -7,6 +7,7 @@ import { CameraRegistry } from './camera-registry'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { PilotEvaluation } from './pilot-evaluation'
 import { TerritorialActivity } from './territorial-activity'
+import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
 import { VisionMetrics } from './vision-metrics'
@@ -27,7 +28,7 @@ export default async function WildlifeVisionPage() {
               <Eye className="h-4 w-4" />
               Wildlife Intelligence
             </div>
-            <h1 className="mt-3 text-4xl font-light tracking-tight">SegurIA Vision</h1>
+            <h1 className="mt-3 text-4xl font-normal tracking-tight">SegurIA Vision</h1>
             <p className="mt-3 max-w-2xl text-white/60">
               Analisis asistido de camaras trampa, procesamiento por lote y validacion humana trazable.
             </p>
@@ -62,6 +63,7 @@ export default async function WildlifeVisionPage() {
           <PilotEvaluation />
         </div>
       </div>
+      <TerritorialMapShortcut />
     </main>
   )
 }
