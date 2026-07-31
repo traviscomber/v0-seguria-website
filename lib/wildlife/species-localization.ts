@@ -6,30 +6,27 @@ export type SpeciesLocalization = {
 
 const SPECIES_LOCALIZATION: Record<string, SpeciesLocalization> = {
   huemul: { label: 'Huemul', scientificName: 'Hippocamelus bisulcus', priority: 'focus' },
-  pudu: { label: 'Pudú', scientificName: 'Pudu puda', priority: 'focus' },
+  pudu: { label: 'Pudu', scientificName: 'Pudu puda', priority: 'focus' },
   puma: { label: 'Puma', scientificName: 'Puma concolor', priority: 'focus' },
   culpeo: { label: 'Zorro culpeo', scientificName: 'Lycalopex culpaeus', priority: 'focus' },
   zorro_chilla: { label: 'Zorro chilla', scientificName: 'Lycalopex griseus', priority: 'focus' },
   zorro_gris_chileno: { label: 'Zorro gris chileno', scientificName: 'Lycalopex griseus', priority: 'focus' },
   fox: { label: 'Zorro no determinado', scientificName: 'Lycalopex sp.', priority: 'focus' },
-  guina: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
-  gato_montes: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
-  gato_montés: { label: 'Guiña', scientificName: 'Leopardus guigna', priority: 'focus' },
+  guina: { label: 'Guina', scientificName: 'Leopardus guigna', priority: 'focus' },
+  gato_montes: { label: 'Guina', scientificName: 'Leopardus guigna', priority: 'focus' },
   coipo: { label: 'Coipo', scientificName: 'Myocastor coypus', priority: 'focus' },
   coipu: { label: 'Coipo', scientificName: 'Myocastor coypus', priority: 'focus' },
   person: { label: 'Persona', scientificName: 'Homo sapiens', priority: 'operational' },
-  vehicle: { label: 'Vehículo', priority: 'operational' },
+  vehicle: { label: 'Vehiculo', priority: 'operational' },
   dog: { label: 'Perro', scientificName: 'Canis lupus familiaris', priority: 'operational' },
-  cat: { label: 'Gato doméstico', scientificName: 'Felis catus', priority: 'operational' },
+  cat: { label: 'Gato domestico', scientificName: 'Felis catus', priority: 'operational' },
   livestock: { label: 'Ganado', priority: 'operational' },
   bird_unknown: { label: 'Ave no determinada', priority: 'support' },
   empty_frame: { label: 'Imagen sin fauna', priority: 'support' },
   unknown_animal: { label: 'Animal no identificado', priority: 'support' },
   guanaco: { label: 'Guanaco', scientificName: 'Lama guanicoe', priority: 'support' },
-  vicuna: { label: 'Vicuña', scientificName: 'Vicugna vicugna', priority: 'support' },
-  vicuña: { label: 'Vicuña', scientificName: 'Vicugna vicugna', priority: 'support' },
-  nandu: { label: 'Ñandú', scientificName: 'Rhea pennata', priority: 'support' },
-  ñandú: { label: 'Ñandú', scientificName: 'Rhea pennata', priority: 'support' },
+  vicuna: { label: 'Vicuna', scientificName: 'Vicugna vicugna', priority: 'support' },
+  nandu: { label: 'Nandu', scientificName: 'Rhea pennata', priority: 'support' },
   chinchilla: { label: 'Chinchilla', scientificName: 'Chinchilla lanigera', priority: 'support' },
   vizcacha: { label: 'Vizcacha', scientificName: 'Lagidium viscacia', priority: 'support' },
 }
@@ -45,7 +42,7 @@ function normalizeSpeciesCode(value: string) {
 
 export function getSpeciesLocalization(value: string | null | undefined): SpeciesLocalization {
   const raw = String(value || '').trim()
-  if (!raw) return { label: 'Sin identificación' }
+  if (!raw) return { label: 'Sin identificacion' }
   return SPECIES_LOCALIZATION[normalizeSpeciesCode(raw)] || {
     label: raw.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase()),
   }
