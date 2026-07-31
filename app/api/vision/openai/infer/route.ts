@@ -9,7 +9,13 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
+const STORAGE_BUCKET = 'wildlife-evidence'
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
 
 const detectionSchema = z.object({
   species: z.enum([
@@ -113,6 +119,32 @@ async function resolveCamera(input: {
   return data.id as string
 }
 
+async function storeEvidence(input: {
+  userId: string
+  sha256: string
+  mimeType: string
+  image: Buffer
+}) {
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) return null
+
+  const storagePath = `${input.userId}/${input.sha256}.${EXTENSIONS[input.mimeType]}`
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(storagePath, input.image, {
+      contentType: input.mimeType,
+      upsert: true,
+      cacheControl: '3600',
+    })
+
+  if (error) {
+    console.error('Wildlife evidence upload failed:', error.message)
+    return null
+  }
+
+  return { bucket: STORAGE_BUCKET, path: storagePath }
+}
+
 async function persistJob(input: {
   userId: string
   organizationId: string | null
@@ -125,6 +157,8 @@ async function persistJob(input: {
   cameraId: string | null
   zoneLabel: string | null
   capturedAt: string | null
+  storageBucket: string | null
+  storagePath: string | null
   result?: unknown
   errorCode?: string
   errorMessage?: string
@@ -148,6 +182,8 @@ async function persistJob(input: {
       camera_id: input.cameraId,
       zone_label: input.zoneLabel,
       captured_at: input.capturedAt,
+      storage_bucket: input.storageBucket,
+      storage_path: input.storagePath,
       result_json: input.result ?? null,
       error_code: input.errorCode ?? null,
       error_message: input.errorMessage ?? null,
@@ -191,6 +227,7 @@ export async function POST(request: NextRequest) {
   const sha256 = createHash('sha256').update(image).digest('hex')
   const organizationId = auth.user.clientIds[0] ?? null
   const cameraId = await resolveCamera({ userId: auth.user.id, organizationId, code: cameraCode, name: cameraName, zoneLabel })
+  const evidence = await storeEvidence({ userId: auth.user.id, sha256, mimeType: contentType, image })
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -213,7 +250,12 @@ export async function POST(request: NextRequest) {
   const payload = await response.json() as OpenAiPayload
   if (!response.ok) {
     const message = payload.error?.message || `OpenAI returned ${response.status}`
-    const jobId = await persistJob({ userId: auth.user.id, organizationId, filename, mimeType: contentType, byteSize: image.length, sha256, model, status: 'failed', cameraId, zoneLabel, capturedAt, errorCode: 'openai_request_failed', errorMessage: message })
+    const jobId = await persistJob({
+      userId: auth.user.id, organizationId, filename, mimeType: contentType,
+      byteSize: image.length, sha256, model, status: 'failed', cameraId,
+      zoneLabel, capturedAt, storageBucket: evidence?.bucket || null,
+      storagePath: evidence?.path || null, errorCode: 'openai_request_failed', errorMessage: message,
+    })
     return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId }, { status: 502 })
   }
 
@@ -234,7 +276,12 @@ export async function POST(request: NextRequest) {
     operational_risks: analysis.operational_risks,
     limitations: [...analysis.limitations, 'OpenAI Vision entrega una predicción asistida que requiere validación humana.'],
   }
-  const jobId = await persistJob({ userId: auth.user.id, organizationId, filename, mimeType: contentType, byteSize: image.length, sha256, model, status: 'completed', cameraId, zoneLabel, capturedAt, result })
+  const jobId = await persistJob({
+    userId: auth.user.id, organizationId, filename, mimeType: contentType,
+    byteSize: image.length, sha256, model, status: 'completed', cameraId,
+    zoneLabel, capturedAt, storageBucket: evidence?.bucket || null,
+    storagePath: evidence?.path || null, result,
+  })
 
-  return NextResponse.json({ ok: true, job_id: jobId, provider: 'openai', model_version: model, camera_id: cameraId, zone_label: zoneLabel, captured_at: capturedAt, detections_count: detections.length, ...result, timestamp: new Date().toISOString() })
+  return NextResponse.json({ ok: true, job_id: jobId, provider: 'openai', model_version: model, camera_id: cameraId, zone_label: zoneLabel, captured_at: capturedAt, evidence_stored: Boolean(evidence), detections_count: detections.length, ...result, timestamp: new Date().toISOString() })
 }
