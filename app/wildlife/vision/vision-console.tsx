@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Camera, CheckCircle2, ImageIcon, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
 
 import { getConfidenceLevel, getSpeciesLocalization } from '@/lib/wildlife/species-localization'
+import { SpeciesTaxonomyPanel } from './species-taxonomy-panel'
 import {
   selectVisionProvider,
   visionProviderEndpoint,
@@ -315,6 +316,8 @@ export function VisionConsole() {
                                 <p className="text-[11px] uppercase tracking-[0.13em] text-white/30">Rasgos observados</p>
                                 <p className="mt-2 text-sm leading-6 text-white/60">{detection.description || 'Sin descripcion morfologica disponible.'}</p>
                               </div>
+
+                              <SpeciesTaxonomyPanel species={species} />
                             </div>
                           )
                         })}
