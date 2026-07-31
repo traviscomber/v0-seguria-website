@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Camera, MapPin, Minus, Plus, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Camera, MapPin, Minus, Plus, RefreshCw, ShieldAlert } from 'lucide-react'
 
 import { getSpeciesLocalization } from '@/lib/wildlife/species-localization'
 
@@ -19,7 +19,6 @@ type JobRecord = {
   result_json?: { detections?: Detection[] } | null
   wildlife_cameras?: { code?: string | null; name?: string | null; zone_label?: string | null } | null
 }
-
 type MapSighting = {
   id: string
   speciesCode: string
@@ -32,6 +31,7 @@ type MapSighting = {
 
 const CENTER = { latitude: -39.905, longitude: -71.913 }
 const VIEWPORT = { width: 960, height: 560 }
+const CONSERVATION_CENTER = { latitude: -39.9378, longitude: -71.9037 }
 
 const LANDMARKS = [
   { name: 'Hotel Nothofagus', latitude: -39.86924, longitude: -71.91447 },
@@ -65,7 +65,7 @@ function latitudeToWorldY(latitude: number, zoom: number) {
 }
 
 export function CartographicBaseMap() {
-  const [layerId, setLayerId] = useState<LayerId>('osm')
+  const [layerId, setLayerId] = useState<LayerId>('satellite')
   const [zoom, setZoom] = useState(12)
   const [cameras, setCameras] = useState<CameraRecord[]>([])
   const [jobs, setJobs] = useState<JobRecord[]>([])
@@ -157,6 +157,7 @@ export function CartographicBaseMap() {
     const position = projection.point(point.latitude, point.longitude)
     return `${position.x},${position.y}`
   }).join(' ')
+  const conservationPosition = projection.point(CONSERVATION_CENTER.latitude, CONSERVATION_CENTER.longitude)
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1d2c]">
@@ -164,21 +165,21 @@ export function CartographicBaseMap() {
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8fc8ea]">Cartografia territorial</p>
           <h2 className="mt-1 text-2xl font-medium text-white">Mapa operativo de Huilo Huilo</h2>
-          <p className="mt-1 text-sm text-white/45">Camaras, avistamientos y zona referencial del Centro de Conservacion del Huemul del Sur.</p>
+          <p className="mt-1 text-sm text-white/60">Camaras, avistamientos y zona referencial del Centro de Conservacion del Huemul del Sur.</p>
         </div>
-        <button type="button" onClick={() => void loadData()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/70 hover:bg-white/[0.04] disabled:opacity-40">
+        <button type="button" onClick={() => void loadData()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/12 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68b4e3]/60 disabled:opacity-40">
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Actualizar
         </button>
       </div>
 
       <div className="grid gap-3 border-b border-white/10 p-5 sm:grid-cols-2 sm:p-6">
-        <label className="text-sm text-white/50"><span className="mb-2 block">Especie</span><select value={speciesFilter} onChange={(event) => setSpeciesFilter(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#071622] px-4 py-3 text-white outline-none"><option value="all">Todas las especies</option>{speciesOptions.map((code) => <option key={code} value={code}>{getSpeciesLocalization(code).label}</option>)}</select></label>
-        <label className="text-sm text-white/50"><span className="mb-2 block">Sector</span><select value={zoneFilter} onChange={(event) => setZoneFilter(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#071622] px-4 py-3 text-white outline-none"><option value="all">Todos los sectores</option>{zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label>
+        <label className="text-sm text-white/65"><span className="mb-2 block">Especie</span><select value={speciesFilter} onChange={(event) => setSpeciesFilter(event.target.value)} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todas las especies</option>{speciesOptions.map((code) => <option key={code} value={code}>{getSpeciesLocalization(code).label}</option>)}</select></label>
+        <label className="text-sm text-white/65"><span className="mb-2 block">Sector</span><select value={zoneFilter} onChange={(event) => setZoneFilter(event.target.value)} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todos los sectores</option>{zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label>
       </div>
 
-      {error && <p className="m-5 rounded-xl border border-red-300/15 bg-red-300/[0.04] p-4 text-sm text-red-100/80 sm:m-6">{error}</p>}
+      {error && <p className="m-5 rounded-xl border border-red-300/15 bg-red-300/[0.04] p-4 text-sm text-red-100/85 sm:m-6">{error}</p>}
 
-      <div className="relative min-h-[560px] overflow-hidden bg-[#071622]">
+      <div className="relative min-h-[620px] overflow-hidden bg-[#071622] sm:min-h-[560px]">
         <div className="absolute left-1/2 top-1/2 h-[560px] w-[960px] -translate-x-1/2 -translate-y-1/2 overflow-hidden">
           {tiles.map((tile) => <img key={`${layerId}-${zoom}-${tile.x}-${tile.y}`} src={layer.tileUrl(zoom, tile.x, tile.y)} alt="" draggable={false} className="absolute h-64 w-64 select-none" style={{ left: tile.left, top: tile.top }} />)}
 
@@ -186,27 +187,46 @@ export function CartographicBaseMap() {
             <polygon points={polygonPoints} fill="rgba(245,158,11,.18)" stroke="rgba(251,191,36,.98)" strokeWidth="3" strokeDasharray="9 6" />
           </svg>
 
+          <div className="group absolute -translate-x-1/2 -translate-y-1/2" style={{ left: conservationPosition.x, top: conservationPosition.y }}>
+            <button type="button" aria-label="Informacion del Centro de Conservacion del Huemul del Sur" className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-amber-300 bg-[#071622]/95 text-amber-200 shadow-xl transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70">
+              <ShieldAlert className="h-4 w-4" />
+            </button>
+            <div className="pointer-events-none absolute bottom-12 left-1/2 z-40 hidden w-64 -translate-x-1/2 rounded-xl border border-amber-300/25 bg-[#071622]/98 p-3 text-xs shadow-2xl group-hover:block group-focus-within:block">
+              <p className="font-medium text-amber-100">Centro de Conservacion del Huemul del Sur</p>
+              <p className="mt-1 leading-5 text-white/70">Zona sensible referencial en el entorno de Pampa Pilmaiquen. No representa limite legal ni recinto exacto.</p>
+            </div>
+          </div>
+
           {LANDMARKS.map((landmark) => {
             const position = projection.point(landmark.latitude, landmark.longitude)
-            return <div key={landmark.name} className="group absolute -translate-x-1/2 -translate-y-full" style={{ left: position.x, top: position.y }}><div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-[#0b1d2c] shadow-lg"><MapPin className="h-3.5 w-3.5 text-white/80" /></div><div className="pointer-events-none absolute left-1/2 top-9 z-30 hidden w-max max-w-52 -translate-x-1/2 rounded-lg border border-white/10 bg-[#071622] px-3 py-2 text-xs text-white/75 shadow-2xl group-hover:block">{landmark.name}</div></div>
+            return <div key={landmark.name} className="group absolute -translate-x-1/2 -translate-y-full" style={{ left: position.x, top: position.y }}><div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-[#0b1d2c] shadow-lg"><MapPin className="h-3.5 w-3.5 text-white/85" /></div><div className="pointer-events-none absolute left-1/2 top-9 z-30 hidden w-max max-w-52 -translate-x-1/2 rounded-lg border border-white/12 bg-[#071622] px-3 py-2 text-xs text-white/85 shadow-2xl group-hover:block">{landmark.name}</div></div>
           })}
 
           {mappedCameras.map((camera) => {
             const position = projection.point(camera.latitude as number, camera.longitude as number)
             const cameraSightings = filteredSightings.filter((item) => item.camera?.id === camera.id)
             const dimmed = filteredSightings.length > 0 && !visibleCameraIds.has(camera.id)
-            return <div key={camera.id} className={`group absolute -translate-x-1/2 -translate-y-1/2 ${dimmed ? 'opacity-30' : ''}`} style={{ left: position.x, top: position.y }}><div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#9bd3f3] bg-[#071622] shadow-xl"><Camera className="h-4 w-4 text-[#9bd3f3]" /></div>{cameraSightings.length > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{cameraSightings.length}</span>}<div className="pointer-events-none absolute left-1/2 top-12 z-30 hidden w-64 -translate-x-1/2 rounded-xl border border-white/10 bg-[#071622] p-3 text-xs shadow-2xl group-hover:block"><p className="font-medium text-white">{camera.code} · {camera.name}</p><p className="mt-1 text-white/45">{camera.zone_label || 'Sin sector'}</p><p className="mt-2 text-[#9bd3f3]">{cameraSightings.length} avistamientos filtrados</p>{cameraSightings.slice(0, 3).map((item) => <p key={item.id} className="mt-1 text-white/55">{item.speciesLabel}{typeof item.confidence === 'number' ? ` · ${Math.round(item.confidence * 100)}%` : ''}</p>)}</div></div>
+            return <div key={camera.id} className={`group absolute -translate-x-1/2 -translate-y-1/2 ${dimmed ? 'opacity-30' : ''}`} style={{ left: position.x, top: position.y }}><div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#9bd3f3] bg-[#071622] shadow-xl"><Camera className="h-4 w-4 text-[#9bd3f3]" /></div>{cameraSightings.length > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{cameraSightings.length}</span>}<div className="pointer-events-none absolute left-1/2 top-12 z-30 hidden w-64 -translate-x-1/2 rounded-xl border border-white/12 bg-[#071622] p-3 text-xs shadow-2xl group-hover:block"><p className="font-medium text-white">{camera.code} · {camera.name}</p><p className="mt-1 text-white/60">{camera.zone_label || 'Sin sector'}</p><p className="mt-2 text-[#9bd3f3]">{cameraSightings.length} avistamientos filtrados</p>{cameraSightings.slice(0, 3).map((item) => <p key={item.id} className="mt-1 text-white/70">{item.speciesLabel}{typeof item.confidence === 'number' ? ` · ${Math.round(item.confidence * 100)}%` : ''}</p>)}</div></div>
           })}
         </div>
 
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-[#071622]/92 p-2 shadow-xl backdrop-blur">{(Object.keys(LAYERS) as LayerId[]).map((id) => <button key={id} type="button" onClick={() => setLayerId(id)} className={`rounded-lg px-3 py-2 text-xs transition ${layerId === id ? 'bg-[#68b4e3] text-[#06131d]' : 'text-white/65 hover:bg-white/[0.06]'}`}>{LAYERS[id].label}</button>)}</div>
+        <div className="absolute left-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1.5 rounded-xl border border-white/12 bg-[#071622]/94 p-1.5 shadow-xl backdrop-blur sm:left-4 sm:top-4 sm:gap-2 sm:p-2">
+          {(Object.keys(LAYERS) as LayerId[]).map((id) => <button key={id} type="button" aria-pressed={layerId === id} onClick={() => setLayerId(id)} className={`rounded-lg px-3 py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9bd3f3]/70 ${layerId === id ? 'bg-[#8cccef] text-[#04131d] shadow-md ring-1 ring-white/50' : 'text-white/75 hover:bg-white/[0.08]'}`}>{LAYERS[id].label}</button>)}
+        </div>
 
-        <div className="absolute bottom-8 right-4 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[#071622]/92 shadow-xl backdrop-blur"><button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/70 hover:bg-white/[0.06]"><Plus className="h-4 w-4" /></button><button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/10 p-3 text-white/70 hover:bg-white/[0.06]"><Minus className="h-4 w-4" /></button></div>
+        <div className="absolute right-3 top-16 max-w-[210px] rounded-xl border border-amber-300/25 bg-[#071622]/95 px-3 py-2 text-[11px] text-amber-100 shadow-xl backdrop-blur sm:right-4 sm:top-4 sm:max-w-56">
+          <p className="font-medium">Zona sensible referencial</p>
+          <p className="mt-1 leading-4 text-white/65">Centro de Conservacion del Huemul del Sur.</p>
+        </div>
 
-        <div className="absolute right-4 top-4 max-w-72 rounded-xl border border-amber-300/20 bg-[#071622]/92 px-3 py-2 text-xs text-amber-100 backdrop-blur"><p className="font-medium">Centro de Conservacion del Huemul del Sur</p><p className="mt-1 text-[11px] text-white/45">Zona referencial. No representa limite legal ni recinto exacto.</p></div>
+        <div className="absolute bottom-24 right-3 flex flex-col overflow-hidden rounded-xl border border-white/12 bg-[#071622]/94 shadow-xl backdrop-blur sm:bottom-8 sm:right-4"><button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/80 hover:bg-white/[0.07]"><Plus className="h-4 w-4" /></button><button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><Minus className="h-4 w-4" /></button></div>
 
-        <div className="absolute bottom-4 left-4 w-[min(320px,calc(100%-6rem))] rounded-xl border border-white/10 bg-[#071622]/94 p-3 shadow-xl backdrop-blur"><div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white">Leyenda y estado</p><span className="text-[11px] text-white/40">{filteredSightings.length} avistamientos</span></div><div className="mt-2 grid gap-1.5 text-[11px] text-white/55"><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#9bd3f3]" />Camara georreferenciada</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400/70" />Zona sensible referencial</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-300" />Avistamientos vinculados</p></div>{pendingSightings.length > 0 && <div className="mt-3 border-t border-white/10 pt-2"><div className="flex items-center gap-1.5 text-[11px] text-amber-100"><AlertTriangle className="h-3.5 w-3.5" />{pendingSightings.length} ubicaciones pendientes</div><p className="mt-1 line-clamp-2 text-[10px] text-white/38">{pendingSightings.slice(0, 3).map((item) => item.speciesLabel).join(' · ')}</p></div>}</div>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded bg-black/65 px-2 py-1 text-[10px] text-white/65">{layer.attribution}</div>
+        <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/12 bg-[#071622]/96 p-3 shadow-xl backdrop-blur sm:bottom-4 sm:left-4 sm:right-auto sm:w-[320px]">
+          <div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white">Leyenda y estado</p><span className="text-[11px] text-white/60">{filteredSightings.length} avistamientos</span></div>
+          <div className="mt-2 grid gap-1.5 text-[11px] text-white/75"><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#9bd3f3]" />Camara georreferenciada</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400/80" />Zona sensible referencial</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-300" />Avistamientos vinculados</p></div>
+          {pendingSightings.length > 0 && <div className="mt-3 border-t border-white/12 pt-2"><div className="flex items-center gap-1.5 text-[11px] text-amber-100"><AlertTriangle className="h-3.5 w-3.5" />{pendingSightings.length} ubicaciones pendientes</div><p className="mt-1 line-clamp-2 text-[10px] text-white/60">{pendingSightings.slice(0, 3).map((item) => item.speciesLabel).join(' · ')}</p></div>}
+        </div>
+        <div className="absolute bottom-2 left-1/2 hidden -translate-x-1/2 rounded bg-black/70 px-2 py-1 text-[10px] text-white/75 sm:block">{layer.attribution}</div>
       </div>
     </section>
   )
