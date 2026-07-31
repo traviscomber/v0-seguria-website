@@ -5,6 +5,7 @@ import { ArrowLeft, Eye } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
 import { PilotEvaluation } from './pilot-evaluation'
+import { TerritorialActivity } from './territorial-activity'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
 import { VisionMetrics } from './vision-metrics'
@@ -27,7 +28,7 @@ export default async function WildlifeVisionPage() {
             </div>
             <h1 className="mt-3 text-4xl font-light tracking-tight">SegurIA Vision</h1>
             <p className="mt-3 max-w-2xl text-white/60">
-              Análisis asistido de cámaras trampa, procesamiento por lote y validación humana trazable.
+              Analisis asistido de camaras trampa, procesamiento por lote y validacion humana trazable.
             </p>
           </div>
           <Link
@@ -35,7 +36,7 @@ export default async function WildlifeVisionPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Cola de revisión de dataset
+            Cola de revision de dataset
           </Link>
         </div>
 
@@ -43,6 +44,7 @@ export default async function WildlifeVisionPage() {
           <VisionMetrics />
           <CameraRegistry />
           <VisionConsole />
+          <TerritorialActivity />
           <VisionJobHistory />
           <PilotEvaluation />
         </div>
