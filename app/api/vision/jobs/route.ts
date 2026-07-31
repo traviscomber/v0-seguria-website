@@ -18,6 +18,10 @@ const reviewSchema = z.object({
 
 const REVIEW_STATUSES = ['pending', 'confirmed', 'corrected', 'rejected', 'unidentifiable'] as const
 
+function validDate(value: string | null) {
+  return value && !Number.isNaN(Date.parse(value)) ? new Date(value).toISOString() : null
+}
+
 export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
@@ -49,6 +53,12 @@ export async function GET(request: NextRequest) {
 
   const cameraId = request.nextUrl.searchParams.get('camera_id')
   if (cameraId && z.string().uuid().safeParse(cameraId).success) query = query.eq('camera_id', cameraId)
+
+  const capturedFrom = validDate(request.nextUrl.searchParams.get('captured_from'))
+  if (capturedFrom) query = query.gte('captured_at', capturedFrom)
+
+  const capturedTo = validDate(request.nextUrl.searchParams.get('captured_to'))
+  if (capturedTo) query = query.lte('captured_at', capturedTo)
 
   const { data, error } = await query
   if (error) {
