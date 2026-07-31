@@ -1,9 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { MapPin, Minus, Plus } from 'lucide-react'
 
 type LayerId = 'osm' | 'topo' | 'satellite'
+type Point = { name: string; latitude: number; longitude: number }
 
 type Layer = {
   label: string
@@ -11,8 +12,28 @@ type Layer = {
   tileUrl: (zoom: number, x: number, y: number) => string
 }
 
-const CENTER = { latitude: -40.0301, longitude: -71.9528 }
+const CENTER = { latitude: -39.8665, longitude: -71.9185 }
 const VIEWPORT = { width: 960, height: 520 }
+
+const LANDMARKS: Point[] = [
+  { name: 'Hotel Nothofagus', latitude: -39.86924, longitude: -71.91447 },
+  { name: 'Montana Magica', latitude: -39.86939, longitude: -71.91515 },
+  { name: 'Salto de la Leona', latitude: -39.86968, longitude: -71.9186 },
+  { name: 'Museo de los Volcanes', latitude: -39.86139, longitude: -71.90568 },
+  { name: 'Salto Huilo Huilo', latitude: -39.85332, longitude: -71.95414 },
+]
+
+const OPERATIONAL_POLYGON = [
+  { latitude: -39.8485, longitude: -71.9605 },
+  { latitude: -39.8482, longitude: -71.9480 },
+  { latitude: -39.8555, longitude: -71.9360 },
+  { latitude: -39.8570, longitude: -71.9010 },
+  { latitude: -39.8660, longitude: -71.8975 },
+  { latitude: -39.8750, longitude: -71.9040 },
+  { latitude: -39.8780, longitude: -71.9195 },
+  { latitude: -39.8725, longitude: -71.9380 },
+  { latitude: -39.8630, longitude: -71.9595 },
+]
 
 const LAYERS: Record<LayerId, Layer> = {
   osm: {
@@ -43,16 +64,31 @@ function latitudeToWorldY(latitude: number, zoom: number) {
 
 export function CartographicBaseMap() {
   const [layerId, setLayerId] = useState<LayerId>('osm')
-  const [zoom, setZoom] = useState(10)
+  const [zoom, setZoom] = useState(13)
   const layer = LAYERS[layerId]
 
-  const tiles = useMemo(() => {
+  const projection = useMemo(() => {
     const centerX = longitudeToWorldX(CENTER.longitude, zoom)
     const centerY = latitudeToWorldY(CENTER.latitude, zoom)
-    const startX = Math.floor((centerX - VIEWPORT.width / 2) / 256)
-    const startY = Math.floor((centerY - VIEWPORT.height / 2) / 256)
-    const endX = Math.floor((centerX + VIEWPORT.width / 2) / 256)
-    const endY = Math.floor((centerY + VIEWPORT.height / 2) / 256)
+    const leftWorld = centerX - VIEWPORT.width / 2
+    const topWorld = centerY - VIEWPORT.height / 2
+    return {
+      centerX,
+      centerY,
+      leftWorld,
+      topWorld,
+      point: (latitude: number, longitude: number) => ({
+        x: longitudeToWorldX(longitude, zoom) - leftWorld,
+        y: latitudeToWorldY(latitude, zoom) - topWorld,
+      }),
+    }
+  }, [zoom])
+
+  const tiles = useMemo(() => {
+    const startX = Math.floor(projection.leftWorld / 256)
+    const startY = Math.floor(projection.topWorld / 256)
+    const endX = Math.floor((projection.leftWorld + VIEWPORT.width) / 256)
+    const endY = Math.floor((projection.topWorld + VIEWPORT.height) / 256)
     const result: Array<{ x: number; y: number; left: number; top: number }> = []
 
     for (let x = startX; x <= endX; x += 1) {
@@ -60,21 +96,28 @@ export function CartographicBaseMap() {
         result.push({
           x,
           y,
-          left: x * 256 - (centerX - VIEWPORT.width / 2),
-          top: y * 256 - (centerY - VIEWPORT.height / 2),
+          left: x * 256 - projection.leftWorld,
+          top: y * 256 - projection.topWorld,
         })
       }
     }
 
     return result
-  }, [zoom])
+  }, [projection.leftWorld, projection.topWorld])
+
+  const polygonPoints = OPERATIONAL_POLYGON
+    .map((point) => {
+      const position = projection.point(point.latitude, point.longitude)
+      return `${position.x},${position.y}`
+    })
+    .join(' ')
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1d2c]">
       <div className="border-b border-white/10 px-5 py-5 sm:px-6">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8fc8ea]">Cartografia territorial</p>
         <h2 className="mt-1 text-2xl font-medium text-white">Mapa real de Huilo Huilo</h2>
-        <p className="mt-1 text-sm text-white/45">Capas cartograficas base centradas en la reserva.</p>
+        <p className="mt-1 text-sm text-white/45">Capas cartograficas y nucleo operativo formado por hoteles, pasarelas, portales y atractivos cercanos.</p>
       </div>
 
       <div className="relative min-h-[520px] overflow-hidden bg-[#071622]">
@@ -90,6 +133,30 @@ export function CartographicBaseMap() {
               style={{ left: tile.left, top: tile.top }}
             />
           ))}
+
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWPORT.width} ${VIEWPORT.height}`} preserveAspectRatio="none">
+            <polygon
+              points={polygonPoints}
+              fill="rgba(16, 185, 129, 0.18)"
+              stroke="rgba(110, 231, 183, 0.98)"
+              strokeWidth="3"
+              strokeDasharray="9 6"
+            />
+          </svg>
+
+          {LANDMARKS.map((landmark) => {
+            const position = projection.point(landmark.latitude, landmark.longitude)
+            return (
+              <div key={landmark.name} className="group absolute -translate-x-1/2 -translate-y-full" style={{ left: position.x, top: position.y }}>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#0b1d2c] shadow-xl">
+                  <MapPin className="h-4 w-4 text-[#9bd3f3]" />
+                </div>
+                <div className="pointer-events-none absolute left-1/2 top-10 z-20 hidden w-max max-w-52 -translate-x-1/2 rounded-lg border border-white/10 bg-[#071622] px-3 py-2 text-xs text-white/75 shadow-2xl group-hover:block">
+                  {landmark.name}
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         <div className="absolute left-4 top-4 flex gap-2 rounded-xl border border-white/10 bg-[#071622]/90 p-2 shadow-xl backdrop-blur">
@@ -107,11 +174,13 @@ export function CartographicBaseMap() {
 
         <div className="absolute bottom-8 right-4 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[#071622]/90 shadow-xl backdrop-blur">
           <button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/70 hover:bg-white/[0.06]"><Plus className="h-4 w-4" /></button>
-          <button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(7, value - 1))} className="border-t border-white/10 p-3 text-white/70 hover:bg-white/[0.06]"><Minus className="h-4 w-4" /></button>
+          <button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/10 p-3 text-white/70 hover:bg-white/[0.06]"><Minus className="h-4 w-4" /></button>
         </div>
 
         <div className="absolute bottom-2 left-3 rounded bg-black/65 px-2 py-1 text-[10px] text-white/65">{layer.attribution}</div>
-        <div className="absolute right-4 top-4 rounded-xl border border-white/10 bg-[#071622]/90 px-3 py-2 text-xs text-white/60 backdrop-blur">Centro referencial Huilo Huilo</div>
+        <div className="absolute right-4 top-4 max-w-64 rounded-xl border border-emerald-300/20 bg-[#071622]/90 px-3 py-2 text-xs text-emerald-100 backdrop-blur">
+          Nucleo operativo referencial. No representa el limite legal de la reserva.
+        </div>
       </div>
     </section>
   )
