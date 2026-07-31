@@ -10,8 +10,8 @@ export const maxDuration = 60
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024
 const STORAGE_BUCKET = 'wildlife-evidence'
-const PROMPT_VERSION = 'seguria-vision-v2-es'
-const PIPELINE_VERSION = 'vision-pipeline-v3'
+const PROMPT_VERSION = 'seguria-vision-v3-es-fox'
+const PIPELINE_VERSION = 'vision-pipeline-v4'
 const MAX_RETRIES = 2
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
@@ -43,32 +43,106 @@ const analysisSchema = z.object({
   limitations: z.array(z.string().max(300)).max(10),
 })
 
+type DetectionSpecies = z.infer<typeof detectionSchema>['species']
 type OpenAiPayload = {
   choices?: Array<{ message?: { content?: string } }>
   error?: { message?: string }
 }
 
-const speciesAliases: Record<string, z.infer<typeof detectionSchema>['species']> = {
-  cougar: 'puma', 'mountain lion': 'puma', 'andean deer': 'huemul',
-  'south andean deer': 'huemul', 'dwarf deer': 'pudu', vicuna: 'vicuña',
-  nandu: 'ñandú', rhea: 'ñandú', 'culpeo fox': 'culpeo', 'andean fox': 'culpeo',
-  chilla: 'zorro_chilla', 'zorro chilla': 'zorro_chilla', 'zorro gris': 'zorro_gris_chileno',
-  wildcat: 'gato_montés', nutria: 'coipu', cow: 'livestock', cattle: 'livestock',
-  horse: 'livestock', sheep: 'livestock', goat: 'livestock', pig: 'livestock',
-  llama: 'livestock', alpaca: 'livestock', donkey: 'livestock', leopard: 'unknown_animal',
-  jaguar: 'unknown_animal', bear: 'unknown_animal', wolf: 'unknown_animal',
+const speciesAliases: Record<string, DetectionSpecies> = {
+  cougar: 'puma',
+  'mountain lion': 'puma',
+  'andean deer': 'huemul',
+  'south andean deer': 'huemul',
+  'dwarf deer': 'pudu',
+  vicuna: 'vicuña',
+  nandu: 'ñandú',
+  rhea: 'ñandú',
+  fox: 'fox',
+  zorro: 'fox',
+  'chilean fox': 'fox',
+  'zorro chileno': 'fox',
+  'south american fox': 'fox',
+  culpeo: 'culpeo',
+  'culpeo fox': 'culpeo',
+  'andean fox': 'culpeo',
+  'andean zorro': 'culpeo',
+  'zorro culpeo': 'culpeo',
+  'zorro colorado': 'culpeo',
+  'lycalopex culpaeus': 'culpeo',
+  chilla: 'zorro_chilla',
+  'zorro chilla': 'zorro_chilla',
+  'chilla fox': 'zorro_chilla',
+  'south american grey fox': 'zorro_chilla',
+  'south american gray fox': 'zorro_chilla',
+  'lycalopex griseus': 'zorro_chilla',
+  'zorro gris': 'zorro_gris_chileno',
+  'zorro gris chileno': 'zorro_gris_chileno',
+  'chilean grey fox': 'zorro_gris_chileno',
+  'chilean gray fox': 'zorro_gris_chileno',
+  'patagonian fox': 'zorro_gris_chileno',
+  wildcat: 'gato_montés',
+  nutria: 'coipu',
+  cow: 'livestock',
+  cattle: 'livestock',
+  horse: 'livestock',
+  sheep: 'livestock',
+  goat: 'livestock',
+  pig: 'livestock',
+  llama: 'livestock',
+  alpaca: 'livestock',
+  donkey: 'livestock',
+  leopard: 'unknown_animal',
+  jaguar: 'unknown_animal',
+  bear: 'unknown_animal',
+  wolf: 'unknown_animal',
+}
+
+function normalizeTaxonText(value: unknown) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/[^a-z0-9ñáéíóúü\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function resolveFoxSpecies(text: string): DetectionSpecies | null {
+  const normalized = normalizeTaxonText(text)
+  if (!normalized) return null
+  if (/\b(culpeo|zorro colorado|andean fox|andean zorro|lycalopex culpaeus)\b/.test(normalized)) return 'culpeo'
+  if (/\b(chilla|lycalopex griseus|south american gr[ae]y fox)\b/.test(normalized)) return 'zorro_chilla'
+  if (/\b(zorro gris|chilean gr[ae]y fox|patagonian fox)\b/.test(normalized)) return 'zorro_gris_chileno'
+  if (/\b(zorro|fox)\b/.test(normalized)) return 'fox'
+  return null
+}
+
+function resolveSpecies(rawSpecies: unknown, context: string): DetectionSpecies {
+  const normalizedSpecies = normalizeTaxonText(rawSpecies)
+  const direct = speciesAliases[normalizedSpecies]
+  if (direct) return direct
+
+  const foxFromContext = resolveFoxSpecies(`${normalizedSpecies} ${context}`)
+  if (foxFromContext) return foxFromContext
+
+  const parsed = detectionSchema.shape.species.safeParse(normalizedSpecies.replace(/ /g, '_'))
+  return parsed.success ? parsed.data : 'unknown_animal'
 }
 
 function normalizeAnalysis(outputText: string) {
   const raw = JSON.parse(outputText) as Record<string, unknown>
   const detections = Array.isArray(raw.detections) ? raw.detections : []
+  const sceneSummary = String(raw.scene_summary || '')
+
   raw.detections = detections
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
     .map((item) => {
-      const rawSpecies = String(item.species || 'unknown_animal').toLowerCase().trim()
+      const description = String(item.description || '').slice(0, 300)
       const box = item.box && typeof item.box === 'object' ? item.box as Record<string, unknown> : {}
       return {
-        species: speciesAliases[rawSpecies] ?? rawSpecies,
+        species: resolveSpecies(item.species, `${description} ${sceneSummary}`),
         confidence: typeof item.confidence === 'number' ? Math.min(1, Math.max(0, item.confidence)) : 0.5,
         box: {
           x1: Math.min(1, Math.max(0, Number(box.x1) || 0)),
@@ -76,9 +150,11 @@ function normalizeAnalysis(outputText: string) {
           x2: Math.min(1, Math.max(0, Number(box.x2) || 1)),
           y2: Math.min(1, Math.max(0, Number(box.y2) || 1)),
         },
-        description: String(item.description || '').slice(0, 300),
+        description,
       }
     })
+
+  raw.scene_summary = sceneSummary.slice(0, 800)
   raw.operational_risks = Array.isArray(raw.operational_risks)
     ? raw.operational_risks
     : typeof raw.operational_risks === 'string' ? [raw.operational_risks] : []
@@ -307,12 +383,26 @@ export async function POST(request: NextRequest) {
     messages: [
       {
         role: 'system',
-        content: 'Eres SegurIA Vision, un sistema experto en fauna chilena y cámaras trampa. Identifica únicamente fauna, personas, vehículos y ganado realmente visibles. Usa los identificadores de especie permitidos. Devuelve JSON válido con detections, scene_summary, operational_risks y limitations. Todos los textos descriptivos deben estar escritos en español de Chile. No inventes objetos ocultos y usa unknown_animal cuando no exista certeza suficiente.',
+        content: `Eres SegurIA Vision, un sistema experto en fauna chilena y cámaras trampa.
+Identifica únicamente fauna, personas, vehículos y ganado realmente visibles.
+Devuelve JSON válido con detections, scene_summary, operational_risks y limitations.
+Todos los textos descriptivos deben estar escritos exclusivamente en español de Chile.
+
+Usa únicamente estos identificadores de especie: person, vehicle, cat, dog, puma, huemul, pudu, guanaco, vicuña, ñandú, fox, culpeo, zorro_chilla, zorro_gris_chileno, gato_montés, coipu, chinchilla, vizcacha, livestock, unknown_animal.
+
+Reglas especiales para zorros chilenos:
+- culpeo: zorro culpeo, zorro colorado, Lycalopex culpaeus; suele ser más grande y robusto, con tonos rojizos.
+- zorro_chilla: zorro chilla, Lycalopex griseus; generalmente más pequeño, grisáceo, con patas más finas.
+- zorro_gris_chileno: usa este identificador solo cuando la evidencia visual o el contexto indiquen explícitamente zorro gris chileno/patagónico.
+- fox: úsalo cuando sea claramente un zorro, pero no exista evidencia suficiente para asignar una de las especies anteriores.
+- Nunca devuelvas unknown_animal si el sujeto es claramente un zorro.
+
+No inventes objetos ocultos. La confianza debe reflejar la certeza visual y no debe reducirse a 0.5 solo por no distinguir la especie exacta de zorro.`,
       },
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Analiza esta imagen de cámara trampa. Para cada sujeto visible devuelve especie, confianza, bounding box normalizado y una descripción breve en español. Resume la escena, riesgos y limitaciones también en español.' },
+          { type: 'text', text: 'Analiza esta imagen de cámara trampa. Para cada sujeto visible devuelve especie, confianza, bounding box normalizado y una descripción breve en español. Resume la escena, riesgos y limitaciones también en español. Si observas un zorro, clasifícalo al menos como fox aunque no puedas distinguir con seguridad culpeo, chilla o zorro gris chileno.' },
           { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
         ],
       },
