@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Camera, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
 
 import {
@@ -41,6 +41,14 @@ type ProviderResponse = {
   }
 }
 
+type CameraRecord = {
+  id: string
+  code: string
+  name: string
+  zone_label?: string | null
+  active: boolean
+}
+
 type BatchResult = {
   filename: string
   state: 'processing' | 'completed' | 'failed'
@@ -55,25 +63,47 @@ type CaptureMetadata = {
 }
 
 const MAX_BATCH_SIZE = 20
+const MANUAL_CAMERA = '__manual__'
 
 export function VisionConsole() {
   const [health, setHealth] = useState<VisionResponse | null>(null)
   const [ready, setReady] = useState<VisionResponse | null>(null)
   const [providers, setProviders] = useState<ProviderResponse | null>(null)
+  const [cameras, setCameras] = useState<CameraRecord[]>([])
+  const [selectedCameraId, setSelectedCameraId] = useState('')
   const [results, setResults] = useState<BatchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [cameraLoadError, setCameraLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     void Promise.all([
       fetch('/api/vision/health', { cache: 'no-store' }),
       fetch('/api/vision/ready', { cache: 'no-store' }),
       fetch('/api/vision/providers', { cache: 'no-store' }),
-    ]).then(async ([healthResponse, readyResponse, providerResponse]) => {
+      fetch('/api/vision/cameras', { cache: 'no-store' }),
+    ]).then(async ([healthResponse, readyResponse, providerResponse, cameraResponse]) => {
       setHealth(await healthResponse.json())
       setReady(await readyResponse.json())
       setProviders(await providerResponse.json())
+
+      const cameraPayload = await cameraResponse.json()
+      if (cameraResponse.ok && cameraPayload.success) {
+        const activeCameras = (cameraPayload.data as CameraRecord[]).filter((camera) => camera.active)
+        setCameras(activeCameras)
+        if (activeCameras.length === 1) setSelectedCameraId(activeCameras[0].id)
+      } else {
+        setCameraLoadError(cameraPayload.error || 'No fue posible cargar las cámaras registradas.')
+      }
+    }).catch(() => {
+      setCameraLoadError('No fue posible cargar las cámaras registradas.')
     })
   }, [])
+
+  const selectedCamera = useMemo(
+    () => cameras.find((camera) => camera.id === selectedCameraId) || null,
+    [cameras, selectedCameraId],
+  )
+  const manualMode = selectedCameraId === MANUAL_CAMERA
 
   const isOnnxReady = ready?.ok === true
   const isOpenAiReady = providers?.providers?.openai?.ready === true
@@ -126,20 +156,25 @@ export function VisionConsole() {
     const files = formData.getAll('images').filter((item): item is File => item instanceof File && item.size > 0)
     if (!files.length || !selectedEndpoint) return
 
-    const metadata: CaptureMetadata = {
-      cameraCode: String(formData.get('cameraCode') || '').trim(),
-      cameraName: String(formData.get('cameraName') || '').trim(),
-      zoneLabel: String(formData.get('zoneLabel') || '').trim(),
-      capturedAt: String(formData.get('capturedAt') || '').trim(),
-    }
+    const metadata: CaptureMetadata = selectedCamera
+      ? {
+          cameraCode: selectedCamera.code,
+          cameraName: selectedCamera.name,
+          zoneLabel: selectedCamera.zone_label || '',
+          capturedAt: String(formData.get('capturedAt') || '').trim(),
+        }
+      : {
+          cameraCode: String(formData.get('cameraCode') || '').trim(),
+          cameraName: String(formData.get('cameraName') || '').trim(),
+          zoneLabel: String(formData.get('zoneLabel') || '').trim(),
+          capturedAt: String(formData.get('capturedAt') || '').trim(),
+        }
+
     const selectedFiles = files.slice(0, MAX_BATCH_SIZE)
     setLoading(true)
     setResults(selectedFiles.map((file) => ({ filename: file.name, state: 'processing' })))
 
-    for (const file of selectedFiles) {
-      await analyzeFile(file, metadata)
-    }
-
+    for (const file of selectedFiles) await analyzeFile(file, metadata)
     setLoading(false)
   }
 
@@ -167,31 +202,60 @@ export function VisionConsole() {
           <Upload className="h-5 w-5 text-[#9DD2F2]" />
           <div>
             <h2 className="text-xl font-light text-white">Carga por lote</h2>
-            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes. Los metadatos se aplican al lote completo.</p>
+            <p className="text-sm text-white/55">Hasta {MAX_BATCH_SIZE} imágenes. La cámara y fecha se aplican al lote completo.</p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        {cameraLoadError && (
+          <p className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-sm text-amber-100/80">{cameraLoadError}</p>
+        )}
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm text-white/60">
-            <span>Código de cámara</span>
-            <input name="cameraCode" maxLength={80} placeholder="CAM-HH-001" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
-          </label>
-          <label className="space-y-1 text-sm text-white/60">
-            <span>Nombre de cámara</span>
-            <input name="cameraName" maxLength={160} placeholder="Sendero norte" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
-          </label>
-          <label className="space-y-1 text-sm text-white/60">
-            <span>Zona</span>
-            <div className="relative">
-              <MapPin className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-white/30" />
-              <input name="zoneLabel" maxLength={160} placeholder="Reserva norte" className="w-full rounded-lg border border-white/10 bg-[#081827] py-3 pl-10 pr-3 text-white outline-none" />
-            </div>
+            <span>Cámara registrada</span>
+            <select
+              value={selectedCameraId}
+              onChange={(event) => setSelectedCameraId(event.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none"
+            >
+              <option value="">Sin cámara asociada</option>
+              {cameras.map((camera) => (
+                <option key={camera.id} value={camera.id}>
+                  {camera.code} · {camera.name}{camera.zone_label ? ` · ${camera.zone_label}` : ''}
+                </option>
+              ))}
+              <option value={MANUAL_CAMERA}>Ingreso manual</option>
+            </select>
           </label>
           <label className="space-y-1 text-sm text-white/60">
             <span>Fecha de captura</span>
             <input name="capturedAt" type="datetime-local" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
           </label>
         </div>
+
+        {selectedCamera && (
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-[#9DD2F2]/15 bg-[#9DD2F2]/[0.04] px-4 py-3 text-sm text-white/65">
+            <span><strong className="font-medium text-white">{selectedCamera.code}</strong> · {selectedCamera.name}</span>
+            {selectedCamera.zone_label && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {selectedCamera.zone_label}</span>}
+          </div>
+        )}
+
+        {manualMode && (
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <label className="space-y-1 text-sm text-white/60">
+              <span>Código manual</span>
+              <input name="cameraCode" maxLength={80} placeholder="CAM-HH-001" required className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+            </label>
+            <label className="space-y-1 text-sm text-white/60">
+              <span>Nombre manual</span>
+              <input name="cameraName" maxLength={160} placeholder="Sendero norte" required className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+            </label>
+            <label className="space-y-1 text-sm text-white/60">
+              <span>Zona manual</span>
+              <input name="zoneLabel" maxLength={160} placeholder="Reserva norte" className="w-full rounded-lg border border-white/10 bg-[#081827] px-3 py-3 text-white outline-none" />
+            </label>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row">
           <input
