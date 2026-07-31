@@ -1,42 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthorizedRequest } from '@/lib/api-auth'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { reviewedImageMatchesPhotoId } from '@/lib/wildlife/review-image-source'
 
-const allowedPhotoIds = new Set([
-  '613942273',
-  '613943394',
-  '613973095',
-  '614064618',
-  '614360234',
-  '614065687',
-  '614065784',
-  '622425146',
-  '622425175',
-  '622254775',
-  '622254778',
-  '622254808',
-])
+export const runtime = 'nodejs'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ photoId: string }> }
 ) {
+  const auth = await getAuthorizedRequest(request, ['admin'])
+  if (!auth) {
+    return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
+  }
+
   const { photoId } = await context.params
-  if (!allowedPhotoIds.has(photoId)) {
+  if (!/^\d+$/.test(photoId)) {
     return NextResponse.json({ error: 'Imagen no autorizada.' }, { status: 404 })
   }
 
-  const source = `https://inaturalist-open-data.s3.amazonaws.com/photos/${photoId}/original.jpg`
-  const response = await fetch(source, { next: { revalidate: 86400 } })
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Base de datos no configurada.' }, { status: 503 })
+  }
+
+  const { data: candidates, error } = await supabase
+    .from('wildlife_occurrence_media')
+    .select('identifier_url, mime_type, wildlife_media_reviews!inner(id)')
+    .ilike('identifier_url', `%/photos/${photoId}/%`)
+    .limit(10)
+
+  if (error) {
+    console.error('Wildlife review preview lookup failed:', error.message)
+    return NextResponse.json({ error: 'No fue posible validar la imagen.' }, { status: 500 })
+  }
+
+  const media = candidates?.find((candidate) =>
+    reviewedImageMatchesPhotoId(candidate.identifier_url, photoId)
+  )
+
+  if (!media) {
+    return NextResponse.json({ error: 'Imagen no autorizada.' }, { status: 404 })
+  }
+
+  const response = await fetch(media.identifier_url, {
+    cache: 'force-cache',
+    next: { revalidate: 86400 },
+    signal: AbortSignal.timeout(15_000),
+  })
+
   if (!response.ok || !response.body) {
     return NextResponse.json({ error: 'No fue posible cargar la imagen.' }, { status: 502 })
+  }
+
+  const upstreamType = response.headers.get('content-type') || media.mime_type || 'image/jpeg'
+  if (!upstreamType.toLowerCase().startsWith('image/')) {
+    return NextResponse.json({ error: 'El recurso remoto no es una imagen valida.' }, { status: 502 })
   }
 
   return new NextResponse(response.body, {
     status: 200,
     headers: {
-      'Content-Type': response.headers.get('content-type') || 'image/jpeg',
-      'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+      'Content-Type': upstreamType,
+      'Cache-Control': 'private, no-store, max-age=0',
       'Content-Disposition': `inline; filename="wildlife-${photoId}.jpg"`,
       'X-Content-Type-Options': 'nosniff',
+      'Cross-Origin-Resource-Policy': 'same-origin',
     },
   })
 }
