@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
-import { AlertTriangle, Camera, MapPin, Minus, Plus, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, Camera, LocateFixed, MapPin, Minus, Plus, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react'
 
 import { getSpeciesLocalization } from '@/lib/wildlife/species-localization'
 
@@ -28,7 +28,6 @@ type MapSighting = {
   date: Date
   camera?: CameraRecord
 }
-
 type PanOffset = { x: number; y: number }
 type DragState = { pointerId: number; x: number; y: number; originX: number; originY: number }
 
@@ -77,6 +76,7 @@ export function CartographicBaseMap() {
   const [zoom, setZoom] = useState(12)
   const [pan, setPan] = useState<PanOffset>({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
+  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null)
   const dragRef = useRef<DragState | null>(null)
   const [cameras, setCameras] = useState<CameraRecord[]>([])
   const [jobs, setJobs] = useState<JobRecord[]>([])
@@ -138,6 +138,9 @@ export function CartographicBaseMap() {
   const mappedCameras = cameras.filter((camera) => typeof camera.latitude === 'number' && typeof camera.longitude === 'number')
   const visibleCameraIds = new Set(filteredSightings.map((item) => item.camera?.id).filter(Boolean))
   const pendingSightings = filteredSightings.filter((item) => !item.camera || typeof item.camera.latitude !== 'number' || typeof item.camera.longitude !== 'number')
+  const selectedCamera = mappedCameras.find((camera) => camera.id === selectedCameraId) || null
+  const selectedCameraSightings = selectedCamera ? filteredSightings.filter((item) => item.camera?.id === selectedCamera.id) : []
+  const recentMappedSightings = filteredSightings.filter((item) => item.camera).slice(0, 4)
 
   const projection = useMemo(() => {
     const centerX = longitudeToWorldX(CENTER.longitude, zoom)
@@ -200,9 +203,21 @@ export function CartographicBaseMap() {
     setZoom((value) => Math.max(10, Math.min(15, value + direction)))
   }
 
+  function focusCamera(camera: CameraRecord) {
+    const targetZoom = Math.max(13, zoom)
+    const centerX = longitudeToWorldX(CENTER.longitude, targetZoom)
+    const centerY = latitudeToWorldY(CENTER.latitude, targetZoom)
+    const cameraX = longitudeToWorldX(camera.longitude as number, targetZoom)
+    const cameraY = latitudeToWorldY(camera.latitude as number, targetZoom)
+    setZoom(targetZoom)
+    setPan({ x: clampPan(centerX - cameraX), y: clampPan(centerY - cameraY) })
+    setSelectedCameraId(camera.id)
+  }
+
   function resetView() {
     setZoom(12)
     setPan({ x: 0, y: 0 })
+    setSelectedCameraId(null)
   }
 
   return (
@@ -219,13 +234,13 @@ export function CartographicBaseMap() {
       </div>
 
       <div className="grid gap-3 border-b border-white/10 p-5 sm:grid-cols-2 sm:p-6">
-        <label className="text-sm text-white/65"><span className="mb-2 block">Especie</span><select value={speciesFilter} onChange={(event) => setSpeciesFilter(event.target.value)} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todas las especies</option>{speciesOptions.map((code) => <option key={code} value={code}>{getSpeciesLocalization(code).label}</option>)}</select></label>
-        <label className="text-sm text-white/65"><span className="mb-2 block">Sector</span><select value={zoneFilter} onChange={(event) => setZoneFilter(event.target.value)} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todos los sectores</option>{zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label>
+        <label className="text-sm text-white/65"><span className="mb-2 block">Especie</span><select value={speciesFilter} onChange={(event) => { setSpeciesFilter(event.target.value); setSelectedCameraId(null) }} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todas las especies</option>{speciesOptions.map((code) => <option key={code} value={code}>{getSpeciesLocalization(code).label}</option>)}</select></label>
+        <label className="text-sm text-white/65"><span className="mb-2 block">Sector</span><select value={zoneFilter} onChange={(event) => { setZoneFilter(event.target.value); setSelectedCameraId(null) }} className="w-full rounded-xl border border-white/12 bg-[#071622] px-4 py-3 text-white outline-none transition focus:border-[#68b4e3]/60 focus:ring-2 focus:ring-[#68b4e3]/10"><option value="all">Todos los sectores</option>{zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label>
       </div>
 
       {error && <p className="m-5 rounded-xl border border-red-300/15 bg-red-300/[0.04] p-4 text-sm text-red-100/85 sm:m-6">{error}</p>}
 
-      <div className="relative min-h-[620px] overflow-hidden bg-[#071622] sm:min-h-[560px]">
+      <div className="relative min-h-[680px] overflow-hidden bg-[#071622] sm:min-h-[560px]">
         <div
           role="application"
           aria-label="Mapa interactivo. Arrastra para desplazarte y usa la rueda o controles para acercar y alejar."
@@ -261,7 +276,21 @@ export function CartographicBaseMap() {
             const position = projection.point(camera.latitude as number, camera.longitude as number)
             const cameraSightings = filteredSightings.filter((item) => item.camera?.id === camera.id)
             const dimmed = filteredSightings.length > 0 && !visibleCameraIds.has(camera.id)
-            return <div key={camera.id} className={`group absolute -translate-x-1/2 -translate-y-1/2 ${dimmed ? 'opacity-30' : ''}`} style={{ left: position.x, top: position.y }}><div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#9bd3f3] bg-[#071622] shadow-xl"><Camera className="h-4 w-4 text-[#9bd3f3]" /></div>{cameraSightings.length > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{cameraSightings.length}</span>}<div className="pointer-events-none absolute left-1/2 top-12 z-30 hidden w-64 -translate-x-1/2 rounded-xl border border-white/12 bg-[#071622] p-3 text-xs shadow-2xl group-hover:block"><p className="font-medium text-white">{camera.code} · {camera.name}</p><p className="mt-1 text-white/60">{camera.zone_label || 'Sin sector'}</p><p className="mt-2 text-[#9bd3f3]">{cameraSightings.length} avistamientos filtrados</p>{cameraSightings.slice(0, 3).map((item) => <p key={item.id} className="mt-1 text-white/70">{item.speciesLabel}{typeof item.confidence === 'number' ? ` · ${Math.round(item.confidence * 100)}%` : ''}</p>)}</div></div>
+            const selected = selectedCameraId === camera.id
+            return (
+              <div key={camera.id} className={`group absolute -translate-x-1/2 -translate-y-1/2 ${dimmed ? 'opacity-30' : ''}`} style={{ left: position.x, top: position.y }}>
+                <button type="button" aria-label={`Enfocar camara ${camera.code}`} aria-pressed={selected} onClick={() => focusCamera(camera)} className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-[#071622] shadow-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9bd3f3]/70 ${selected ? 'scale-110 border-white ring-4 ring-[#68b4e3]/30' : 'border-[#9bd3f3] hover:scale-105'}`}>
+                  <Camera className="h-4 w-4 text-[#9bd3f3]" />
+                </button>
+                {cameraSightings.length > 0 && <span className="pointer-events-none absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{cameraSightings.length}</span>}
+                <div className={`pointer-events-none absolute left-1/2 top-12 z-30 w-64 -translate-x-1/2 rounded-xl border border-white/12 bg-[#071622] p-3 text-xs shadow-2xl ${selected ? 'block' : 'hidden group-hover:block'}`}>
+                  <p className="font-medium text-white">{camera.code} · {camera.name}</p>
+                  <p className="mt-1 text-white/60">{camera.zone_label || 'Sin sector'}</p>
+                  <p className="mt-2 text-[#9bd3f3]">{cameraSightings.length} avistamientos filtrados</p>
+                  {cameraSightings.slice(0, 3).map((item) => <p key={item.id} className="mt-1 text-white/70">{item.speciesLabel}{typeof item.confidence === 'number' ? ` · ${Math.round(item.confidence * 100)}%` : ''}</p>)}
+                </div>
+              </div>
+            )
           })}
         </div>
 
@@ -274,17 +303,37 @@ export function CartographicBaseMap() {
           <p className="mt-1 leading-4 text-white/65">Centro de Conservacion del Huemul del Sur.</p>
         </div>
 
-        <div className="absolute bottom-24 right-3 flex flex-col overflow-hidden rounded-xl border border-white/12 bg-[#071622]/94 shadow-xl backdrop-blur sm:bottom-8 sm:right-4">
+        <div className="absolute bottom-32 right-3 flex flex-col overflow-hidden rounded-xl border border-white/12 bg-[#071622]/94 shadow-xl backdrop-blur sm:bottom-8 sm:right-4">
           <button type="button" aria-label="Acercar mapa" onClick={() => setZoom((value) => Math.min(15, value + 1))} className="p-3 text-white/80 hover:bg-white/[0.07]"><Plus className="h-4 w-4" /></button>
           <button type="button" aria-label="Alejar mapa" onClick={() => setZoom((value) => Math.max(10, value - 1))} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><Minus className="h-4 w-4" /></button>
           <button type="button" aria-label="Volver al centro del mapa" onClick={resetView} className="border-t border-white/12 p-3 text-white/80 hover:bg-white/[0.07]"><RotateCcw className="h-4 w-4" /></button>
         </div>
 
-        <div className="pointer-events-none absolute left-1/2 top-1/2 rounded-lg bg-black/55 px-3 py-2 text-xs text-white/75 opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
-
-        <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/12 bg-[#071622]/96 p-3 shadow-xl backdrop-blur sm:bottom-4 sm:left-4 sm:right-auto sm:w-[320px]">
-          <div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white">Leyenda y estado</p><span className="text-[11px] text-white/60">{filteredSightings.length} avistamientos</span></div>
+        <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/12 bg-[#071622]/96 p-3 shadow-xl backdrop-blur sm:bottom-4 sm:left-4 sm:right-auto sm:w-[350px]">
+          <div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white">Leyenda y enfoque</p><span className="text-[11px] text-white/60">{filteredSightings.length} avistamientos</span></div>
           <div className="mt-2 grid gap-1.5 text-[11px] text-white/75"><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#9bd3f3]" />Camara georreferenciada</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400/80" />Zona sensible referencial</p><p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-300" />Avistamientos vinculados</p></div>
+
+          {recentMappedSightings.length > 0 && (
+            <div className="mt-3 border-t border-white/12 pt-2">
+              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-white/50">Enfocar avistamiento</p>
+              <div className="grid gap-1.5">
+                {recentMappedSightings.map((item) => (
+                  <button key={item.id} type="button" onClick={() => item.camera && focusCamera(item.camera)} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.04] px-2.5 py-2 text-left text-[11px] text-white/75 transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68b4e3]/50">
+                    <span className="truncate">{item.speciesLabel} · {item.camera?.code}</span>
+                    <LocateFixed className="h-3.5 w-3.5 shrink-0 text-[#9bd3f3]" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {selectedCamera && (
+            <div className="mt-3 border-t border-white/12 pt-2 text-[11px]">
+              <div className="flex items-center justify-between gap-2"><p className="font-medium text-white">{selectedCamera.code} · {selectedCamera.name}</p><button type="button" onClick={() => setSelectedCameraId(null)} className="text-white/50 hover:text-white">Cerrar</button></div>
+              <p className="mt-1 text-white/60">{selectedCamera.zone_label || 'Sin sector'} · {selectedCameraSightings.length} avistamientos filtrados</p>
+            </div>
+          )}
+
           {pendingSightings.length > 0 && <div className="mt-3 border-t border-white/12 pt-2"><div className="flex items-center gap-1.5 text-[11px] text-amber-100"><AlertTriangle className="h-3.5 w-3.5" />{pendingSightings.length} ubicaciones pendientes</div><p className="mt-1 line-clamp-2 text-[10px] text-white/60">{pendingSightings.slice(0, 3).map((item) => item.speciesLabel).join(' · ')}</p></div>}
         </div>
         <div className="absolute bottom-2 left-1/2 hidden -translate-x-1/2 rounded bg-black/70 px-2 py-1 text-[10px] text-white/75 sm:block">{layer.attribution}</div>
