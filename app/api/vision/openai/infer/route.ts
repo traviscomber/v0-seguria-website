@@ -270,7 +270,7 @@ async function requestWithFallback(apiKey: string, body: Record<string, unknown>
   const shouldFallback = [400, 404, 422].includes(primary.response.status)
   if (!shouldFallback) return { ...primary, model: PRIMARY_MODEL, fallbackUsed: false }
 
-  const fallbackBody = { ...body, model: FALLBACK_MODEL }
+  const fallbackBody: Record<string, unknown> = { ...body, model: FALLBACK_MODEL }
   delete fallbackBody.max_completion_tokens
   fallbackBody.max_tokens = body.max_completion_tokens
   const fallback = await fetchOpenAiWithRetry(apiKey, fallbackBody)
