@@ -4,8 +4,8 @@ import { ArrowLeft, Eye, MapPin } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
-import { CartographicBaseMap } from './cartographic-base-map'
 import { ImageMetadataActivity } from './image-metadata-activity'
+import { OperationalTerritorialMap } from './operational-territorial-map'
 import { PilotEvaluation } from './pilot-evaluation'
 import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
@@ -55,7 +55,7 @@ export default async function WildlifeVisionPage() {
           <VisionMetrics />
           <CameraRegistry />
           <div id="territorial-map" className="scroll-mt-6">
-            <CartographicBaseMap />
+            <OperationalTerritorialMap />
           </div>
           <VisionConsole />
           <ImageMetadataActivity />
