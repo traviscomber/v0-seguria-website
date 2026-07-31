@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, CircleAlert, Download, MapPin, RefreshCw, Search, X } from 'lucide-react'
 
+import { VisionEvidenceViewer } from './vision-evidence-viewer'
+
 type ReviewStatus = 'pending' | 'confirmed' | 'corrected' | 'rejected' | 'unidentifiable'
 type JobStatus = 'queued' | 'processing' | 'completed' | 'failed'
 
-type Detection = { species: string; confidence: number; description?: string }
+type Detection = {
+  species: string
+  confidence: number
+  description?: string
+  box?: { x1: number; y1: number; x2: number; y2: number }
+}
 type CameraRelation = { code?: string | null; name?: string | null; zone_label?: string | null }
 
 type Job = {
@@ -19,6 +26,7 @@ type Job = {
   camera_id?: string | null
   zone_label?: string | null
   captured_at?: string | null
+  has_evidence?: boolean
   wildlife_cameras?: CameraRelation | CameraRelation[] | null
   corrected_common_name?: string | null
   corrected_scientific_name?: string | null
@@ -127,7 +135,7 @@ export function VisionJobHistory({ refreshKey = 0 }: { refreshKey?: number }) {
   return (
     <section className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-xl font-light text-white">Historial de análisis</h2><p className="mt-1 text-sm text-white/50">Predicciones, metadatos de captura y revisión humana.</p></div>
+        <div><h2 className="text-xl font-light text-white">Historial de análisis</h2><p className="mt-1 text-sm text-white/50">Predicciones, evidencia privada y revisión humana.</p></div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={exportCsv} disabled={!jobs.length} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 disabled:opacity-40"><Download className="h-4 w-4" /> Exportar CSV</button>
           <button type="button" onClick={() => void loadJobs()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 disabled:opacity-40"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualizar</button>
@@ -166,7 +174,7 @@ export function VisionJobHistory({ refreshKey = 0 }: { refreshKey?: number }) {
 
               {job.review_status === 'corrected' && (job.corrected_common_name || job.corrected_scientific_name) && <div className="mt-4 rounded-lg border border-amber-300/15 bg-amber-300/[0.05] p-3 text-sm text-amber-100/80">Corrección: {[job.corrected_common_name, job.corrected_scientific_name].filter(Boolean).join(' · ')}{job.review_notes && <p className="mt-1 text-xs text-amber-100/55">{job.review_notes}</p>}</div>}
 
-              {editingJobId === job.id ? <div className="mt-4 grid gap-3 rounded-lg border border-amber-300/15 bg-amber-300/[0.04] p-4 md:grid-cols-2"><input value={draft.commonName} onChange={(e) => setDraft((current) => ({ ...current, commonName: e.target.value }))} placeholder="Nombre común corregido" className="rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white" /><input value={draft.scientificName} onChange={(e) => setDraft((current) => ({ ...current, scientificName: e.target.value }))} placeholder="Nombre científico corregido" className="rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white" /><textarea value={draft.notes} onChange={(e) => setDraft((current) => ({ ...current, notes: e.target.value }))} placeholder="Notas de revisión" className="min-h-20 rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white md:col-span-2" /><div className="flex gap-2 md:col-span-2"><button onClick={() => void review(job.id, 'corrected', draft)} disabled={updating === job.id || (!draft.commonName.trim() && !draft.scientificName.trim())} className="rounded-lg bg-amber-300/15 px-3 py-2 text-xs text-amber-100 disabled:opacity-40">Guardar corrección</button><button onClick={() => setEditingJobId(null)} className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70">Cancelar</button></div></div> : job.status === 'completed' && <div className="mt-4 flex flex-wrap gap-2"><button onClick={() => void review(job.id, 'confirmed')} disabled={updating === job.id} className="inline-flex items-center gap-2 rounded-lg bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100"><Check className="h-3.5 w-3.5" /> Confirmar</button><button onClick={() => startCorrection(job)} className="rounded-lg bg-amber-300/15 px-3 py-2 text-xs text-amber-100">Corregir</button><button onClick={() => void review(job.id, 'unidentifiable')} className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70">No identificable</button><button onClick={() => void review(job.id, 'rejected')} className="inline-flex items-center gap-2 rounded-lg bg-red-300/15 px-3 py-2 text-xs text-red-100"><X className="h-3.5 w-3.5" /> Rechazar</button></div>}
+              {editingJobId === job.id ? <div className="mt-4 grid gap-3 rounded-lg border border-amber-300/15 bg-amber-300/[0.04] p-4 md:grid-cols-2"><input value={draft.commonName} onChange={(e) => setDraft((current) => ({ ...current, commonName: e.target.value }))} placeholder="Nombre común corregido" className="rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white" /><input value={draft.scientificName} onChange={(e) => setDraft((current) => ({ ...current, scientificName: e.target.value }))} placeholder="Nombre científico corregido" className="rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white" /><textarea value={draft.notes} onChange={(e) => setDraft((current) => ({ ...current, notes: e.target.value }))} placeholder="Notas de revisión" className="min-h-20 rounded-lg border border-white/10 bg-[#081827] px-3 py-2 text-sm text-white md:col-span-2" /><div className="flex gap-2 md:col-span-2"><button onClick={() => void review(job.id, 'corrected', draft)} disabled={updating === job.id || (!draft.commonName.trim() && !draft.scientificName.trim())} className="rounded-lg bg-amber-300/15 px-3 py-2 text-xs text-amber-100 disabled:opacity-40">Guardar corrección</button><button onClick={() => setEditingJobId(null)} className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70">Cancelar</button></div></div> : job.status === 'completed' && <div className="mt-4 flex flex-wrap gap-2">{job.has_evidence && <VisionEvidenceViewer jobId={job.id} detections={detections} />}<button onClick={() => void review(job.id, 'confirmed')} disabled={updating === job.id} className="inline-flex items-center gap-2 rounded-lg bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100"><Check className="h-3.5 w-3.5" /> Confirmar</button><button onClick={() => startCorrection(job)} className="rounded-lg bg-amber-300/15 px-3 py-2 text-xs text-amber-100">Corregir</button><button onClick={() => void review(job.id, 'unidentifiable')} className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70">No identificable</button><button onClick={() => void review(job.id, 'rejected')} className="inline-flex items-center gap-2 rounded-lg bg-red-300/15 px-3 py-2 text-xs text-red-100"><X className="h-3.5 w-3.5" /> Rechazar</button></div>}
             </article>
           )
         })}
