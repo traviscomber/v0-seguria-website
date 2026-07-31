@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Camera, CheckCircle2, ImageIcon, Loader2, MapPin, Sparkles, Upload } from 'lucide-react'
 
-import { getSpeciesLocalization } from '@/lib/wildlife/species-localization'
+import { getConfidenceLevel, getSpeciesLocalization } from '@/lib/wildlife/species-localization'
 import {
   selectVisionProvider,
   visionProviderEndpoint,
@@ -14,6 +14,8 @@ import {
 type Detection = {
   species: string
   confidence: number
+  confidence_source?: 'model' | 'heuristic' | 'verification'
+  model_confidence?: number | null
   box: { x1: number; y1: number; x2: number; y2: number }
   description?: string
 }
@@ -67,6 +69,12 @@ type CaptureMetadata = {
 
 const MAX_BATCH_SIZE = 20
 const MANUAL_CAMERA = '__manual__'
+
+function confidenceSourceLabel(source: Detection['confidence_source']) {
+  if (source === 'verification') return 'Verificacion visual'
+  if (source === 'heuristic') return 'Estimacion del sistema'
+  return 'Modelo de vision'
+}
 
 export function VisionConsole() {
   const [health, setHealth] = useState<VisionResponse | null>(null)
@@ -269,19 +277,44 @@ export function VisionConsole() {
                     {item.result?.scene_summary && <p className="mt-5 text-base leading-7 text-white/72">{item.result.scene_summary}</p>}
 
                     {!!item.result?.detections?.length && (
-                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="mt-5 space-y-4">
                         {item.result.detections.map((detection, index) => {
                           const species = getSpeciesLocalization(detection.species)
+                          const confidencePercent = Math.round(detection.confidence * 100)
                           return (
-                            <div key={`${detection.species}-${index}`} className="rounded-xl border border-white/8 bg-white/[0.035] p-4">
-                              <div className="flex items-start justify-between gap-3">
+                            <div key={`${detection.species}-${index}`} className="overflow-hidden rounded-2xl border border-[#68b4e3]/20 bg-[#071622]">
+                              <div className="flex flex-col gap-4 border-b border-white/8 p-5 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
-                                  <p className="font-medium text-white">{species.label}</p>
-                                  {species.scientificName && <p className="mt-0.5 text-xs italic text-white/40">{species.scientificName}</p>}
+                                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#8fc8ea]">Ficha de identificacion</p>
+                                  <h3 className="mt-2 text-2xl font-light text-white">{species.label}</h3>
+                                  {species.scientificName && <p className="mt-1 text-sm italic text-white/50">{species.scientificName}</p>}
                                 </div>
-                                <span className="rounded-full bg-[#68b4e3]/10 px-2.5 py-1 text-xs font-medium text-[#9bd3f3]">{Math.round(detection.confidence * 100)}%</span>
+                                <div className="rounded-xl border border-[#68b4e3]/20 bg-[#68b4e3]/[0.07] px-4 py-3 text-right">
+                                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">Confianza</p>
+                                  <p className="mt-1 text-2xl font-light text-[#9bd3f3]">{confidencePercent}%</p>
+                                  <p className="mt-0.5 text-xs text-white/40">{getConfidenceLevel(detection.confidence)}</p>
+                                </div>
                               </div>
-                              {detection.description && <p className="mt-2 text-sm leading-6 text-white/48">{detection.description}</p>}
+
+                              <div className="grid gap-px bg-white/8 sm:grid-cols-3">
+                                <div className="bg-[#071622] p-4">
+                                  <p className="text-[11px] uppercase tracking-[0.13em] text-white/30">Nombre comun</p>
+                                  <p className="mt-1 text-sm text-white/80">{species.label}</p>
+                                </div>
+                                <div className="bg-[#071622] p-4">
+                                  <p className="text-[11px] uppercase tracking-[0.13em] text-white/30">Nombre cientifico</p>
+                                  <p className="mt-1 text-sm italic text-white/80">{species.scientificName || 'No disponible'}</p>
+                                </div>
+                                <div className="bg-[#071622] p-4">
+                                  <p className="text-[11px] uppercase tracking-[0.13em] text-white/30">Origen del score</p>
+                                  <p className="mt-1 text-sm text-white/80">{confidenceSourceLabel(detection.confidence_source)}</p>
+                                </div>
+                              </div>
+
+                              <div className="p-5">
+                                <p className="text-[11px] uppercase tracking-[0.13em] text-white/30">Rasgos observados</p>
+                                <p className="mt-2 text-sm leading-6 text-white/60">{detection.description || 'Sin descripcion morfologica disponible.'}</p>
+                              </div>
                             </div>
                           )
                         })}
