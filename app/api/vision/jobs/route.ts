@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('wildlife_inference_jobs')
-    .select('id, original_filename, mime_type, byte_size, provider, model_name, status, review_status, result_json, error_code, error_message, corrected_common_name, corrected_scientific_name, review_notes, camera_id, zone_label, captured_at, reviewed_at, created_at, updated_at, wildlife_cameras(code, name, zone_label)')
+    .select('id, original_filename, mime_type, byte_size, provider, model_name, status, review_status, result_json, error_code, error_message, corrected_common_name, corrected_scientific_name, review_notes, camera_id, zone_label, captured_at, storage_path, reviewed_at, created_at, updated_at, wildlife_cameras(code, name, zone_label)')
     .eq('submitted_by_user_id', auth.user.id)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -66,7 +66,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'No fue posible cargar el historial.' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true, data: data || [] })
+  const responseData = (data || []).map(({ storage_path, ...job }) => ({
+    ...job,
+    has_evidence: Boolean(storage_path),
+  }))
+
+  return NextResponse.json({ success: true, data: responseData })
 }
 
 export async function PATCH(request: NextRequest) {
