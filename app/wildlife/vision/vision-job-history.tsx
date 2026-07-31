@@ -37,6 +37,11 @@ type CorrectionDraft = {
   notes: string
 }
 
+type ExportRow = {
+  job: Job
+  detection: Detection | null
+}
+
 const reviewLabels: Record<ReviewStatus, string> = {
   pending: 'Pendiente',
   confirmed: 'Confirmado',
@@ -84,7 +89,7 @@ export function VisionJobHistory({ refreshKey = 0 }: { refreshKey?: number }) {
     void loadJobs()
   }, [loadJobs, refreshKey])
 
-  const exportRows = useMemo(() => jobs.flatMap((job) => {
+  const exportRows = useMemo<ExportRow[]>(() => jobs.flatMap<ExportRow>((job) => {
     const detections = job.result_json?.detections || []
     if (detections.length === 0) return [{ job, detection: null }]
     return detections.map((detection) => ({ job, detection }))
