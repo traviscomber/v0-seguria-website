@@ -10,7 +10,7 @@ const securityHeaders = [
       "object-src 'none'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.vercel.app https://inaturalist-open-data.s3.amazonaws.com",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.vercel.app https://inaturalist-open-data.s3.amazonaws.com https://tile.openstreetmap.org https://*.tile.opentopomap.org https://server.arcgisonline.com",
       "font-src 'self' data:",
       "connect-src 'self' https: wss:",
       "media-src 'self' blob: https:",
@@ -117,14 +117,12 @@ const nextConfig = {
         destination: '/es/propiedades-inteligentes',
         permanent: true,
       },
-      // Redirect www to non-www (n3uralia.com)
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.n3uralia.com' }],
         destination: 'https://n3uralia.com/:path*',
         permanent: true,
       },
-      // Domain consolidation: segur-ia.cl → seguria.tech (301 permanent redirect)
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'segur-ia.cl' }],
