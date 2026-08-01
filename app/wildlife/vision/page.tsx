@@ -7,6 +7,7 @@ import { CameraRegistry } from './camera-registry'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { OperationalTerritorialMap } from './operational-territorial-map'
 import { PilotEvaluation } from './pilot-evaluation'
+import { TerritorialAlertCenter } from './territorial-alert-center'
 import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
@@ -24,9 +25,14 @@ export default async function WildlifeVisionPage() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-3 text-sm text-[#9DD2F2]">
-              <Eye className="h-4 w-4" />
-              Wildlife Intelligence
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[#9DD2F2]">
+              <span className="inline-flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Wildlife Intelligence
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] text-white/45">
+                SegurIA · Powered by N3uralia
+              </span>
             </div>
             <h1 className="mt-3 text-4xl font-normal tracking-tight">SegurIA Vision</h1>
             <p className="mt-3 max-w-2xl text-white/60">
@@ -53,6 +59,7 @@ export default async function WildlifeVisionPage() {
 
         <div className="mt-8 space-y-8">
           <VisionMetrics />
+          <TerritorialAlertCenter />
           <CameraRegistry />
           <div id="territorial-map" className="scroll-mt-6">
             <OperationalTerritorialMap />
