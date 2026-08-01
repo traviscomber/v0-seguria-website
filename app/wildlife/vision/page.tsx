@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { OperationalTerritorialMap } from './operational-territorial-map'
+import { PilotBatchManager } from './pilot-batch-manager'
 import { PilotEvaluation } from './pilot-evaluation'
 import { TerritorialAlertCenter } from './territorial-alert-center'
 import { TerritorialMapShortcut } from './territorial-map-shortcut'
@@ -66,6 +67,7 @@ export default async function WildlifeVisionPage() {
           </div>
           <VisionOperationsWorkspace />
           <CameraRegistry />
+          <PilotBatchManager />
           <VisionConsole />
           <ImageMetadataActivity />
           <VisionJobHistory />
