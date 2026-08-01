@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 const paramsSchema = z.object({ batchId: z.string().uuid() })
 
@@ -13,6 +14,11 @@ export async function POST(
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth)
+  if (!access.capabilities.reviewEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite cerrar lotes revisados.' }, { status: 403 })
+  }
+
   const parsedParams = paramsSchema.safeParse(await context.params)
   if (!parsedParams.success) {
     return NextResponse.json({ success: false, error: 'Lote invalido.' }, { status: 400 })
@@ -22,12 +28,16 @@ export async function POST(
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   const { batchId } = parsedParams.data
-  const { data: batch, error: batchError } = await supabase
+  let batchQuery = supabase
     .from('wildlife_pilot_batches')
     .select('id, status')
     .eq('id', batchId)
-    .eq('created_by_user_id', auth.user.id)
-    .maybeSingle()
+
+  batchQuery = access.operationId
+    ? batchQuery.eq('organization_id', access.operationId)
+    : batchQuery.eq('created_by_user_id', auth.user.id)
+
+  const { data: batch, error: batchError } = await batchQuery.maybeSingle()
 
   if (batchError) {
     console.error('Wildlife pilot completion lookup failed:', batchError.message)
@@ -36,11 +46,16 @@ export async function POST(
   if (!batch) return NextResponse.json({ success: false, error: 'Lote no encontrado.' }, { status: 404 })
   if (batch.status === 'cancelled') return NextResponse.json({ success: false, error: 'El lote esta cancelado.' }, { status: 409 })
 
-  const { data: jobs, error: jobsError } = await supabase
+  let jobsQuery = supabase
     .from('wildlife_inference_jobs')
     .select('id, status, review_status')
     .eq('pilot_batch_id', batchId)
-    .eq('submitted_by_user_id', auth.user.id)
+
+  jobsQuery = access.operationId
+    ? jobsQuery.eq('organization_id', access.operationId)
+    : jobsQuery.eq('submitted_by_user_id', auth.user.id)
+
+  const { data: jobs, error: jobsError } = await jobsQuery
 
   if (jobsError) {
     console.error('Wildlife pilot completion jobs failed:', jobsError.message)
@@ -71,11 +86,16 @@ export async function POST(
   }
 
   const now = new Date().toISOString()
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from('wildlife_pilot_batches')
     .update({ status: 'completed', completed_at: now, updated_at: now })
     .eq('id', batchId)
-    .eq('created_by_user_id', auth.user.id)
+
+  updateQuery = access.operationId
+    ? updateQuery.eq('organization_id', access.operationId)
+    : updateQuery.eq('created_by_user_id', auth.user.id)
+
+  const { data, error } = await updateQuery
     .select('id, status, completed_at')
     .single()
 
@@ -83,6 +103,16 @@ export async function POST(
     console.error('Wildlife pilot completion update failed:', error.message)
     return NextResponse.json({ success: false, error: 'No fue posible cerrar el lote.' }, { status: 500 })
   }
+
+  await writeTerritorialAudit({
+    request,
+    auth,
+    access,
+    action: 'pilot_batch.completed',
+    resourceType: 'wildlife_pilot_batch',
+    resourceId: batchId,
+    payload: { total: rows.length, failed },
+  })
 
   return NextResponse.json({
     success: true,
