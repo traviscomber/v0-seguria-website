@@ -47,7 +47,7 @@ export async function POST(
     .eq('id', batchId)
 
   batchQuery = access.operationId
-    ? batchQuery.eq('organization_id', access.operationId)
+    ? batchQuery.eq('operation_id', access.operationId)
     : batchQuery.eq('created_by_user_id', auth.user.id)
 
   const { data: batch, error: batchError } = await batchQuery.maybeSingle()
@@ -65,7 +65,7 @@ export async function POST(
     .eq('pilot_batch_id', batchId)
 
   jobQuery = access.operationId
-    ? jobQuery.eq('organization_id', access.operationId)
+    ? jobQuery.eq('operation_id', access.operationId)
     : jobQuery.eq('submitted_by_user_id', auth.user.id)
 
   const { data: job, error: jobError } = await jobQuery.maybeSingle()
@@ -112,11 +112,11 @@ export async function POST(
 
   let attachQuery = supabase
     .from('wildlife_inference_jobs')
-    .update({ pilot_batch_id: batchId, updated_at: new Date().toISOString() })
+    .update({ pilot_batch_id: batchId, operation_id: access.operationId, updated_at: new Date().toISOString() })
     .eq('id', retriedJobId)
 
   attachQuery = access.operationId
-    ? attachQuery.eq('organization_id', access.operationId)
+    ? attachQuery.eq('operation_id', access.operationId)
     : attachQuery.eq('submitted_by_user_id', auth.user.id)
 
   const { error: attachError } = await attachQuery
