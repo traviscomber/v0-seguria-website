@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     .order('code', { ascending: true })
 
   query = access.operationId
-    ? query.eq('organization_id', access.operationId)
+    ? query.eq('operation_id', access.operationId)
     : query.eq('created_by_user_id', auth.user.id)
 
   const { data, error } = await query
@@ -105,12 +105,13 @@ export async function POST(request: NextRequest) {
   if (parsed.data.id) {
     query = supabase.from('wildlife_cameras').update(mutablePayload).eq('id', parsed.data.id)
     query = access.operationId
-      ? query.eq('organization_id', access.operationId)
+      ? query.eq('operation_id', access.operationId)
       : query.eq('created_by_user_id', auth.user.id)
   } else {
     query = supabase.from('wildlife_cameras').insert({
       ...mutablePayload,
-      organization_id: access.operationId,
+      operation_id: access.operationId,
+      organization_id: null,
       created_by_user_id: auth.user.id,
     })
   }
