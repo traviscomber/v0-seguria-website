@@ -9,6 +9,7 @@ import { ImageMetadataActivity } from './image-metadata-activity'
 import { OperationalTerritorialMap } from './operational-territorial-map'
 import { PilotBatchManager } from './pilot-batch-manager'
 import { PilotEvaluation } from './pilot-evaluation'
+import { TerritorialAccessPanel } from './territorial-access-panel'
 import { TerritorialAlertCenter } from './territorial-alert-center'
 import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
@@ -62,6 +63,7 @@ export default async function WildlifeVisionPage() {
 
         <div className="mt-8 space-y-8">
           <VisionMetrics />
+          <TerritorialAccessPanel />
           <TerritorialAlertCenter />
           <div id="territorial-map" className="scroll-mt-6">
             <OperationalTerritorialMap />
