@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { deriveVisionAlertCandidates, type VisionCameraInput, type VisionJobInput } from './vision-alerts'
+import { deriveVisionAlertCandidates, type VisionCameraInput, type VisionJobInput } from './vision-alerts.ts'
 
 const NOW = new Date('2026-07-31T22:00:00.000Z')
 
