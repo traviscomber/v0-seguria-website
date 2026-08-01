@@ -5,17 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm test:seguria-alerts && next build",
+    "build": "pnpm test:seguria-alerts && pnpm test:vision-quality && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:proposal-engine": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/proposals/document-engine/document-engine.test.ts",
     "test:vision-providers": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/wildlife/vision-providers.test.ts",
+    "test:vision-quality": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/wildlife/quality-diagnostics.test.ts",
     "test:seguria-alerts": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/alerts/vision-alerts.test.ts",
     "test:wildlife-licenses": "node --test scripts/wildlife/gbif-license.test.mjs",
     "test:wildlife-review-proxy": "node --experimental-strip-types --experimental-specifier-resolution=node --test lib/wildlife/review-image-source.test.ts",
     "wildlife:gbif:dry-run": "node scripts/wildlife/import-gbif-huilo-huilo.mjs --limit=500",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test:proposal-engine && pnpm test:vision-providers && pnpm test:wildlife-licenses && pnpm test:wildlife-review-proxy && pnpm build",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:proposal-engine && pnpm test:vision-providers && pnpm test:vision-quality && pnpm test:wildlife-licenses && pnpm test:wildlife-review-proxy && pnpm build",
     "db:health": "node scripts/database-health.mjs",
     "smoke:client-portal": "node scripts/client-portal-smoke.mjs",
     "smoke:operational": "node scripts/operational-smoke.mjs",
@@ -86,7 +87,7 @@
     "postcss": "^8.5",
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.2.0",
-    "tw-animate-css": "1.3.3",
+    "tw-animate-css": "^1.3.3",
     "typescript": "5.7.3"
   }
 }
