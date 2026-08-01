@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Eye, Layers3, MapPin } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { CameraQualityDiagnostics } from './camera-quality-diagnostics'
 import { CameraRegistry } from './camera-registry'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { OperationalTerritorialMap } from './operational-territorial-map'
@@ -67,6 +68,7 @@ export default async function WildlifeVisionPage() {
           </div>
           <VisionOperationsWorkspace />
           <CameraRegistry />
+          <CameraQualityDiagnostics />
           <PilotBatchManager />
           <VisionConsole />
           <ImageMetadataActivity />
