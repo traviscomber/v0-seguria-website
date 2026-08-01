@@ -26,7 +26,7 @@ export async function GET(
     .eq('id', jobId)
 
   query = access.operationId
-    ? query.eq('organization_id', access.operationId)
+    ? query.eq('operation_id', access.operationId)
     : query.eq('submitted_by_user_id', auth.user.id)
 
   const { data: job, error } = await query.maybeSingle()
