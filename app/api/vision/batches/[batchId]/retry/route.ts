@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -22,6 +23,11 @@ export async function POST(
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth)
+  if (!access.capabilities.processEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite reintentar analisis.' }, { status: 403 })
+  }
+
   const { batchId } = await context.params
   if (!z.string().uuid().safeParse(batchId).success) {
     return NextResponse.json({ success: false, error: 'Lote invalido.' }, { status: 400 })
@@ -35,12 +41,16 @@ export async function POST(
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
-  const { data: batch, error: batchError } = await supabase
+  let batchQuery = supabase
     .from('wildlife_pilot_batches')
     .select('id, status')
     .eq('id', batchId)
-    .eq('created_by_user_id', auth.user.id)
-    .maybeSingle()
+
+  batchQuery = access.operationId
+    ? batchQuery.eq('organization_id', access.operationId)
+    : batchQuery.eq('created_by_user_id', auth.user.id)
+
+  const { data: batch, error: batchError } = await batchQuery.maybeSingle()
 
   if (batchError) return NextResponse.json({ success: false, error: 'No fue posible verificar el lote.' }, { status: 500 })
   if (!batch) return NextResponse.json({ success: false, error: 'Lote no encontrado.' }, { status: 404 })
@@ -48,13 +58,17 @@ export async function POST(
     return NextResponse.json({ success: false, error: 'El lote esta cerrado.' }, { status: 409 })
   }
 
-  const { data: job, error: jobError } = await supabase
+  let jobQuery = supabase
     .from('wildlife_inference_jobs')
     .select('id, original_filename, mime_type, storage_bucket, storage_path, camera_id, zone_label, captured_at, status, wildlife_cameras(code, name, zone_label)')
     .eq('id', parsed.data.jobId)
-    .eq('submitted_by_user_id', auth.user.id)
     .eq('pilot_batch_id', batchId)
-    .maybeSingle()
+
+  jobQuery = access.operationId
+    ? jobQuery.eq('organization_id', access.operationId)
+    : jobQuery.eq('submitted_by_user_id', auth.user.id)
+
+  const { data: job, error: jobError } = await jobQuery.maybeSingle()
 
   if (jobError) return NextResponse.json({ success: false, error: 'No fue posible verificar el analisis.' }, { status: 500 })
   if (!job) return NextResponse.json({ success: false, error: 'Analisis no encontrado en este lote.' }, { status: 404 })
@@ -96,11 +110,16 @@ export async function POST(
   const payload = await upstream.json() as Record<string, unknown>
   const retriedJobId = typeof payload.job_id === 'string' ? payload.job_id : job.id
 
-  const { error: attachError } = await supabase
+  let attachQuery = supabase
     .from('wildlife_inference_jobs')
     .update({ pilot_batch_id: batchId, updated_at: new Date().toISOString() })
     .eq('id', retriedJobId)
-    .eq('submitted_by_user_id', auth.user.id)
+
+  attachQuery = access.operationId
+    ? attachQuery.eq('organization_id', access.operationId)
+    : attachQuery.eq('submitted_by_user_id', auth.user.id)
+
+  const { error: attachError } = await attachQuery
   if (attachError) console.error('Wildlife batch retry reassociation failed:', attachError.message)
 
   const { error: auditError } = await supabase.from('wildlife_ai_audit_log').insert({
@@ -111,6 +130,16 @@ export async function POST(
     new_values: { upstream_status: upstream.status, batch_id: batchId },
   })
   if (auditError) console.error('Wildlife batch retry audit failed:', auditError.message)
+
+  await writeTerritorialAudit({
+    request,
+    auth,
+    access,
+    action: 'pilot_batch.retry',
+    resourceType: 'wildlife_inference_job',
+    resourceId: retriedJobId,
+    payload: { batchId, upstreamStatus: upstream.status },
+  })
 
   return NextResponse.json({
     success: upstream.ok,
