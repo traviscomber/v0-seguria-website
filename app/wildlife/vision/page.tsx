@@ -12,6 +12,7 @@ import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
 import { VisionJobHistory } from './vision-job-history'
 import { VisionMetrics } from './vision-metrics'
+import { VisionOperationsWorkspace } from './vision-operations-workspace'
 
 export default async function WildlifeVisionPage() {
   const supabase = await createSupabaseServerClient()
@@ -60,10 +61,11 @@ export default async function WildlifeVisionPage() {
         <div className="mt-8 space-y-8">
           <VisionMetrics />
           <TerritorialAlertCenter />
-          <CameraRegistry />
           <div id="territorial-map" className="scroll-mt-6">
             <OperationalTerritorialMap />
           </div>
+          <VisionOperationsWorkspace />
+          <CameraRegistry />
           <VisionConsole />
           <ImageMetadataActivity />
           <VisionJobHistory />
