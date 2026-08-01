@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(160),
@@ -105,17 +106,20 @@ function summarizeBatch(batch: BatchRow) {
   }
 }
 
-async function loadBatches(userId: string, batchId?: string | null) {
+async function loadBatches(userId: string, operationId: string | null, batchId?: string | null) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return { data: null, error: new Error('Base de datos no configurada.') }
 
   let query = supabase
     .from('wildlife_pilot_batches')
     .select('id, name, description, zone_label, target_image_count, status, camera_id, started_at, completed_at, created_at, updated_at, wildlife_cameras(code, name, zone_label), wildlife_inference_jobs(id, original_filename, status, review_status, result_json, error_code, error_message, estimated_cost_usd, latency_ms, created_at, updated_at)')
-    .eq('created_by_user_id', userId)
     .order('created_at', { ascending: false })
     .order('created_at', { referencedTable: 'wildlife_inference_jobs', ascending: false })
     .limit(50)
+
+  query = operationId
+    ? query.eq('organization_id', operationId)
+    : query.eq('created_by_user_id', userId)
 
   if (batchId) query = query.eq('id', batchId)
   const result = await query
@@ -127,23 +131,41 @@ export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth, request.nextUrl.searchParams.get('operation_id'))
+  if (!access.capabilities.viewEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite consultar lotes.' }, { status: 403 })
+  }
+
   const batchId = request.nextUrl.searchParams.get('id')
   if (batchId && !z.string().uuid().safeParse(batchId).success) {
     return NextResponse.json({ success: false, error: 'Lote invalido.' }, { status: 400 })
   }
 
-  const loaded = await loadBatches(auth.user.id, batchId)
+  const loaded = await loadBatches(auth.user.id, access.operationId, batchId)
   if (loaded.error) {
     console.error('Wildlife pilot batch listing failed:', loaded.error.message)
     return NextResponse.json({ success: false, error: 'No fue posible cargar los lotes.' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true, data: loaded.data || [] })
+  return NextResponse.json({
+    success: true,
+    data: loaded.data || [],
+    access: {
+      role: access.role,
+      processEvidence: access.capabilities.processEvidence,
+      reviewEvidence: access.capabilities.reviewEvidence,
+    },
+  })
 }
 
 export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
+  const access = await resolveWildlifeAccess(auth)
+  if (!access.capabilities.processEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite crear lotes.' }, { status: 403 })
+  }
 
   const parsed = createSchema.safeParse(await request.json())
   if (!parsed.success) {
@@ -154,12 +176,16 @@ export async function POST(request: NextRequest) {
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   if (parsed.data.cameraId) {
-    const { data: camera, error: cameraError } = await supabase
+    let cameraQuery = supabase
       .from('wildlife_cameras')
       .select('id')
       .eq('id', parsed.data.cameraId)
-      .eq('created_by_user_id', auth.user.id)
-      .maybeSingle()
+
+    cameraQuery = access.operationId
+      ? cameraQuery.eq('organization_id', access.operationId)
+      : cameraQuery.eq('created_by_user_id', auth.user.id)
+
+    const { data: camera, error: cameraError } = await cameraQuery.maybeSingle()
     if (cameraError) return NextResponse.json({ success: false, error: 'No fue posible verificar la camara.' }, { status: 500 })
     if (!camera) return NextResponse.json({ success: false, error: 'Camara no encontrada.' }, { status: 404 })
   }
@@ -167,7 +193,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('wildlife_pilot_batches')
     .insert({
-      organization_id: auth.user.clientIds[0] ?? null,
+      organization_id: access.operationId,
       created_by_user_id: auth.user.id,
       camera_id: parsed.data.cameraId || null,
       name: parsed.data.name,
@@ -184,7 +210,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'No fue posible crear el lote.' }, { status: 500 })
   }
 
-  const loaded = await loadBatches(auth.user.id, data.id)
+  await writeTerritorialAudit({
+    request,
+    auth,
+    access,
+    action: 'pilot_batch.created',
+    resourceType: 'wildlife_pilot_batch',
+    resourceId: data.id,
+    payload: { targetImageCount: parsed.data.targetImageCount },
+  })
+
+  const loaded = await loadBatches(auth.user.id, access.operationId, data.id)
   return NextResponse.json({ success: true, data: loaded.data?.[0] || { id: data.id } }, { status: 201 })
 }
 
@@ -192,21 +228,32 @@ export async function PATCH(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth)
   const parsed = patchSchema.safeParse(await request.json())
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Accion invalida.' }, { status: 400 })
   }
 
+  const required = parsed.data.action === 'set_status' && parsed.data.status === 'completed'
+    ? access.capabilities.reviewEvidence
+    : access.capabilities.processEvidence
+  if (!required) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite esta accion sobre el lote.' }, { status: 403 })
+  }
+
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
-  const { data: batch, error: batchError } = await supabase
+  let batchQuery = supabase
     .from('wildlife_pilot_batches')
     .select('id, status, target_image_count, started_at')
     .eq('id', parsed.data.batchId)
-    .eq('created_by_user_id', auth.user.id)
-    .maybeSingle()
 
+  batchQuery = access.operationId
+    ? batchQuery.eq('organization_id', access.operationId)
+    : batchQuery.eq('created_by_user_id', auth.user.id)
+
+  const { data: batch, error: batchError } = await batchQuery.maybeSingle()
   if (batchError) return NextResponse.json({ success: false, error: 'No fue posible verificar el lote.' }, { status: 500 })
   if (!batch) return NextResponse.json({ success: false, error: 'Lote no encontrado.' }, { status: 404 })
 
@@ -215,13 +262,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'El lote esta cerrado.' }, { status: 409 })
     }
 
-    const { data: job, error: jobError } = await supabase
+    let jobQuery = supabase
       .from('wildlife_inference_jobs')
       .select('id, pilot_batch_id')
       .eq('id', parsed.data.jobId)
-      .eq('submitted_by_user_id', auth.user.id)
-      .maybeSingle()
 
+    jobQuery = access.operationId
+      ? jobQuery.eq('organization_id', access.operationId)
+      : jobQuery.eq('submitted_by_user_id', auth.user.id)
+
+    const { data: job, error: jobError } = await jobQuery.maybeSingle()
     if (jobError) return NextResponse.json({ success: false, error: 'No fue posible verificar el analisis.' }, { status: 500 })
     if (!job) return NextResponse.json({ success: false, error: 'Analisis no encontrado.' }, { status: 404 })
 
@@ -236,20 +286,40 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { error: attachError } = await supabase
+    let attachQuery = supabase
       .from('wildlife_inference_jobs')
       .update({ pilot_batch_id: batch.id, updated_at: new Date().toISOString() })
       .eq('id', job.id)
-      .eq('submitted_by_user_id', auth.user.id)
+
+    attachQuery = access.operationId
+      ? attachQuery.eq('organization_id', access.operationId)
+      : attachQuery.eq('submitted_by_user_id', auth.user.id)
+
+    const { error: attachError } = await attachQuery
     if (attachError) return NextResponse.json({ success: false, error: 'No fue posible asociar el analisis al lote.' }, { status: 500 })
 
     const now = new Date().toISOString()
-    const { error: startError } = await supabase
+    let startQuery = supabase
       .from('wildlife_pilot_batches')
       .update({ status: 'processing', started_at: batch.started_at || now, completed_at: null })
       .eq('id', batch.id)
-      .eq('created_by_user_id', auth.user.id)
+
+    startQuery = access.operationId
+      ? startQuery.eq('organization_id', access.operationId)
+      : startQuery.eq('created_by_user_id', auth.user.id)
+
+    const { error: startError } = await startQuery
     if (startError) return NextResponse.json({ success: false, error: 'El analisis fue guardado, pero el lote no pudo actualizar su estado.' }, { status: 500 })
+
+    await writeTerritorialAudit({
+      request,
+      auth,
+      access,
+      action: 'pilot_batch.job_attached',
+      resourceType: 'wildlife_pilot_batch',
+      resourceId: batch.id,
+      payload: { jobId: job.id },
+    })
   } else {
     if (parsed.data.status === 'completed') {
       const { count, error: activeError } = await supabase
@@ -267,14 +337,30 @@ export async function PATCH(request: NextRequest) {
       started_at: parsed.data.status === 'processing' ? batch.started_at || now : batch.started_at,
       completed_at: parsed.data.status === 'completed' ? now : null,
     }
-    const { error: statusError } = await supabase
+
+    let statusQuery = supabase
       .from('wildlife_pilot_batches')
       .update(updates)
       .eq('id', batch.id)
-      .eq('created_by_user_id', auth.user.id)
+
+    statusQuery = access.operationId
+      ? statusQuery.eq('organization_id', access.operationId)
+      : statusQuery.eq('created_by_user_id', auth.user.id)
+
+    const { error: statusError } = await statusQuery
     if (statusError) return NextResponse.json({ success: false, error: 'No fue posible actualizar el lote.' }, { status: 500 })
+
+    await writeTerritorialAudit({
+      request,
+      auth,
+      access,
+      action: 'pilot_batch.status_updated',
+      resourceType: 'wildlife_pilot_batch',
+      resourceId: batch.id,
+      payload: { status: parsed.data.status },
+    })
   }
 
-  const loaded = await loadBatches(auth.user.id, batch.id)
+  const loaded = await loadBatches(auth.user.id, access.operationId, batch.id)
   return NextResponse.json({ success: true, data: loaded.data?.[0] || null })
 }
