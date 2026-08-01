@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { extractEmbeddedImageMetadata } from '@/lib/wildlife/image-metadata'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -13,6 +14,11 @@ const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  const access = await resolveWildlifeAccess(auth)
+  if (!access.capabilities.processEvidence) {
+    return NextResponse.json({ error: 'forbidden', message: 'Tu rol no permite procesar evidencia.' }, { status: 403 })
+  }
 
   const contentType = (request.headers.get('x-image-content-type') || '').toLowerCase()
   if (!ALLOWED_MIME_TYPES.has(contentType)) {
@@ -45,12 +51,16 @@ export async function POST(request: NextRequest) {
   if (upstream.ok && jobId) {
     const supabase = createSupabaseAdminClient()
     if (supabase) {
-      const { data: existing } = await supabase
+      let lookup = supabase
         .from('wildlife_inference_jobs')
         .select('result_json')
         .eq('id', jobId)
-        .eq('submitted_by_user_id', auth.user.id)
-        .maybeSingle()
+
+      lookup = access.operationId
+        ? lookup.eq('organization_id', access.operationId)
+        : lookup.eq('submitted_by_user_id', auth.user.id)
+
+      const { data: existing } = await lookup.maybeSingle()
 
       const currentResult = existing?.result_json && typeof existing.result_json === 'object'
         ? existing.result_json as Record<string, unknown>
@@ -68,7 +78,7 @@ export async function POST(request: NextRequest) {
           : 'not_validated',
       }
 
-      const { error } = await supabase
+      let update = supabase
         .from('wildlife_inference_jobs')
         .update({
           result_json: { ...currentResult, image_metadata: imageMetadata },
@@ -76,11 +86,29 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', jobId)
-        .eq('submitted_by_user_id', auth.user.id)
 
+      update = access.operationId
+        ? update.eq('organization_id', access.operationId)
+        : update.eq('submitted_by_user_id', auth.user.id)
+
+      const { error } = await update
       if (error) console.error('Wildlife EXIF persistence failed:', error.message)
       payload.image_metadata = imageMetadata
       payload.captured_at = metadata.capturedAt || manualCapturedAt || payload.captured_at || null
+
+      await writeTerritorialAudit({
+        request,
+        auth,
+        access,
+        action: 'evidence.processed',
+        resourceType: 'wildlife_inference_job',
+        resourceId: jobId,
+        payload: {
+          mimeType: contentType,
+          byteSize: image.length,
+          hasEmbeddedCoordinates: metadata.latitude !== null && metadata.longitude !== null,
+        },
+      })
     }
   } else {
     payload.image_metadata = metadata
