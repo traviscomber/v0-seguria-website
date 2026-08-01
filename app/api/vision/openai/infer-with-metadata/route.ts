@@ -21,14 +21,10 @@ export async function POST(request: NextRequest) {
   }
 
   const contentType = (request.headers.get('x-image-content-type') || '').toLowerCase()
-  if (!ALLOWED_MIME_TYPES.has(contentType)) {
-    return NextResponse.json({ error: 'unsupported_image_type' }, { status: 422 })
-  }
+  if (!ALLOWED_MIME_TYPES.has(contentType)) return NextResponse.json({ error: 'unsupported_image_type' }, { status: 422 })
 
   const image = Buffer.from(await request.arrayBuffer())
-  if (image.length === 0 || image.length > MAX_IMAGE_BYTES) {
-    return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
-  }
+  if (image.length === 0 || image.length > MAX_IMAGE_BYTES) return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
 
   const metadata = extractEmbeddedImageMetadata(image, contentType)
   const headers = new Headers()
@@ -51,16 +47,12 @@ export async function POST(request: NextRequest) {
   if (upstream.ok && jobId) {
     const supabase = createSupabaseAdminClient()
     if (supabase) {
-      let lookup = supabase
+      const { data: existing } = await supabase
         .from('wildlife_inference_jobs')
-        .select('result_json')
+        .select('result_json, camera_id')
         .eq('id', jobId)
-
-      lookup = access.operationId
-        ? lookup.eq('organization_id', access.operationId)
-        : lookup.eq('submitted_by_user_id', auth.user.id)
-
-      const { data: existing } = await lookup.maybeSingle()
+        .eq('submitted_by_user_id', auth.user.id)
+        .maybeSingle()
 
       const currentResult = existing?.result_json && typeof existing.result_json === 'object'
         ? existing.result_json as Record<string, unknown>
@@ -68,31 +60,32 @@ export async function POST(request: NextRequest) {
 
       const imageMetadata = {
         ...metadata,
-        capturedAtSource: metadata.capturedAt
-          ? 'exif'
-          : manualCapturedAt
-            ? 'manual'
-            : 'processing_fallback',
-        locationStatus: metadata.latitude !== null && metadata.longitude !== null
-          ? 'validated_exif'
-          : 'not_validated',
+        capturedAtSource: metadata.capturedAt ? 'exif' : manualCapturedAt ? 'manual' : 'processing_fallback',
+        locationStatus: metadata.latitude !== null && metadata.longitude !== null ? 'validated_exif' : 'not_validated',
       }
 
-      let update = supabase
+      const { error } = await supabase
         .from('wildlife_inference_jobs')
         .update({
+          operation_id: access.operationId,
           result_json: { ...currentResult, image_metadata: imageMetadata },
           captured_at: metadata.capturedAt || manualCapturedAt || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', jobId)
+        .eq('submitted_by_user_id', auth.user.id)
 
-      update = access.operationId
-        ? update.eq('organization_id', access.operationId)
-        : update.eq('submitted_by_user_id', auth.user.id)
-
-      const { error } = await update
       if (error) console.error('Wildlife EXIF persistence failed:', error.message)
+
+      if (existing?.camera_id && access.operationId) {
+        const { error: cameraError } = await supabase
+          .from('wildlife_cameras')
+          .update({ operation_id: access.operationId, updated_at: new Date().toISOString() })
+          .eq('id', existing.camera_id)
+          .eq('created_by_user_id', auth.user.id)
+        if (cameraError) console.error('Wildlife camera operation scope failed:', cameraError.message)
+      }
+
       payload.image_metadata = imageMetadata
       payload.captured_at = metadata.capturedAt || manualCapturedAt || payload.captured_at || null
 
