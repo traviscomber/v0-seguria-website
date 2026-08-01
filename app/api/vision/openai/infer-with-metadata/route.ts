@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   const payload = await upstream.json() as Record<string, unknown>
   const jobId = typeof payload.job_id === 'string' ? payload.job_id : null
 
-  if (upstream.ok && jobId) {
+  if (jobId) {
     const supabase = createSupabaseAdminClient()
     if (supabase) {
       const { data: existing } = await supabase
@@ -93,12 +93,13 @@ export async function POST(request: NextRequest) {
         request,
         auth,
         access,
-        action: 'evidence.processed',
+        action: upstream.ok ? 'evidence.processed' : 'evidence.processing_failed',
         resourceType: 'wildlife_inference_job',
         resourceId: jobId,
         payload: {
           mimeType: contentType,
           byteSize: image.length,
+          upstreamStatus: upstream.status,
           hasEmbeddedCoordinates: metadata.latitude !== null && metadata.longitude !== null,
         },
       })
