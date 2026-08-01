@@ -73,6 +73,28 @@ export function OperationalTerritorialMap() {
 
   useEffect(() => { void loadData(); const handler = () => void loadData(); window.addEventListener('wildlife-job-created', handler); return () => window.removeEventListener('wildlife-job-created', handler) }, [])
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const cameraId = (event as CustomEvent<{ cameraId?: string }>).detail?.cameraId
+      if (!cameraId) return
+      const camera = cameras.find((item) => item.id === cameraId)
+      if (!camera || typeof camera.latitude !== 'number' || typeof camera.longitude !== 'number') return
+      const nextZoom = Math.max(zoom, 13)
+      const centerX = worldX(CENTER.longitude, nextZoom)
+      const centerY = worldY(CENTER.latitude, nextZoom)
+      setSelectedCameraId(camera.id)
+      setVisibility((current) => ({ ...current, cameras: true }))
+      setZoom(nextZoom)
+      setPan({
+        x: clamp(centerX - worldX(camera.longitude, nextZoom)),
+        y: clamp(centerY - worldY(camera.latitude, nextZoom)),
+      })
+    }
+
+    window.addEventListener('seguria-map-focus', handler)
+    return () => window.removeEventListener('seguria-map-focus', handler)
+  }, [cameras, zoom])
+
   const sightings = useMemo<Sighting[]>(() => jobs.map((job) => {
     const detection = job.result_json?.detections?.[0]; const speciesCode = detection?.species || 'unknown_animal'; const camera = cameras.find((item) => item.id === job.camera_id)
     return { id: job.id, speciesCode, speciesLabel: getSpeciesLocalization(speciesCode).label, confidence: detection?.confidence, zone: job.zone_label || camera?.zone_label || job.wildlife_cameras?.zone_label || 'Sin sector', date: new Date(job.captured_at || job.created_at), camera }
@@ -142,7 +164,7 @@ export function OperationalTerritorialMap() {
         {visibility.conservation && <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${VIEWPORT.width} ${VIEWPORT.height}`} preserveAspectRatio="none"><polygon points={polygonPoints} fill="rgba(245,158,11,.18)" stroke="rgba(251,191,36,.98)" strokeWidth="3" strokeDasharray="9 6" /></svg>}
         {visibility.conservation && <div className="group absolute -translate-x-1/2 -translate-y-1/2" style={{ left: conservationPosition.x, top: conservationPosition.y }}><button type="button" aria-label="Centro de Conservacion" className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-amber-300 bg-[#071622]/95 text-amber-200"><ShieldAlert className="h-4 w-4" /></button><div className="pointer-events-none absolute bottom-12 left-1/2 z-40 hidden w-64 -translate-x-1/2 rounded-xl border border-amber-300/25 bg-[#071622]/98 p-3 text-xs group-hover:block"><p className="font-medium text-amber-100">Centro de Conservacion del Huemul del Sur</p><p className="mt-1 text-white/70">Zona sensible referencial.</p></div></div>}
         {visibility.landmarks && LANDMARKS.map((landmark) => { const position = projection.point(landmark.latitude, landmark.longitude); return <div key={landmark.name} className="group absolute -translate-x-1/2 -translate-y-full" style={{ left: position.x, top: position.y }}><div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-[#0b1d2c]"><MapPin className="h-3.5 w-3.5 text-white/85" /></div><div className="pointer-events-none absolute left-1/2 top-9 z-30 hidden w-max -translate-x-1/2 rounded-lg bg-[#071622] px-3 py-2 text-xs text-white/85 group-hover:block">{landmark.name}</div></div> })}
-        {visibility.cameras && mappedCameras.map((camera) => { const position = projection.point(camera.latitude as number, camera.longitude as number); const count = filtered.filter((item) => item.camera?.id === camera.id).length; const selected = selectedCameraId === camera.id; const dimmed = filtered.length > 0 && !visibleCameraIds.has(camera.id); return <button key={camera.id} type="button" onClick={() => focusCamera(camera)} className={`absolute -translate-x-1/2 -translate-y-1/2 transition ${dimmed ? 'opacity-30' : ''} ${selected ? 'z-40 scale-110' : ''}`} style={{ left: position.x, top: position.y }}><span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-[#071622] ${selected ? 'border-white ring-4 ring-[#68b4e3]/30' : 'border-[#9bd3f3]'}`}><Camera className="h-4 w-4 text-[#9bd3f3]" /></span>{count > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{count}</span>}</button> })}
+        {visibility.cameras && mappedCameras.map((camera) => { const position = projection.point(camera.latitude as number, camera.longitude as number); const count = filtered.filter((item) => item.camera?.id === camera.id).length; const selected = selectedCameraId === camera.id; const dimmed = filtered.length > 0 && !visibleCameraIds.has(camera.id); return <button key={camera.id} type="button" aria-label={`Enfocar camara ${camera.code}`} aria-pressed={selected} onClick={() => focusCamera(camera)} className={`absolute -translate-x-1/2 -translate-y-1/2 transition ${dimmed ? 'opacity-30' : ''} ${selected ? 'z-40 scale-110' : ''}`} style={{ left: position.x, top: position.y }}><span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-[#071622] ${selected ? 'border-white ring-4 ring-[#68b4e3]/30' : 'border-[#9bd3f3]'}`}><Camera className="h-4 w-4 text-[#9bd3f3]" /></span>{count > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-300 px-1 text-[10px] font-semibold text-[#06131d]">{count}</span>}</button> })}
       </div>
 
       <div className="absolute left-3 top-3 flex gap-1.5 rounded-xl border border-white/12 bg-[#071622]/94 p-1.5">{(Object.keys(LAYERS) as LayerId[]).map((id) => <button key={id} type="button" onClick={() => setLayerId(id)} className={`rounded-lg px-3 py-2 text-xs font-medium ${layerId === id ? 'bg-[#8cccef] text-[#04131d]' : 'text-white/75'}`}>{LAYERS[id].label}</button>)}</div>
