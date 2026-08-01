@@ -76,7 +76,10 @@ export async function POST(request: NextRequest) {
   if (newRows.length > 0) {
     const { data: inserted, error: insertError } = await supabase
       .from('seguria_alerts')
-      .insert(newRows)
+      .upsert(newRows, {
+        onConflict: 'owner_user_id,fingerprint',
+        ignoreDuplicates: true,
+      })
       .select('id')
 
     if (insertError) {
