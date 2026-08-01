@@ -64,7 +64,7 @@ revoke insert, update, delete on public.wildlife_territorial_access_log from aut
 grant select on public.wildlife_territorial_access_log to authenticated;
 
 with single_operation as (
-  select user_id, min(operation_id) as operation_id
+  select user_id, max(operation_id::text)::uuid as operation_id
   from public.user_operations
   group by user_id
   having count(*) = 1
@@ -76,7 +76,7 @@ where camera.organization_id is null
   and camera.created_by_user_id = scope.user_id;
 
 with single_operation as (
-  select user_id, min(operation_id) as operation_id
+  select user_id, max(operation_id::text)::uuid as operation_id
   from public.user_operations
   group by user_id
   having count(*) = 1
@@ -88,7 +88,7 @@ where job.organization_id is null
   and job.submitted_by_user_id = scope.user_id;
 
 with single_operation as (
-  select user_id, min(operation_id) as operation_id
+  select user_id, max(operation_id::text)::uuid as operation_id
   from public.user_operations
   group by user_id
   having count(*) = 1
