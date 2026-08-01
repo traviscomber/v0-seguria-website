@@ -15,28 +15,17 @@ export async function POST(
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
   const access = await resolveWildlifeAccess(auth)
-  if (!access.capabilities.reviewEvidence) {
-    return NextResponse.json({ success: false, error: 'Tu rol no permite cerrar lotes revisados.' }, { status: 403 })
-  }
+  if (!access.capabilities.reviewEvidence) return NextResponse.json({ success: false, error: 'Tu rol no permite cerrar lotes revisados.' }, { status: 403 })
 
   const parsedParams = paramsSchema.safeParse(await context.params)
-  if (!parsedParams.success) {
-    return NextResponse.json({ success: false, error: 'Lote invalido.' }, { status: 400 })
-  }
+  if (!parsedParams.success) return NextResponse.json({ success: false, error: 'Lote invalido.' }, { status: 400 })
 
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   const { batchId } = parsedParams.data
-  let batchQuery = supabase
-    .from('wildlife_pilot_batches')
-    .select('id, status')
-    .eq('id', batchId)
-
-  batchQuery = access.operationId
-    ? batchQuery.eq('organization_id', access.operationId)
-    : batchQuery.eq('created_by_user_id', auth.user.id)
-
+  let batchQuery = supabase.from('wildlife_pilot_batches').select('id, status').eq('id', batchId)
+  batchQuery = access.operationId ? batchQuery.eq('operation_id', access.operationId) : batchQuery.eq('created_by_user_id', auth.user.id)
   const { data: batch, error: batchError } = await batchQuery.maybeSingle()
 
   if (batchError) {
@@ -46,15 +35,8 @@ export async function POST(
   if (!batch) return NextResponse.json({ success: false, error: 'Lote no encontrado.' }, { status: 404 })
   if (batch.status === 'cancelled') return NextResponse.json({ success: false, error: 'El lote esta cancelado.' }, { status: 409 })
 
-  let jobsQuery = supabase
-    .from('wildlife_inference_jobs')
-    .select('id, status, review_status')
-    .eq('pilot_batch_id', batchId)
-
-  jobsQuery = access.operationId
-    ? jobsQuery.eq('organization_id', access.operationId)
-    : jobsQuery.eq('submitted_by_user_id', auth.user.id)
-
+  let jobsQuery = supabase.from('wildlife_inference_jobs').select('id, status, review_status').eq('pilot_batch_id', batchId)
+  jobsQuery = access.operationId ? jobsQuery.eq('operation_id', access.operationId) : jobsQuery.eq('submitted_by_user_id', auth.user.id)
   const { data: jobs, error: jobsError } = await jobsQuery
 
   if (jobsError) {
@@ -66,12 +48,7 @@ export async function POST(
   const active = rows.filter((job) => ['queued', 'processing'].includes(job.status)).length
   const pendingReview = rows.filter((job) => job.status === 'completed' && job.review_status === 'pending').length
   const failed = rows.filter((job) => job.status === 'failed').length
-
-  const criteria = {
-    hasAnalyses: rows.length > 0,
-    noActiveProcessing: active === 0,
-    allCompletedReviewed: pendingReview === 0,
-  }
+  const criteria = { hasAnalyses: rows.length > 0, noActiveProcessing: active === 0, allCompletedReviewed: pendingReview === 0 }
 
   if (!criteria.hasAnalyses || !criteria.noActiveProcessing || !criteria.allCompletedReviewed) {
     return NextResponse.json({
@@ -86,40 +63,16 @@ export async function POST(
   }
 
   const now = new Date().toISOString()
-  let updateQuery = supabase
-    .from('wildlife_pilot_batches')
-    .update({ status: 'completed', completed_at: now, updated_at: now })
-    .eq('id', batchId)
-
-  updateQuery = access.operationId
-    ? updateQuery.eq('organization_id', access.operationId)
-    : updateQuery.eq('created_by_user_id', auth.user.id)
-
-  const { data, error } = await updateQuery
-    .select('id, status, completed_at')
-    .single()
+  let updateQuery = supabase.from('wildlife_pilot_batches').update({ status: 'completed', completed_at: now, updated_at: now }).eq('id', batchId)
+  updateQuery = access.operationId ? updateQuery.eq('operation_id', access.operationId) : updateQuery.eq('created_by_user_id', auth.user.id)
+  const { data, error } = await updateQuery.select('id, status, completed_at').single()
 
   if (error) {
     console.error('Wildlife pilot completion update failed:', error.message)
     return NextResponse.json({ success: false, error: 'No fue posible cerrar el lote.' }, { status: 500 })
   }
 
-  await writeTerritorialAudit({
-    request,
-    auth,
-    access,
-    action: 'pilot_batch.completed',
-    resourceType: 'wildlife_pilot_batch',
-    resourceId: batchId,
-    payload: { total: rows.length, failed },
-  })
+  await writeTerritorialAudit({ request, auth, access, action: 'pilot_batch.completed', resourceType: 'wildlife_pilot_batch', resourceId: batchId, payload: { total: rows.length, failed } })
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      ...data,
-      criteria,
-      totals: { total: rows.length, active, pendingReview, failed },
-    },
-  })
+  return NextResponse.json({ success: true, data: { ...data, criteria, totals: { total: rows.length, active, pendingReview, failed } } })
 }
