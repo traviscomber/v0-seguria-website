@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, Eye, MapPin } from 'lucide-react'
+import { Eye, Layers3, MapPin } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraRegistry } from './camera-registry'
@@ -50,11 +50,11 @@ export default async function WildlifeVisionPage() {
               Ver mapa territorial
             </a>
             <Link
-              href="/wildlife/review"
+              href="/wildlife/vision/batches"
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Cola de revision de dataset
+              <Layers3 className="h-4 w-4" />
+              Revisar lotes piloto
             </Link>
           </div>
         </div>
