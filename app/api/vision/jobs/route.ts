@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     .limit(limit)
 
   query = access.operationId
-    ? query.eq('organization_id', access.operationId)
+    ? query.eq('operation_id', access.operationId)
     : query.eq('submitted_by_user_id', auth.user.id)
 
   const reviewStatus = request.nextUrl.searchParams.get('review_status')
@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest) {
     .eq('id', parsed.data.jobId)
 
   query = access.operationId
-    ? query.eq('organization_id', access.operationId)
+    ? query.eq('operation_id', access.operationId)
     : query.eq('submitted_by_user_id', auth.user.id)
 
   const { data, error } = await query
