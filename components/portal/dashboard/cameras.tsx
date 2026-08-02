@@ -11,26 +11,41 @@ interface DashboardCamerasProps {
   theme: ClientTheme
 }
 
+const HUILO_HUILO_CAMERA_LABELS = [
+  'Recepción principal',
+  'Estacionamiento principal',
+  'Sendero bosque húmedo',
+  'Cruce de río',
+  'Área de servicio',
+  'Mirador del lago',
+]
+
+const HUILO_HUILO_IMAGE_POSITIONS = [
+  'center',
+  'center 62%',
+  '32% center',
+  '68% center',
+  'center 74%',
+  'center 38%',
+]
+
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
   const CameraIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Camera
-  const title = theme.key === 'huilo-huilo'
+  const isHuiloHuilo = theme.key === 'huilo-huilo'
+  const title = isHuiloHuilo
     ? 'Vistas del territorio'
     : theme.key === 'santa-elena'
       ? 'Monitoreo de predios'
       : 'Vistas recientes'
-  const description = theme.key === 'huilo-huilo'
-    ? 'Acceso rápido a cámaras ubicadas en hoteles, senderos y zonas protegidas.'
+  const description = isHuiloHuilo
+    ? 'Imágenes demostrativas de hoteles, senderos y zonas protegidas mientras se conectan los feeds en vivo.'
     : theme.key === 'santa-elena'
       ? 'Revisa accesos, corrales, maquinaria y zonas operativas desde un solo lugar.'
       : `Acceso rápido a las cámaras disponibles en tus ${theme.vocabulary.properties}.`
 
   return (
     <section id="camaras" className="space-y-4">
-      <PortalSectionHeading
-        eyebrow="Vigilancia"
-        title={title}
-        description={description}
-      />
+      <PortalSectionHeading eyebrow="Vigilancia" title={title} description={description} />
 
       {cameras.length === 0 ? (
         <PortalEmptyState
@@ -41,8 +56,14 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {cameras.map(({ site, device }, index) => {
             const deviceId = device.id ? String(device.id) : null
-            const label = getPortalDeviceLabel(device) || 'Cámara'
+            const sourceLabel = getPortalDeviceLabel(device)
+            const label = isHuiloHuilo
+              ? HUILO_HUILO_CAMERA_LABELS[index % HUILO_HUILO_CAMERA_LABELS.length]
+              : sourceLabel || 'Cámara'
             const location = site.label || site.name || theme.vocabulary.properties
+            const fallbackSrc = isHuiloHuilo
+              ? site.imageUrl || '/portal/huilo-huilo.jpg'
+              : site.imageUrl || undefined
 
             return (
               <Link
@@ -51,19 +72,28 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
                 className={`group overflow-hidden rounded-[22px] border border-white/10 ${theme.cardClass} shadow-lg shadow-black/10 backdrop-blur-xl transition hover:-translate-y-1 hover:border-white/20`}
               >
                 <div className="relative h-44 overflow-hidden bg-black/25">
-                  {deviceId ? (
-                    <CameraSnapshot deviceId={deviceId} alt={label} />
-                  ) : (
+                  <CameraSnapshot
+                    deviceId={deviceId}
+                    alt={label}
+                    fallbackSrc={fallbackSrc}
+                    fallbackPosition={HUILO_HUILO_IMAGE_POSITIONS[index % HUILO_HUILO_IMAGE_POSITIONS.length]}
+                  />
+                  {!deviceId && !fallbackSrc ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-white/35">
                       <CameraIcon className="h-8 w-8" strokeWidth={1.4} />
                       Vista no disponible
                     </div>
-                  )}
+                  ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/5 to-black/20" />
                   <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] text-white/75 backdrop-blur-md">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)]" />
-                    Disponible
+                    <span className={`h-2 w-2 rounded-full ${isHuiloHuilo ? 'bg-amber-300' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)]'}`} />
+                    {isHuiloHuilo ? 'Vista demo' : 'Disponible'}
                   </span>
+                  {isHuiloHuilo ? (
+                    <span className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-white/60 backdrop-blur-md">
+                      Sin feed en vivo
+                    </span>
+                  ) : null}
                   <span className={`absolute bottom-3 right-3 rounded-full border border-white/10 bg-black/60 p-2 backdrop-blur-md ${theme.accentTextClass}`}>
                     <CameraIcon className="h-4 w-4" strokeWidth={1.7} />
                   </span>
@@ -75,7 +105,7 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
                     {location}
                   </p>
                   <p className="mt-3 text-[11px] uppercase tracking-[0.16em] text-white/30 transition group-hover:text-white/55">
-                    Abrir {theme.key === 'santa-elena' ? 'predio' : theme.key === 'huilo-huilo' ? 'espacio' : 'propiedad'}
+                    Abrir {theme.key === 'santa-elena' ? 'predio' : isHuiloHuilo ? 'espacio' : 'propiedad'}
                   </p>
                 </div>
               </Link>
