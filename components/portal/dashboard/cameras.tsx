@@ -20,13 +20,9 @@ const HUILO_HUILO_CAMERA_LABELS = [
   'Mirador del lago',
 ]
 
-const HUILO_HUILO_IMAGE_POSITIONS = [
-  'center',
-  'center 62%',
-  '32% center',
-  '68% center',
-  'center 74%',
-  'center 38%',
+const HUILO_HUILO_DEMO_IMAGES = [
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/parking.jpg',
 ]
 
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
@@ -62,7 +58,7 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
               : sourceLabel || 'Cámara'
             const location = site.label || site.name || theme.vocabulary.properties
             const fallbackSrc = isHuiloHuilo
-              ? site.imageUrl || '/portal/huilo-huilo.jpg'
+              ? HUILO_HUILO_DEMO_IMAGES[index % HUILO_HUILO_DEMO_IMAGES.length]
               : site.imageUrl || undefined
 
             return (
@@ -72,12 +68,7 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
                 className={`group overflow-hidden rounded-[22px] border border-white/10 ${theme.cardClass} shadow-lg shadow-black/10 backdrop-blur-xl transition hover:-translate-y-1 hover:border-white/20`}
               >
                 <div className="relative h-44 overflow-hidden bg-black/25">
-                  <CameraSnapshot
-                    deviceId={deviceId}
-                    alt={label}
-                    fallbackSrc={fallbackSrc}
-                    fallbackPosition={HUILO_HUILO_IMAGE_POSITIONS[index % HUILO_HUILO_IMAGE_POSITIONS.length]}
-                  />
+                  <CameraSnapshot deviceId={deviceId} alt={label} fallbackSrc={fallbackSrc} />
                   {!deviceId && !fallbackSrc ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-white/35">
                       <CameraIcon className="h-8 w-8" strokeWidth={1.4} />
