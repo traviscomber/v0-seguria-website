@@ -5,6 +5,7 @@ import { Eye, Layers3, MapPin } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CameraQualityDiagnostics } from './camera-quality-diagnostics'
 import { CameraRegistry } from './camera-registry'
+import { DemoDataControl } from './demo-data-control'
 import { ImageMetadataActivity } from './image-metadata-activity'
 import { OperationalTerritorialMap } from './operational-territorial-map'
 import { PilotBatchManager } from './pilot-batch-manager'
@@ -62,6 +63,7 @@ export default async function WildlifeVisionPage() {
         </div>
 
         <div className="mt-8 space-y-8">
+          <DemoDataControl />
           <VisionMetrics />
           <TerritorialAccessPanel />
           <TerritorialAlertCenter />
