@@ -105,7 +105,7 @@ export function PropertyCameras({ model }: PropertyCamerasProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071524] via-transparent to-transparent" />
                 <PortalStatusBadge
                   className="absolute left-3 top-3"
-                  tone={isSyntheticDemo ? 'info' : getPortalTone(device.estado || device.status)}
+                  tone={isSyntheticDemo ? 'neutral' : getPortalTone(device.estado || device.status)}
                 >
                   {isSyntheticDemo
                     ? 'Vista demo'
