@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Leaf, MapPin, ShieldCheck, Sparkles, Wheat } from 'lucide-react'
 import { getClientTheme } from '@/lib/client-theme'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 function resolvePostLoginPath(nextPath: string, role?: string) {
   const fallback = role === 'client' ? '/app' : '/admin'
@@ -13,7 +13,6 @@ function resolvePostLoginPath(nextPath: string, role?: string) {
 }
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,33 +20,49 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   const theme = useMemo(() => getClientTheme(email), [email])
   const ThemeIcon = theme.key === 'santa-elena' ? Wheat : Leaf
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (loading) return
+
+    const formData = new FormData(event.currentTarget)
+    const submittedEmail = String(formData.get('email') || '').trim().toLowerCase()
+    const submittedPassword = String(formData.get('password') || '')
+
+    setEmail(submittedEmail)
+    setPassword(submittedPassword)
     setLoading(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      if (!submittedEmail || !submittedPassword) {
+        throw new Error('Ingresa tu correo y clave.')
+      }
+
+      const supabase = createSupabaseBrowserClient()
+      if (!supabase) {
+        throw new Error('El servicio de acceso no esta configurado.')
+      }
+
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: submittedEmail,
+        password: submittedPassword,
       })
 
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No pudimos validar tu acceso.`)
+      if (signInError || !data.user || !data.session) {
+        throw new Error('No pudimos validar tu acceso. Revisa el correo y la clave.')
       }
 
-      const result = await response.json()
-
-      if (!result?.success) {
-        throw new Error(result?.error || 'No fue posible iniciar sesión.')
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !sessionData.session) {
+        await supabase.auth.signOut()
+        throw new Error('La sesion no pudo guardarse. Intenta nuevamente.')
       }
 
-      const role = result.data?.user?.role
-      router.replace(resolvePostLoginPath(nextPath, role))
+      const metadataRole = data.user.app_metadata?.platform_role || data.user.app_metadata?.role
+      const role = metadataRole === 'admin' || metadataRole === 'technician' ? metadataRole : 'client'
+      window.location.replace(resolvePostLoginPath(nextPath, role))
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'No fue posible iniciar sesión.')
-    } finally {
+      setError(submitError instanceof Error ? submitError.message : 'No fue posible iniciar sesion.')
       setLoading(false)
     }
   }
