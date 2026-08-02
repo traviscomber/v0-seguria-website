@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess } from '@/lib/wildlife/server-access'
 
 type Detection = {
   species?: unknown
@@ -19,6 +20,11 @@ export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth, request.nextUrl.searchParams.get('operation_id'))
+  if (!access.capabilities.viewEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite consultar metricas.' }, { status: 403 })
+  }
+
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
@@ -26,17 +32,22 @@ export async function GET(request: NextRequest) {
   const days = Number.isFinite(daysParam) ? Math.min(365, Math.max(1, Math.trunc(daysParam))) : 30
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('wildlife_inference_jobs')
     .select('status, review_status, result_json, created_at')
-    .eq('submitted_by_user_id', auth.user.id)
     .gte('created_at', since)
     .order('created_at', { ascending: false })
     .limit(5000)
 
+  query = access.operationId
+    ? query.eq('operation_id', access.operationId)
+    : query.eq('submitted_by_user_id', auth.user.id)
+
+  const { data, error } = await query
+
   if (error) {
     console.error('Wildlife metrics load failed:', error.message)
-    return NextResponse.json({ success: false, error: 'No fue posible calcular las métricas.' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'No fue posible calcular las metricas.' }, { status: 500 })
   }
 
   const jobs = (data || []) as JobRow[]
@@ -108,6 +119,11 @@ export async function GET(request: NextRequest) {
         estimated_cost_per_analysis_usd: costPerAnalysisUsd,
         estimated_total_usd: costPerAnalysisUsd === null ? null : completed * costPerAnalysisUsd,
       },
+    },
+    access: {
+      operationId: access.operationId,
+      operationName: access.operationName,
+      role: access.role,
     },
   })
 }
