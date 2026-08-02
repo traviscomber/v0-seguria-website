@@ -3,9 +3,11 @@ import { z } from 'zod'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 const ALERT_STATUSES = ['open', 'acknowledged', 'resolved', 'dismissed'] as const
 const ALERT_SEVERITIES = ['info', 'low', 'medium', 'high', 'critical'] as const
+const ALERT_MANAGER_ROLES = new Set(['owner', 'admin', 'operator'])
 
 const actionSchema = z.object({
   alertId: z.string().uuid(),
@@ -32,6 +34,11 @@ export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth, request.nextUrl.searchParams.get('operation_id'))
+  if (!access.capabilities.viewEvidence) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite consultar alertas.' }, { status: 403 })
+  }
+
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
@@ -41,9 +48,12 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('seguria_alerts')
     .select('id, module, alert_type, severity, status, source_type, source_id, camera_id, title, summary, zone_label, detected_at, payload, acknowledged_at, resolved_at, created_at, updated_at, wildlife_cameras(code, name, zone_label)')
-    .eq('owner_user_id', auth.user.id)
     .order('detected_at', { ascending: false })
     .limit(limit)
+
+  query = access.operationId
+    ? query.eq('operation_id', access.operationId)
+    : query.eq('owner_user_id', auth.user.id)
 
   const moduleName = request.nextUrl.searchParams.get('module')?.trim()
   if (moduleName) query = query.eq('module', moduleName)
@@ -64,12 +74,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'No fue posible cargar las alertas.' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true, data: data || [] })
+  return NextResponse.json({
+    success: true,
+    data: data || [],
+    access: {
+      operationId: access.operationId,
+      operationName: access.operationName,
+      role: access.role,
+      canManage: ALERT_MANAGER_ROLES.has(access.role),
+    },
+  })
 }
 
 export async function PATCH(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
+  const access = await resolveWildlifeAccess(auth)
+  if (!ALERT_MANAGER_ROLES.has(access.role)) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite gestionar alertas.' }, { status: 403 })
+  }
 
   const parsed = actionSchema.safeParse(await request.json())
   if (!parsed.success) {
@@ -79,12 +103,15 @@ export async function PATCH(request: NextRequest) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
-  const { data: current, error: loadError } = await supabase
+  let currentQuery = supabase
     .from('seguria_alerts')
     .select('id, status')
     .eq('id', parsed.data.alertId)
-    .eq('owner_user_id', auth.user.id)
-    .maybeSingle()
+  currentQuery = access.operationId
+    ? currentQuery.eq('operation_id', access.operationId)
+    : currentQuery.eq('owner_user_id', auth.user.id)
+
+  const { data: current, error: loadError } = await currentQuery.maybeSingle()
 
   if (loadError) {
     console.error('SegurIA alert transition load failed:', loadError.message)
@@ -116,11 +143,15 @@ export async function PATCH(request: NextRequest) {
     payload.resolved_at = null
   }
 
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from('seguria_alerts')
     .update(payload)
     .eq('id', parsed.data.alertId)
-    .eq('owner_user_id', auth.user.id)
+  updateQuery = access.operationId
+    ? updateQuery.eq('operation_id', access.operationId)
+    : updateQuery.eq('owner_user_id', auth.user.id)
+
+  const { data, error } = await updateQuery
     .select('id, module, alert_type, severity, status, source_type, source_id, camera_id, title, summary, zone_label, detected_at, payload, acknowledged_at, resolved_at, created_at, updated_at, wildlife_cameras(code, name, zone_label)')
     .single()
 
@@ -144,9 +175,19 @@ export async function PATCH(request: NextRequest) {
     previous_status: currentStatus,
     new_status: status,
     note: parsed.data.note || null,
-    metadata: { source: 'seguria-alert-api-v1' },
+    metadata: { source: 'seguria-alert-api-v2', operation_id: access.operationId },
   })
   if (activityError) console.error('SegurIA alert activity insert failed:', activityError.message)
+
+  await writeTerritorialAudit({
+    request,
+    auth,
+    access,
+    action: `alert.${action}`,
+    resourceType: 'seguria_alert',
+    resourceId: data.id,
+    payload: { previousStatus: currentStatus, newStatus: status },
+  })
 
   return NextResponse.json({ success: true, data })
 }
