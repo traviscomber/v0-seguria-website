@@ -140,6 +140,33 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+.field-control {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1rem;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.field-control:focus {
+  border-color: rgba(77, 163, 217, 0.7);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.field-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.field-control option {
+  background: #123A5A;
+  color: #FFFFFF;
+}
+
 /* Section backgrounds */
 .section-dark {
   background: #0A1B2E;

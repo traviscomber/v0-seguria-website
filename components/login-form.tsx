@@ -6,6 +6,12 @@ import { useMemo, useState } from 'react'
 import { Leaf, MapPin, ShieldCheck, Sparkles, Wheat } from 'lucide-react'
 import { getClientTheme } from '@/lib/client-theme'
 
+function resolvePostLoginPath(nextPath: string, role?: string) {
+  const fallback = role === 'client' ? '/app' : '/admin'
+  if (!nextPath.startsWith('/') || nextPath.startsWith('//')) return fallback
+  return nextPath
+}
+
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -38,7 +44,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       }
 
       const role = result.data?.user?.role
-      router.replace(role === 'client' ? (nextPath.startsWith('/app') ? nextPath : '/app') : '/admin')
+      router.replace(resolvePostLoginPath(nextPath, role))
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No fue posible iniciar sesión.')
     } finally {

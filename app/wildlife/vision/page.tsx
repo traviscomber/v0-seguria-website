@@ -1,9 +1,21 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { Eye, Layers3, MapPin } from 'lucide-react'
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { CameraQualityDiagnostics } from './camera-quality-diagnostics'
+import { CameraRegistry } from './camera-registry'
+import { ImageMetadataActivity } from './image-metadata-activity'
+import { OperationalTerritorialMap } from './operational-territorial-map'
+import { PilotBatchManager } from './pilot-batch-manager'
+import { PilotEvaluation } from './pilot-evaluation'
+import { TerritorialAccessPanel } from './territorial-access-panel'
+import { TerritorialAlertCenter } from './territorial-alert-center'
+import { TerritorialMapShortcut } from './territorial-map-shortcut'
 import { VisionConsole } from './vision-console'
+import { VisionJobHistory } from './vision-job-history'
+import { VisionMetrics } from './vision-metrics'
+import { VisionOperationsWorkspace } from './vision-operations-workspace'
 
 export default async function WildlifeVisionPage() {
   const supabase = await createSupabaseServerClient()
@@ -17,28 +29,56 @@ export default async function WildlifeVisionPage() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-3 text-sm text-[#9DD2F2]">
-              <Eye className="h-4 w-4" />
-              Wildlife Intelligence
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[#9DD2F2]">
+              <span className="inline-flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Wildlife Intelligence
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] text-white/45">
+                SegurIA · Powered by N3uralia
+              </span>
             </div>
-            <h1 className="mt-3 text-4xl font-light tracking-tight">SegurIA Vision</h1>
+            <h1 className="mt-3 text-4xl font-normal tracking-tight">SegurIA Vision</h1>
             <p className="mt-3 max-w-2xl text-white/60">
-              Estado del motor de visión y prueba controlada de imágenes para operaciones que trabajan con animales.
+              Analisis asistido de camaras trampa, procesamiento por lote y validacion humana trazable.
             </p>
           </div>
-          <Link
-            href="/wildlife/review"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Cola de revisión
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="#territorial-map"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#68b4e3]/25 bg-[#68b4e3]/[0.06] px-4 py-3 text-sm text-[#9bd3f3] hover:bg-[#68b4e3]/[0.1]"
+            >
+              <MapPin className="h-4 w-4" />
+              Ver mapa territorial
+            </a>
+            <Link
+              href="/wildlife/vision/batches"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-white/75 hover:bg-white/[0.05]"
+            >
+              <Layers3 className="h-4 w-4" />
+              Revisar lotes piloto
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-8">
+          <VisionMetrics />
+          <TerritorialAccessPanel />
+          <TerritorialAlertCenter />
+          <div id="territorial-map" className="scroll-mt-6">
+            <OperationalTerritorialMap />
+          </div>
+          <VisionOperationsWorkspace />
+          <CameraRegistry />
+          <CameraQualityDiagnostics />
+          <PilotBatchManager />
           <VisionConsole />
+          <ImageMetadataActivity />
+          <VisionJobHistory />
+          <PilotEvaluation />
         </div>
       </div>
+      <TerritorialMapShortcut />
     </main>
   )
 }

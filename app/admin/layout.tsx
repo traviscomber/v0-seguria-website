@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   Zap,
   ScrollText,
+  Images,
   Menu,
   X,
   LogOut
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { href: '/admin/documentos', label: 'Documentos', icon: FileText },
   { href: '/admin/dispositivos', label: 'Dispositivos', icon: Cpu },
   { href: '/admin/incidentes', label: 'Incidentes', icon: ShieldAlert },
+  { href: '/admin/vision', label: 'SegurIA Vision', icon: Images, roles: ['admin'] },
   { href: '/admin/automatizaciones', label: 'Automatizaciones', icon: Zap },
   { href: '/admin/auditoria', label: 'Auditoria', icon: ScrollText },
   { href: '/admin/integraciones', label: 'Integraciones', icon: Workflow },
@@ -105,7 +107,6 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#0A1B2E]">
-      {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#123A5A] z-50 flex items-center justify-between px-4">
         <Link href="/admin" className="flex items-center gap-2">
           <img
@@ -117,19 +118,18 @@ export default function AdminLayout({
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 text-white"
+          aria-label={sidebarOpen ? 'Cerrar navegación' : 'Abrir navegación'}
         >
           {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </header>
 
-      {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 bottom-0 w-64 bg-[#123A5A] z-40
         transform transition-transform duration-300
         lg:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-white/10">
           <Link href="/admin" className="flex items-center gap-3">
             <img
@@ -140,8 +140,7 @@ export default function AdminLayout({
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-144px)]">
           {navItems.filter((item) => !item.roles || (userRole && item.roles.includes(userRole))).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
             return (
@@ -164,8 +163,7 @@ export default function AdminLayout({
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-[#123A5A]">
           <Link 
             href="/"
             className="flex items-center gap-3 px-4 py-3 rounded-[5px] text-white/70 hover:bg-white/5 hover:text-white transition-colors"
@@ -176,7 +174,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -184,7 +181,6 @@ export default function AdminLayout({
         />
       )}
 
-      {/* Main Content */}
       <main className="lg:ml-64 min-h-screen pt-16 lg:pt-0">
         <div className="p-6 lg:p-8">
           {children}
