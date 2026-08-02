@@ -516,6 +516,7 @@ export async function POST(request: NextRequest) {
   if (!evidence) return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
 
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
+
   const body: Record<string, unknown> = {
     response_format: { type: 'json_object' },
     messages: [
