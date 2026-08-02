@@ -6,6 +6,12 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
+type ScopedSource = {
+  id: string
+  operation_id?: string | null
+  is_demo?: boolean | null
+}
+
 export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
@@ -17,19 +23,19 @@ export async function POST(request: NextRequest) {
   const [jobsResult, camerasResult, alertsResult] = await Promise.all([
     supabase
       .from('wildlife_inference_jobs')
-      .select('id, status, review_status, camera_id, zone_label, captured_at, created_at, error_code, error_message, result_json, wildlife_cameras(code, name, zone_label, latitude, longitude)')
+      .select('id, status, review_status, camera_id, zone_label, captured_at, created_at, error_code, error_message, result_json, operation_id, is_demo, wildlife_cameras(code, name, zone_label, latitude, longitude)')
       .eq('submitted_by_user_id', auth.user.id)
       .gte('created_at', cutoff)
       .order('created_at', { ascending: false })
       .limit(250),
     supabase
       .from('wildlife_cameras')
-      .select('id, code, name, zone_label, latitude, longitude, active, created_at')
+      .select('id, code, name, zone_label, latitude, longitude, active, created_at, operation_id, is_demo')
       .eq('created_by_user_id', auth.user.id)
       .order('code', { ascending: true }),
     supabase
       .from('seguria_alerts')
-      .select('id, fingerprint, alert_type, status')
+      .select('id, fingerprint, alert_type, status, operation_id, is_demo')
       .eq('owner_user_id', auth.user.id)
       .eq('module', 'vision')
       .limit(1500),
@@ -44,33 +50,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'No fue posible sincronizar las alertas.' }, { status: 500 })
   }
 
-  const jobs = (jobsResult.data || []) as unknown as VisionJobInput[]
-  const cameras = (camerasResult.data || []) as unknown as VisionCameraInput[]
+  const jobRows = (jobsResult.data || []) as unknown as Array<VisionJobInput & ScopedSource>
+  const cameraRows = (camerasResult.data || []) as unknown as Array<VisionCameraInput & ScopedSource>
+  const jobs = jobRows as VisionJobInput[]
+  const cameras = cameraRows as VisionCameraInput[]
   const candidates = deriveVisionAlertCandidates(jobs, cameras)
   const existingAlerts = alertsResult.data || []
   const existingByFingerprint = new Map(existingAlerts.map((alert) => [alert.fingerprint, alert]))
+  const jobsById = new Map(jobRows.map((job) => [job.id, job]))
+  const camerasById = new Map(cameraRows.map((camera) => [camera.id, camera]))
   const organizationId = auth.user.clientIds[0] ?? null
   const now = new Date().toISOString()
 
   const newRows = candidates
     .filter((item) => !existingByFingerprint.has(item.fingerprint))
-    .map((item) => ({
-      organization_id: organizationId,
-      owner_user_id: auth.user.id,
-      module: 'vision',
-      alert_type: item.alertType,
-      severity: item.severity,
-      status: 'open',
-      source_type: item.sourceType,
-      source_id: item.sourceId,
-      camera_id: item.cameraId,
-      fingerprint: item.fingerprint,
-      title: item.title,
-      summary: item.summary,
-      zone_label: item.zoneLabel,
-      detected_at: item.detectedAt,
-      payload: item.payload,
-    }))
+    .map((item) => {
+      const sourceJob = item.sourceType === 'wildlife_inference_job' ? jobsById.get(item.sourceId) : undefined
+      const sourceCamera = item.cameraId ? camerasById.get(item.cameraId) : item.sourceType === 'wildlife_camera' ? camerasById.get(item.sourceId) : undefined
+      const operationId = sourceJob?.operation_id || sourceCamera?.operation_id || null
+      const isDemo = Boolean(sourceJob?.is_demo || sourceCamera?.is_demo)
+
+      return {
+        operation_id: operationId,
+        organization_id: organizationId,
+        owner_user_id: auth.user.id,
+        module: 'vision',
+        alert_type: item.alertType,
+        severity: item.severity,
+        status: 'open',
+        source_type: item.sourceType,
+        source_id: item.sourceId,
+        camera_id: item.cameraId,
+        fingerprint: item.fingerprint,
+        title: item.title,
+        summary: item.summary,
+        zone_label: item.zoneLabel,
+        detected_at: item.detectedAt,
+        payload: isDemo ? { ...item.payload, demo: true } : item.payload,
+        is_demo: isDemo,
+      }
+    })
 
   let createdCount = 0
   if (newRows.length > 0) {
