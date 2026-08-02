@@ -20,9 +20,13 @@ const HUILO_HUILO_CAMERA_LABELS = [
   'Mirador del lago',
 ]
 
-const HUILO_HUILO_DEMO_IMAGES = [
+const HUILO_HUILO_CAMERA_IMAGES = [
   '/demo/huilo-huilo/reception.jpg',
-  '/demo/huilo-huilo/parking.jpg',
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/reception.jpg',
 ]
 
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
@@ -58,7 +62,7 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
               : sourceLabel || 'Cámara'
             const location = site.label || site.name || theme.vocabulary.properties
             const fallbackSrc = isHuiloHuilo
-              ? HUILO_HUILO_DEMO_IMAGES[index % HUILO_HUILO_DEMO_IMAGES.length]
+              ? HUILO_HUILO_CAMERA_IMAGES[index % HUILO_HUILO_CAMERA_IMAGES.length]
               : site.imageUrl || undefined
 
             return (
