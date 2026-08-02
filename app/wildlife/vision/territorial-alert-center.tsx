@@ -119,14 +119,26 @@ export function TerritorialAlertCenter() {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
   const [loading, setLoading] = useState(true)
   const [workingId, setWorkingId] = useState<string | null>(null)
+  const [canManage, setCanManage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastSync, setLastSync] = useState<string | null>(null)
+
+  async function fetchAlerts() {
+    const response = await fetch('/api/alerts?module=vision&limit=100', { cache: 'no-store' })
+    const payload = await response.json()
+    if (!response.ok || !payload.success) throw new Error(payload.error || 'No fue posible cargar las alertas.')
+    setAlerts(payload.data || [])
+    const manageable = Boolean(payload.access?.canManage)
+    setCanManage(manageable)
+    return manageable
+  }
 
   async function loadAlerts(sync = false) {
     setLoading(true)
     setError(null)
     try {
-      if (sync) {
+      const manageable = await fetchAlerts()
+      if (sync && manageable) {
         const syncResponse = await fetch('/api/alerts/vision/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -136,12 +148,8 @@ export function TerritorialAlertCenter() {
           throw new Error(syncPayload.error || 'No fue posible sincronizar las alertas.')
         }
         setLastSync(new Date().toISOString())
+        await fetchAlerts()
       }
-
-      const response = await fetch('/api/alerts?module=vision&limit=100', { cache: 'no-store' })
-      const payload = await response.json()
-      if (!response.ok || !payload.success) throw new Error(payload.error || 'No fue posible cargar las alertas.')
-      setAlerts(payload.data || [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'No fue posible cargar el centro de alertas.')
     } finally {
@@ -178,6 +186,7 @@ export function TerritorialAlertCenter() {
   }), [alerts])
 
   async function transition(alert: AlertRecord, action: AlertAction) {
+    if (!canManage) return
     setWorkingId(alert.id)
     setError(null)
     try {
@@ -214,10 +223,14 @@ export function TerritorialAlertCenter() {
           <h2 className="mt-2 text-2xl font-medium text-white">Eventos que requieren decision operativa</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-white/55">Reglas deterministicas convierten detecciones, fallos y salud de camaras en alertas trazables. Ninguna alerta cientifica se valida sin revision humana.</p>
         </div>
-        <button type="button" onClick={() => void loadAlerts(true)} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/12 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68b4e3]/60 disabled:opacity-40">
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar
-        </button>
+        {canManage ? (
+          <button type="button" onClick={() => void loadAlerts(true)} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/12 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68b4e3]/60 disabled:opacity-40">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Sincronizar
+          </button>
+        ) : (
+          <span className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/45">Modo solo lectura</span>
+        )}
       </div>
 
       <div className="grid gap-px bg-white/8 sm:grid-cols-2 xl:grid-cols-4">
@@ -306,22 +319,22 @@ export function TerritorialAlertCenter() {
                       <LocateFixed className="h-3.5 w-3.5" />Ver en mapa
                     </button>
                   )}
-                  {alert.status === 'open' && (
+                  {canManage && alert.status === 'open' && (
                     <button type="button" disabled={busy} onClick={() => void transition(alert, 'acknowledge')} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/20 px-3 py-2 text-xs text-amber-100 transition hover:bg-amber-300/[0.06] disabled:opacity-40">
                       <CircleCheckBig className="h-3.5 w-3.5" />Reconocer
                     </button>
                   )}
-                  {['open', 'acknowledged'].includes(alert.status) && (
+                  {canManage && ['open', 'acknowledged'].includes(alert.status) && (
                     <button type="button" disabled={busy} onClick={() => void transition(alert, 'resolve')} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300/20 px-3 py-2 text-xs text-emerald-100 transition hover:bg-emerald-300/[0.06] disabled:opacity-40">
                       <CheckCircle2 className="h-3.5 w-3.5" />Resolver
                     </button>
                   )}
-                  {['open', 'acknowledged'].includes(alert.status) && (
+                  {canManage && ['open', 'acknowledged'].includes(alert.status) && (
                     <button type="button" disabled={busy} onClick={() => void transition(alert, 'dismiss')} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55 transition hover:bg-white/[0.05] disabled:opacity-40">
                       <Archive className="h-3.5 w-3.5" />Descartar
                     </button>
                   )}
-                  {['resolved', 'dismissed'].includes(alert.status) && (
+                  {canManage && ['resolved', 'dismissed'].includes(alert.status) && (
                     <button type="button" disabled={busy} onClick={() => void transition(alert, 'reopen')} className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-xs text-white/70 transition hover:bg-white/[0.05] disabled:opacity-40">
                       Reabrir
                     </button>
