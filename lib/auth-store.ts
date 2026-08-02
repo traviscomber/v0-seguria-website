@@ -65,35 +65,37 @@ export async function getCurrentAuthSession() {
 
   if (userError || !userData.user) return null
 
-  // Try to get operations from user_operations table
   let organizationIds: string[] = []
   let propertyIds: string[] = []
 
   try {
-    const { data: userOps } = await supabase
-      .from('user_operations')
-      .select('operation_id')
+    const { data: memberships, error: membershipsError } = await supabase
+      .from('memberships')
+      .select('organization_id')
       .eq('user_id', userData.user.id)
 
+    if (membershipsError) throw membershipsError
+
     organizationIds = Array.from(
-      new Set((userOps || []).map((op) => op.operation_id as string))
+      new Set((memberships || []).map((membership) => membership.organization_id as string))
     )
 
-    // Try to get properties from operations/properties relationship
     if (organizationIds.length > 0) {
-      try {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id')
-          .in('operation_id', organizationIds)
-        propertyIds = (properties || []).map((property) => property.id as string)
-      } catch {
-        // Properties table might not exist, continue with empty
-      }
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id')
+        .in('organization_id', organizationIds)
+
+      if (propertiesError) throw propertiesError
+      propertyIds = Array.from(
+        new Set((properties || []).map((property) => property.id as string))
+      )
     }
-  } catch {
-    // user_operations table might not exist, continue with empty ids
-    console.log('[v0] Auth: user_operations table not available, continuing with empty scope')
+  } catch (scopeError) {
+    console.error(
+      '[auth] Portal scope lookup failed:',
+      scopeError instanceof Error ? scopeError.message : 'unknown error'
+    )
   }
 
   const user = mapSupabaseUserToAuthUser(userData.user, { organizationIds, propertyIds })
