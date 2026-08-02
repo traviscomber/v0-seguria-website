@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { deriveVisionAlertCandidates, type VisionCameraInput, type VisionJobInput } from '@/lib/alerts/vision-alerts'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
 export const runtime = 'nodejs'
+
+const ALERT_SYNC_ROLES = new Set(['owner', 'admin', 'operator'])
 
 type ScopedSource = {
   id: string
@@ -16,29 +19,66 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const access = await resolveWildlifeAccess(auth)
+  if (!ALERT_SYNC_ROLES.has(access.role)) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite sincronizar alertas.' }, { status: 403 })
+  }
+
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
+  let alertOwnerUserId = auth.user.id
+  if (access.operationId) {
+    const { data: ownerLink, error: ownerError } = await supabase
+      .from('user_operations')
+      .select('user_id')
+      .eq('operation_id', access.operationId)
+      .eq('role', 'owner')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (ownerError) {
+      console.error('SegurIA alert owner lookup failed:', ownerError.message)
+      return NextResponse.json({ success: false, error: 'No fue posible resolver el propietario operacional.' }, { status: 500 })
+    }
+    if (ownerLink?.user_id) alertOwnerUserId = ownerLink.user_id
+  }
+
   const cutoff = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
+
+  let jobsQuery = supabase
+    .from('wildlife_inference_jobs')
+    .select('id, status, review_status, camera_id, zone_label, captured_at, created_at, error_code, error_message, result_json, operation_id, is_demo, wildlife_cameras(code, name, zone_label, latitude, longitude)')
+    .gte('created_at', cutoff)
+    .order('created_at', { ascending: false })
+    .limit(250)
+
+  let camerasQuery = supabase
+    .from('wildlife_cameras')
+    .select('id, code, name, zone_label, latitude, longitude, active, created_at, operation_id, is_demo')
+    .order('code', { ascending: true })
+
+  let alertsQuery = supabase
+    .from('seguria_alerts')
+    .select('id, fingerprint, alert_type, status, operation_id, is_demo')
+    .eq('module', 'vision')
+    .limit(1500)
+
+  if (access.operationId) {
+    jobsQuery = jobsQuery.eq('operation_id', access.operationId)
+    camerasQuery = camerasQuery.eq('operation_id', access.operationId)
+    alertsQuery = alertsQuery.eq('operation_id', access.operationId)
+  } else {
+    jobsQuery = jobsQuery.eq('submitted_by_user_id', auth.user.id)
+    camerasQuery = camerasQuery.eq('created_by_user_id', auth.user.id)
+    alertsQuery = alertsQuery.eq('owner_user_id', auth.user.id)
+  }
+
   const [jobsResult, camerasResult, alertsResult] = await Promise.all([
-    supabase
-      .from('wildlife_inference_jobs')
-      .select('id, status, review_status, camera_id, zone_label, captured_at, created_at, error_code, error_message, result_json, operation_id, is_demo, wildlife_cameras(code, name, zone_label, latitude, longitude)')
-      .eq('submitted_by_user_id', auth.user.id)
-      .gte('created_at', cutoff)
-      .order('created_at', { ascending: false })
-      .limit(250),
-    supabase
-      .from('wildlife_cameras')
-      .select('id, code, name, zone_label, latitude, longitude, active, created_at, operation_id, is_demo')
-      .eq('created_by_user_id', auth.user.id)
-      .order('code', { ascending: true }),
-    supabase
-      .from('seguria_alerts')
-      .select('id, fingerprint, alert_type, status, operation_id, is_demo')
-      .eq('owner_user_id', auth.user.id)
-      .eq('module', 'vision')
-      .limit(1500),
+    jobsQuery,
+    camerasQuery,
+    alertsQuery,
   ])
 
   if (jobsResult.error || camerasResult.error || alertsResult.error) {
@@ -59,7 +99,6 @@ export async function POST(request: NextRequest) {
   const existingByFingerprint = new Map(existingAlerts.map((alert) => [alert.fingerprint, alert]))
   const jobsById = new Map(jobRows.map((job) => [job.id, job]))
   const camerasById = new Map(cameraRows.map((camera) => [camera.id, camera]))
-  const organizationId = auth.user.clientIds[0] ?? null
   const now = new Date().toISOString()
 
   const newRows = candidates
@@ -67,13 +106,13 @@ export async function POST(request: NextRequest) {
     .map((item) => {
       const sourceJob = item.sourceType === 'wildlife_inference_job' ? jobsById.get(item.sourceId) : undefined
       const sourceCamera = item.cameraId ? camerasById.get(item.cameraId) : item.sourceType === 'wildlife_camera' ? camerasById.get(item.sourceId) : undefined
-      const operationId = sourceJob?.operation_id || sourceCamera?.operation_id || null
+      const operationId = sourceJob?.operation_id || sourceCamera?.operation_id || access.operationId || null
       const isDemo = Boolean(sourceJob?.is_demo || sourceCamera?.is_demo)
 
       return {
         operation_id: operationId,
-        organization_id: organizationId,
-        owner_user_id: auth.user.id,
+        organization_id: null,
+        owner_user_id: alertOwnerUserId,
         module: 'vision',
         alert_type: item.alertType,
         severity: item.severity,
@@ -114,7 +153,7 @@ export async function POST(request: NextRequest) {
         action: 'created',
         previous_status: null,
         new_status: 'open',
-        metadata: { producer: 'vision-rule-engine-v1' },
+        metadata: { producer: 'vision-rule-engine-v2', operation_id: access.operationId },
       })))
       if (activityError) console.error('SegurIA alert creation activity failed:', activityError.message)
     }
@@ -133,7 +172,7 @@ export async function POST(request: NextRequest) {
     const desired = desiredInactive.get(existing.fingerprint)
 
     if (desired && ['resolved', 'dismissed'].includes(existing.status)) {
-      const { error: reopenError } = await supabase
+      let reopenQuery = supabase
         .from('seguria_alerts')
         .update({
           status: 'open',
@@ -142,14 +181,17 @@ export async function POST(request: NextRequest) {
           summary: desired.summary,
           zone_label: desired.zoneLabel,
           detected_at: desired.detectedAt,
-          payload: desired.payload,
+          payload: existing.is_demo ? { ...desired.payload, demo: true } : desired.payload,
           resolved_by_user_id: null,
           resolved_at: null,
           updated_at: now,
         })
         .eq('id', existing.id)
-        .eq('owner_user_id', auth.user.id)
+      reopenQuery = access.operationId
+        ? reopenQuery.eq('operation_id', access.operationId)
+        : reopenQuery.eq('owner_user_id', auth.user.id)
 
+      const { error: reopenError } = await reopenQuery
       if (!reopenError) {
         reopenedCount += 1
         await supabase.from('seguria_alert_activity').insert({
@@ -158,14 +200,14 @@ export async function POST(request: NextRequest) {
           action: 'reopened',
           previous_status: existing.status,
           new_status: 'open',
-          metadata: { producer: 'vision-rule-engine-v1' },
+          metadata: { producer: 'vision-rule-engine-v2', operation_id: access.operationId },
         })
       }
       continue
     }
 
     if (!desired && ['open', 'acknowledged'].includes(existing.status)) {
-      const { error: resolveError } = await supabase
+      let resolveQuery = supabase
         .from('seguria_alerts')
         .update({
           status: 'resolved',
@@ -174,8 +216,11 @@ export async function POST(request: NextRequest) {
           updated_at: now,
         })
         .eq('id', existing.id)
-        .eq('owner_user_id', auth.user.id)
+      resolveQuery = access.operationId
+        ? resolveQuery.eq('operation_id', access.operationId)
+        : resolveQuery.eq('owner_user_id', auth.user.id)
 
+      const { error: resolveError } = await resolveQuery
       if (!resolveError) {
         autoResolvedCount += 1
         await supabase.from('seguria_alert_activity').insert({
@@ -185,11 +230,27 @@ export async function POST(request: NextRequest) {
           previous_status: existing.status,
           new_status: 'resolved',
           note: 'La camara volvio a registrar actividad dentro del umbral operativo.',
-          metadata: { producer: 'vision-rule-engine-v1' },
+          metadata: { producer: 'vision-rule-engine-v2', operation_id: access.operationId },
         })
       }
     }
   }
+
+  await writeTerritorialAudit({
+    request,
+    auth,
+    access,
+    action: 'alerts.synchronized',
+    resourceType: 'seguria_alert_collection',
+    payload: {
+      evaluatedJobs: jobs.length,
+      evaluatedCameras: cameras.length,
+      candidates: candidates.length,
+      created: createdCount,
+      reopened: reopenedCount,
+      autoResolved: autoResolvedCount,
+    },
+  })
 
   return NextResponse.json({
     success: true,
