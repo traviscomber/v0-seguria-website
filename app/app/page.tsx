@@ -10,6 +10,7 @@ import {
 } from '@/components/portal/dashboard'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { buildClientDashboardView } from '@/lib/client-portal/dashboard-view'
+import { getPortalDeviceLabel } from '@/lib/client-portal/presentation'
 import { getClientTheme } from '@/lib/client-theme'
 
 export default async function ClientAppPage() {
@@ -27,6 +28,21 @@ export default async function ClientAppPage() {
   ])
   const theme = getClientTheme(...session.user.clientIds, ...organizationIdentifiers)
   const primaryImage = model.sites.find((site) => Boolean(site.imageUrl))?.imageUrl
+  const firstIncident = model.incidents[0]
+  const firstAlert = model.alerts[0]
+  const priority = firstIncident
+    ? {
+        title: firstIncident.incident.title || firstIncident.incident.type || 'Incidente abierto',
+        location: firstIncident.site.label || firstIncident.site.location || firstIncident.site.name || theme.vocabulary.properties,
+        href: `/app/properties/${firstIncident.site.propertyId}`,
+      }
+    : firstAlert
+      ? {
+          title: getPortalDeviceLabel(firstAlert.device) || 'Equipo con alerta',
+          location: firstAlert.site.label || firstAlert.site.location || firstAlert.site.name || theme.vocabulary.properties,
+          href: `/app/properties/${firstAlert.site.propertyId}`,
+        }
+      : null
 
   return (
     <div
@@ -48,6 +64,7 @@ export default async function ClientAppPage() {
             theme={theme}
             siteCount={model.sites.length}
             imageUrl={primaryImage}
+            priority={priority}
           />
           <DashboardStats
             totals={model.totals}
