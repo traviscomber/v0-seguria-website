@@ -42,7 +42,7 @@ export function ClientPortalShell({
     const SpacesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
 
     return [
-      { href: '/app', label: 'Resumen', icon: Home },
+      { href: '/app#resumen', label: 'Resumen', icon: Home },
       { href: '/app#propiedades', label: spacesLabel, icon: SpacesIcon },
       { href: '/app#incidentes', label: 'Prioridades', icon: Siren },
       { href: '/app#camaras', label: 'Vigilancia', icon: Camera },
@@ -72,7 +72,9 @@ export function ClientPortalShell({
   }
 
   const isNavActive = (href: string) => {
-    if (href === '/app') return pathname === '/app' && !activeHash
+    if (href === '/app#resumen') {
+      return pathname === '/app' && (!activeHash || activeHash === '#resumen')
+    }
     if (href === '/app#propiedades') {
       return pathname.startsWith('/app/properties') || (pathname === '/app' && activeHash === '#propiedades')
     }
@@ -90,7 +92,7 @@ export function ClientPortalShell({
     <div className="min-h-screen text-white" style={{ backgroundColor: theme.pageBackground }}>
       <header className={cn('sticky top-0 z-50 border-b border-white/10 backdrop-blur-2xl', theme.cardClass)}>
         <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-          <Link href="/app" className="flex min-w-0 shrink-0 items-center gap-3" aria-label={`Ir al resumen de ${theme.name}`}>
+          <Link href="/app#resumen" className="flex min-w-0 shrink-0 items-center gap-3" aria-label={`Ir al resumen de ${theme.name}`}>
             <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]', theme.accentTextClass)}>
               <PortalIcon className="h-5 w-5" strokeWidth={1.7} />
             </span>
