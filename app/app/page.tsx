@@ -8,7 +8,6 @@ import {
   DashboardStats,
   DashboardSupport,
 } from '@/components/portal/dashboard'
-import { DemoJourney } from '@/components/portal/demo-journey'
 import { getCurrentAuthSession } from '@/lib/auth-store'
 import { buildClientDashboardView } from '@/lib/client-portal/dashboard-view'
 import { getClientTheme } from '@/lib/client-theme'
@@ -40,9 +39,7 @@ export default async function ClientAppPage() {
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/35" />
 
-      <div className="relative z-10 space-y-8 pt-4">
-        <DemoJourney theme={theme} />
-
+      <div className="relative z-10 space-y-10 pt-4">
         <section id="resumen" className="scroll-mt-24">
           <DashboardHero
             userName={session.user.name}
@@ -76,7 +73,7 @@ export default async function ClientAppPage() {
 
         <section id="actividad" className="scroll-mt-24 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <DashboardActivity activity={model.activity} theme={theme} />
-          <DashboardSupport />
+          <DashboardSupport theme={theme} />
         </section>
       </div>
     </div>
