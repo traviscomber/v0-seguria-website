@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  ListTodo,
   FolderKanban,
   FileText,
   Cpu,
@@ -35,6 +36,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/clientes', label: 'Clientes', icon: Building2 },
+  { href: '/admin/queue', label: 'Cola de atención', icon: ListTodo, roles: ['admin'] },
   { href: '/admin/leads', label: 'Leads', icon: Users, roles: ['admin'] },
   { href: '/admin/evidence', label: 'Evidencia', icon: Paperclip, roles: ['admin'] },
   { href: '/admin/proyectos', label: 'Proyectos', icon: FolderKanban },
