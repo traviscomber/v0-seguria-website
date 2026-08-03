@@ -17,24 +17,32 @@
   --gray-light: #E5E7EB;
   --white: #FFFFFF;
 
+  /* Semantic text and border tokens by surface */
+  --text-primary-dark: #FFFFFF;
+  --text-secondary-dark: #A7B8C8;
+  --text-primary-light: #0A1B2E;
+  --text-secondary-light: #526579;
+  --border-dark: rgba(255, 255, 255, 0.14);
+  --border-light: rgba(10, 27, 46, 0.16);
+
   /* Semantic tokens */
   --background: #0A1B2E;
-  --foreground: #FFFFFF;
+  --foreground: var(--text-primary-dark);
   --card: rgba(18, 58, 90, 0.42);
-  --card-foreground: #FFFFFF;
+  --card-foreground: var(--text-primary-dark);
   --popover: #123A5A;
-  --popover-foreground: #FFFFFF;
+  --popover-foreground: var(--text-primary-dark);
   --primary: rgba(77, 163, 217, 0.85);
   --primary-foreground: #FFFFFF;
   --secondary: rgba(255, 255, 255, 0.10);
   --secondary-foreground: #FFFFFF;
   --muted: #123A5A;
-  --muted-foreground: #6B7280;
+  --muted-foreground: var(--text-secondary-dark);
   --accent: #4DA3D9;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.10);
+  --border: var(--border-dark);
   --input: rgba(255, 255, 255, 0.10);
   --ring: #4DA3D9;
 
@@ -48,6 +56,28 @@
   --motion-fast: 150ms;
   --motion-standard: 200ms;
   --motion-slow: 250ms;
+
+  /* Typography */
+  --type-display-size: 4rem;
+  --type-display-line: 4.5rem;
+  --type-h1-size: 3rem;
+  --type-h1-line: 3.5rem;
+  --type-h2-size: 2.25rem;
+  --type-h2-line: 2.75rem;
+  --type-h3-size: 1.5rem;
+  --type-h3-line: 2rem;
+  --type-h4-size: 1.125rem;
+  --type-h4-line: 1.625rem;
+  --type-body-large-size: 1.125rem;
+  --type-body-large-line: 1.75rem;
+  --type-body-size: 1rem;
+  --type-body-line: 1.5625rem;
+  --type-functional-size: 0.875rem;
+  --type-functional-line: 1.3125rem;
+  --type-caption-size: 0.75rem;
+  --type-caption-line: 1.125rem;
+  --type-eyebrow-size: 0.625rem;
+  --type-eyebrow-line: 0.875rem;
 }
 
 @theme inline {
@@ -100,10 +130,7 @@
   }
 
   h1,
-  h2 {
-    font-weight: 300;
-  }
-
+  h2,
   h3,
   h4,
   h5,
@@ -128,30 +155,136 @@
   }
 }
 
-/* Glass card styles */
+/* Explicit typography styles. Light weight is opt-in, never global. */
+.type-display {
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+  font-weight: 300;
+}
+
+.type-hero {
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-line);
+  font-weight: 300;
+}
+
+.type-h1 {
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-line);
+  font-weight: 400;
+}
+
+.type-h2 {
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-line);
+  font-weight: 400;
+}
+
+.type-h3 {
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+  font-weight: 400;
+}
+
+.type-h4 {
+  font-size: var(--type-h4-size);
+  line-height: var(--type-h4-line);
+  font-weight: 400;
+}
+
+.type-body-large {
+  font-size: var(--type-body-large-size);
+  line-height: var(--type-body-large-line);
+}
+
+.type-body {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+.type-functional {
+  font-size: var(--type-functional-size);
+  line-height: var(--type-functional-line);
+}
+
+.type-caption {
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.type-eyebrow {
+  font-size: var(--type-eyebrow-size);
+  line-height: var(--type-eyebrow-line);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+  .type-display,
+  .type-hero {
+    font-size: 2.5rem;
+    line-height: 2.875rem;
+  }
+
+  .type-h1 {
+    font-size: 2.25rem;
+    line-height: 2.75rem;
+  }
+}
+
+/* Shared surfaces */
+.surface-solid {
+  background: var(--seguria-medium);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-brand);
+}
+
+.surface-subtle {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-brand);
+}
+
+.surface-contextual {
+  background: rgba(18, 58, 90, 0.72);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-panel);
+}
+
+/* Glass card styles: contextual variant, not the default surface */
 .glass-card {
   background: rgba(18, 58, 90, 0.42);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid var(--border-dark);
   border-radius: var(--radius-brand);
 }
 
 .glass-card-light {
   background: rgba(230, 241, 248, 0.78);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-brand);
   box-shadow: 0 18px 45px rgba(10, 27, 46, 0.08);
+  color: var(--text-primary-light);
 }
 
 /* Button styles */
 .btn-primary,
 .btn-secondary,
 .btn-ghost {
+  display: inline-flex;
   min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
   border-radius: var(--radius-brand);
+  font-size: var(--type-functional-size);
+  line-height: var(--type-functional-line);
   transition:
     background var(--motion-standard) ease,
     border-color var(--motion-standard) ease,
-    opacity var(--motion-standard) ease;
+    opacity var(--motion-standard) ease,
+    transform var(--motion-fast) ease;
 }
 
 .btn-primary {
@@ -181,26 +314,39 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+.btn-primary:active,
+.btn-secondary:active,
+.btn-ghost:active {
+  transform: translateY(1px);
+}
+
 .btn-primary:disabled,
 .btn-secondary:disabled,
 .btn-ghost:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+  transform: none;
 }
 
 .field-control {
   width: 100%;
   min-height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid var(--border-dark);
   border-radius: var(--radius-control);
   background: rgba(255, 255, 255, 0.05);
   padding: 0.75rem 1rem;
   color: #FFFFFF;
-  font-size: 0.875rem;
+  font-size: var(--type-functional-size);
+  line-height: var(--type-functional-line);
   outline: none;
   transition:
     border-color var(--motion-standard) ease,
     background var(--motion-standard) ease;
+}
+
+.field-control::placeholder {
+  color: var(--text-secondary-dark);
+  opacity: 0.85;
 }
 
 .field-control:focus-visible {
@@ -221,15 +367,25 @@
 /* Section backgrounds */
 .section-dark {
   background: #0A1B2E;
+  color: var(--text-primary-dark);
 }
 
 .section-medium {
   background: #123A5A;
+  color: var(--text-primary-dark);
 }
 
 .section-ice {
   background: #E6F1F8;
-  color: #0A1B2E;
+  color: var(--text-primary-light);
+}
+
+.text-secondary-dark {
+  color: var(--text-secondary-dark);
+}
+
+.text-secondary-light {
+  color: var(--text-secondary-light);
 }
 
 @media (prefers-reduced-motion: reduce) {
