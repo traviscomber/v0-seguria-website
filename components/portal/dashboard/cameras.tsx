@@ -5,25 +5,12 @@ import { PortalEmptyState, PortalSectionHeading } from '@/components/portal/port
 import type { ClientDashboardView } from '@/lib/client-portal/dashboard-view'
 import { getPortalDeviceLabel } from '@/lib/client-portal/presentation'
 import type { ClientTheme } from '@/lib/client-theme'
+import { getHuiloHuiloDemoCamera } from '@/lib/huilo-huilo-demo'
 
 interface DashboardCamerasProps {
   cameras: ClientDashboardView['cameras']
   theme: ClientTheme
 }
-
-const HUILO_HUILO_CAMERA_LABELS = [
-  'Recepción principal',
-  'Estacionamiento principal',
-  'Sendero bosque húmedo',
-  'Cruce de río',
-  'Área de servicio',
-  'Mirador del lago',
-]
-
-const HUILO_HUILO_DEMO_IMAGES = [
-  '/demo/huilo-huilo/reception.jpg',
-  '/demo/huilo-huilo/parking.jpg',
-]
 
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
   const CameraIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Camera
@@ -52,14 +39,11 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {cameras.map(({ site, device }, index) => {
             const deviceId = device.id ? String(device.id) : null
+            const demo = getHuiloHuiloDemoCamera(index)
             const sourceLabel = getPortalDeviceLabel(device)
-            const label = isHuiloHuilo
-              ? HUILO_HUILO_CAMERA_LABELS[index % HUILO_HUILO_CAMERA_LABELS.length]
-              : sourceLabel || 'Cámara'
+            const label = isHuiloHuilo ? demo.name : sourceLabel || 'Cámara'
             const location = site.label || site.name || theme.vocabulary.properties
-            const fallbackSrc = isHuiloHuilo
-              ? HUILO_HUILO_DEMO_IMAGES[index % HUILO_HUILO_DEMO_IMAGES.length]
-              : site.imageUrl || undefined
+            const fallbackSrc = isHuiloHuilo ? demo.image : site.imageUrl || undefined
 
             return (
               <Link
