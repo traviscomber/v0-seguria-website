@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ExternalLink, FileText, ImageIcon, Loader2, MapPin, RefreshCw, Search, Video } from 'lucide-react'
+import { AlertTriangle, ExternalLink, FileText, History, ImageIcon, Loader2, MapPin, RefreshCw, Search, Video } from 'lucide-react'
 
 type EvidenceFile = {
   name?: string
@@ -22,6 +22,13 @@ type SupportContext = {
   returnPath?: string
 }
 
+type EvidenceAccess = {
+  fileName?: string
+  path?: string
+  openedAt?: string
+  openedBy?: string
+}
+
 type EvidenceRequest = {
   id: string
   name: string
@@ -33,6 +40,7 @@ type EvidenceRequest = {
   subject: string
   message: string
   supportContext?: SupportContext
+  evidenceAccessLog?: EvidenceAccess[]
   evidence: EvidenceFile[]
 }
 
@@ -75,6 +83,7 @@ export default function EvidencePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
+  const [openingKey, setOpeningKey] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -109,8 +118,33 @@ export default function EvidencePage() {
       item.supportContext?.section || '',
       item.supportContext?.propertyId || '',
       item.supportContext?.itemId || '',
+      ...(item.evidenceAccessLog || []).flatMap((entry) => [entry.fileName || '', entry.openedBy || '']),
     ].some((value) => value.toLowerCase().includes(normalized)))
   }, [items, query])
+
+  const openEvidence = async (item: EvidenceRequest, file: EvidenceFile, index: number) => {
+    if (!file.signedUrl || !file.path) return
+    const popup = window.open('', '_blank', 'noopener,noreferrer')
+    const key = `${item.id}-${file.path}-${index}`
+    setOpeningKey(key)
+    try {
+      const response = await fetch('/api/leads/evidence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: item.id, fileName: file.name || 'Archivo', path: file.path }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.success) throw new Error(result?.error || 'No fue posible registrar el acceso.')
+      if (popup) popup.location.href = file.signedUrl
+      else window.open(file.signedUrl, '_blank', 'noopener,noreferrer')
+      await load()
+    } catch (caught) {
+      popup?.close()
+      setError(caught instanceof Error ? caught.message : 'No fue posible abrir la evidencia.')
+    } finally {
+      setOpeningKey('')
+    }
+  }
 
   const fileCount = items.reduce((total, item) => total + item.evidence.length, 0)
 
@@ -120,7 +154,7 @@ export default function EvidencePage() {
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-[#9DD2F2]">Soporte Huilo Huilo</p>
           <h1 className="mt-2 text-3xl font-medium text-white">Evidencia recibida</h1>
-          <p className="mt-2 max-w-3xl text-white/65">Archivos privados asociados a solicitudes de soporte. Los enlaces expiran automáticamente.</p>
+          <p className="mt-2 max-w-3xl text-white/65">Archivos privados con origen contextual, acceso temporal e historial de apertura.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Metric label="Solicitudes" value={String(items.length)} />
@@ -149,7 +183,7 @@ export default function EvidencePage() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/45" aria-hidden="true" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por persona, cámara, alerta o ubicación..." className="w-full rounded-[5px] bg-white/10 py-3 pl-11 pr-4 text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-[#4DA3D9]" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por persona, cámara, alerta, archivo o administrador..." className="w-full rounded-[5px] bg-white/10 py-3 pl-11 pr-4 text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-[#4DA3D9]" />
         </div>
         <button onClick={() => void load()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-[5px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />Actualizar</button>
       </div>
@@ -165,6 +199,7 @@ export default function EvidencePage() {
           {filtered.map((item) => {
             const context = item.supportContext
             const sourceLabel = contextLabel(context)
+            const accessLog = item.evidenceAccessLog || []
             return (
               <article key={item.id} className="glass-card overflow-hidden">
                 <div className="flex flex-col gap-3 border-b border-white/10 p-5 md:flex-row md:items-start md:justify-between">
@@ -173,7 +208,10 @@ export default function EvidencePage() {
                     <p className="mt-1 text-sm text-white/60">{item.email}{item.phone ? ` · ${item.phone}` : ''}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[#9DD2F2]">{item.location || 'Huilo Huilo'} · {formatDate(item.createdAt)}</p>
                   </div>
-                  <span className="self-start rounded-[5px] border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/65">{item.evidence.length} adjunto{item.evidence.length === 1 ? '' : 's'}</span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-[5px] border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/65">{item.evidence.length} adjunto{item.evidence.length === 1 ? '' : 's'}</span>
+                    <span className="rounded-[5px] border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/65">{accessLog.length} apertura{accessLog.length === 1 ? '' : 's'}</span>
+                  </div>
                 </div>
 
                 <div className="grid gap-6 p-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -193,6 +231,20 @@ export default function EvidencePage() {
                     <p className="text-xs uppercase tracking-[0.14em] text-white/45">Solicitud</p>
                     <p className="mt-2 text-sm font-medium text-white/85">{item.subject || 'Soporte operativo'}</p>
                     <p className="mt-3 text-sm leading-7 text-white/65">{item.message || 'Sin mensaje adicional.'}</p>
+
+                    {accessLog.length > 0 ? (
+                      <div className="mt-6 border-t border-white/10 pt-5">
+                        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-white/45"><History className="h-4 w-4" />Historial de acceso</p>
+                        <div className="mt-3 space-y-2">
+                          {accessLog.slice(0, 5).map((entry, index) => (
+                            <div key={`${entry.path}-${entry.openedAt}-${index}`} className="rounded-[6px] bg-white/[0.04] px-3 py-2 text-xs text-white/55">
+                              <p className="truncate text-white/75">{entry.fileName || 'Archivo'}</p>
+                              <p className="mt-1 truncate">{entry.openedBy || 'Administrador'}{entry.openedAt ? ` · ${formatDate(entry.openedAt)}` : ''}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -200,15 +252,20 @@ export default function EvidencePage() {
                       const isImage = file.type?.startsWith('image/')
                       const isVideo = file.type?.startsWith('video/')
                       const Icon = isVideo ? Video : isImage ? ImageIcon : FileText
+                      const key = `${item.id}-${file.path}-${index}`
+                      const isOpening = openingKey === key
                       return (
-                        <a key={`${file.path}-${index}`} href={file.signedUrl || '#'} target="_blank" rel="noreferrer" aria-disabled={!file.signedUrl} className={`group overflow-hidden rounded-[8px] border border-white/10 bg-black/15 transition ${file.signedUrl ? 'hover:border-[#4DA3D9]/60 hover:bg-white/[0.06]' : 'pointer-events-none opacity-55'}`}>
-                          <div className="relative flex h-36 items-center justify-center overflow-hidden bg-black/20">{isImage && file.signedUrl ? <img src={file.signedUrl} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <Icon className="h-8 w-8 text-[#9DD2F2]" aria-hidden="true" />}</div>
+                        <button key={`${file.path}-${index}`} type="button" disabled={!file.signedUrl || !file.path || isOpening} onClick={() => void openEvidence(item, file, index)} className={`group overflow-hidden rounded-[8px] border border-white/10 bg-black/15 text-left transition ${file.signedUrl && file.path ? 'hover:border-[#4DA3D9]/60 hover:bg-white/[0.06]' : 'cursor-not-allowed opacity-55'}`}>
+                          <div className="relative flex h-36 items-center justify-center overflow-hidden bg-black/20">
+                            {isImage && file.signedUrl ? <img src={file.signedUrl} alt="" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <Icon className="h-8 w-8 text-[#9DD2F2]" aria-hidden="true" />}
+                            {isOpening ? <span className="absolute inset-0 flex items-center justify-center bg-black/65"><Loader2 className="h-6 w-6 animate-spin text-white" /></span> : null}
+                          </div>
                           <div className="flex items-center gap-3 p-3">
                             <Icon className="h-4 w-4 shrink-0 text-[#9DD2F2]" aria-hidden="true" />
                             <span className="min-w-0 flex-1"><span className="block truncate text-sm text-white/85">{file.name || 'Archivo'}</span><span className="block text-xs text-white/45">{formatBytes(file.size)}</span></span>
                             <ExternalLink className="h-4 w-4 text-white/40 group-hover:text-white" aria-hidden="true" />
                           </div>
-                        </a>
+                        </button>
                       )
                     })}
                   </div>
