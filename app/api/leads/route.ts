@@ -43,6 +43,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MAX_TOTAL_SIZE = 25 * 1024 * 1024
 const DEFAULT_DAILY_EVIDENCE_BUDGET = 500 * 1024 * 1024
 const EVIDENCE_RETENTION_DAYS = 180
+const MAX_CRM_ACTIVITY_EVENTS = 100
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'])
 
 type VerifiedFile = {
@@ -50,6 +51,14 @@ type VerifiedFile = {
   bytes: Uint8Array
   mime: 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf' | 'video/mp4'
   extension: 'jpg' | 'png' | 'webp' | 'pdf' | 'mp4'
+}
+
+type CrmActivity = {
+  type: 'created' | 'status_changed' | 'notes_updated'
+  at: string
+  by: string
+  fromStatus?: string
+  toStatus?: string
 }
 
 function getClientIp(request: NextRequest) {
@@ -186,6 +195,25 @@ export async function PATCH(request: NextRequest) {
     let details: Record<string, unknown> = {}
     try { details = current.message ? JSON.parse(String(current.message)) : {} } catch { details = { mensaje: current.message || '' } }
 
+    const now = new Date().toISOString()
+    const actor = auth.user.email || auth.user.id
+    const currentStatus = String(current.status || 'new')
+    const currentNotes = String(details.crmNotes || '')
+    const statusChanged = currentStatus !== parsed.data.status
+    const notesChanged = currentNotes !== parsed.data.crmNotes.trim()
+    const previousActivity = Array.isArray(details.crmActivityLog) ? details.crmActivityLog as CrmActivity[] : []
+    const activity: CrmActivity[] = []
+
+    if (statusChanged) {
+      activity.push({ type: 'status_changed', at: now, by: actor, fromStatus: currentStatus, toStatus: parsed.data.status })
+    }
+    if (notesChanged) {
+      activity.push({ type: 'notes_updated', at: now, by: actor })
+    }
+
+    const crmActivityLog = [...previousActivity, ...activity].slice(-MAX_CRM_ACTIVITY_EVENTS)
+    const firstResponseAt = details.crmFirstResponseAt || (currentStatus === 'new' && parsed.data.status !== 'new' ? now : null)
+
     const { data, error } = await supabase
       .from('leads')
       .update({
@@ -193,11 +221,15 @@ export async function PATCH(request: NextRequest) {
         message: JSON.stringify({
           ...details,
           crmNotes: parsed.data.crmNotes.trim(),
-          crmUpdatedAt: new Date().toISOString(),
-          crmUpdatedBy: auth.user.email || auth.user.id,
+          crmUpdatedAt: now,
+          crmUpdatedBy: actor,
+          crmOwner: actor,
+          crmLastActivityAt: activity.length > 0 ? now : details.crmLastActivityAt || null,
+          crmFirstResponseAt: firstResponseAt,
+          crmActivityLog,
           previousStatus: current.status || null,
         }),
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
       .eq('id', parsed.data.id)
       .select('id,name,email,phone,property_type,message,source,status,created_at,updated_at')
@@ -281,6 +313,7 @@ export async function POST(request: NextRequest) {
       evidence.push({ name: verified.file.name, type: verified.mime, size: verified.file.size, bucket: EVIDENCE_BUCKET, path, retentionUntil })
     }
 
+    const createdAt = new Date().toISOString()
     const details = {
       ubicacion: parsed.data.ubicacion || '',
       tamanoAproximado: parsed.data.tamanoAproximado || '',
@@ -300,6 +333,8 @@ export async function POST(request: NextRequest) {
         itemLabel: parsed.data.supportItemLabel || '',
         returnPath: parsed.data.supportReturnPath || '',
       },
+      crmActivityLog: [{ type: 'created', at: createdAt, by: 'Portal Huilo Huilo' } satisfies CrmActivity],
+      crmLastActivityAt: createdAt,
       evidence,
       evidenceTotalBytes: totalSize,
       evidenceRetentionDays: EVIDENCE_RETENTION_DAYS,
