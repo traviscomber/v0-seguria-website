@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import type { ClientTheme } from '@/lib/client-theme'
 
 const steps = [
-  { href: '/app', label: 'Resumen', detail: 'Estado general', icon: Home },
+  { href: '/app#resumen', label: 'Resumen', detail: 'Estado general', icon: Home },
   { href: '/app#propiedades', label: 'Espacios', detail: 'Hoteles y senderos', icon: Trees },
   { href: '/app#incidentes', label: 'Prioridades', detail: 'Qué requiere acción', icon: Siren },
   { href: '/app#camaras', label: 'Vigilancia', detail: 'Evidencia visual', icon: Camera },
