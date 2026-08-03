@@ -20,10 +20,11 @@ function isOpenIncident(incident: NonNullable<ClientDashboardView['sites'][numbe
 }
 
 export function DashboardProperties({ sites, theme }: DashboardPropertiesProps) {
-  const PropertiesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
-  const title = theme.key === 'huilo-huilo' ? 'Estado por espacio protegido' : theme.key === 'santa-elena' ? 'Estado por predio' : 'Estado por ubicación'
-  const description = theme.key === 'huilo-huilo'
-    ? 'Revisa hoteles, senderos y zonas críticas de la reserva.'
+  const isHuiloHuilo = theme.key === 'huilo-huilo'
+  const PropertiesIcon = isHuiloHuilo ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
+  const title = isHuiloHuilo ? 'Mapa operativo' : theme.key === 'santa-elena' ? 'Estado por predio' : 'Estado por ubicación'
+  const description = isHuiloHuilo
+    ? 'Selecciona una zona para ver su estado, cámaras y eventos.'
     : theme.key === 'santa-elena'
       ? 'Entra a cada predio para revisar ganado, equipos, cámaras e incidentes.'
       : 'Entra a una propiedad para revisar sus cámaras, equipos e incidentes.'
@@ -31,7 +32,7 @@ export function DashboardProperties({ sites, theme }: DashboardPropertiesProps) 
   return (
     <div className="space-y-4">
       <PortalSectionHeading
-        eyebrow={`Mis ${theme.vocabulary.properties}`}
+        eyebrow={isHuiloHuilo ? 'Espacios' : `Mis ${theme.vocabulary.properties}`}
         title={title}
         description={description}
       />
@@ -70,19 +71,19 @@ export function DashboardProperties({ sites, theme }: DashboardPropertiesProps) 
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className={`text-xs uppercase tracking-[0.16em] ${theme.accentTextClass}`}>
-                        {site.organizationName || theme.name}
+                        {isHuiloHuilo ? 'Zona protegida' : site.organizationName || theme.name}
                       </p>
                       <h3 className="mt-1 text-xl font-light text-white">{siteLabel}</h3>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/50">
-                        {site.profile?.summary || `Resumen de seguridad y actividad para este espacio de la ${theme.vocabulary.operation}.`}
-                      </p>
+                      {site.profile?.summary ? (
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/50">{site.profile.summary}</p>
+                      ) : null}
                     </div>
                     <ArrowRight className={`mt-1 h-5 w-5 transition group-hover:translate-x-1 ${theme.accentTextClass}`} />
                   </div>
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <DashboardMetric label="Cámaras" value={site.cameraCount || 0} />
                     <DashboardMetric label="Sensores" value={site.sensorCount || 0} />
-                    <DashboardMetric label="Incidentes" value={openSiteIncidents.length} />
+                    <DashboardMetric label="Pendientes" value={openSiteIncidents.length} />
                   </div>
                 </div>
               </Link>
