@@ -8,21 +8,29 @@ type EvidenceReference = {
   size?: number
   bucket?: string
   path?: string
+  retentionUntil?: string
 }
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
+  const leadId = request.nextUrl.searchParams.get('leadId')
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('leads')
     .select('id,name,email,phone,message,status,created_at')
     .eq('source', 'support_huilo_huilo')
     .order('created_at', { ascending: false })
-    .limit(250)
+    .limit(leadId ? 1 : 250)
+
+  if (leadId) query = query.eq('id', leadId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Error reading support evidence:', error.message)
@@ -45,7 +53,7 @@ export async function GET(request: NextRequest) {
 
       const { data: signed, error: signedError } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(path, 60 * 15)
+        .createSignedUrl(path, 60 * 15, { download: false })
 
       return {
         ...reference,
@@ -65,9 +73,14 @@ export async function GET(request: NextRequest) {
       location: String(details.ubicacion || ''),
       subject: String(details.necesidadPrincipal || ''),
       message: String(details.mensaje || ''),
+      retentionDays: Number(details.evidenceRetentionDays || 0),
+      retentionProcessedAt: details.evidenceRetentionProcessedAt || null,
       evidence,
     }
   }))
 
-  return NextResponse.json({ success: true, data: items })
+  return NextResponse.json(
+    { success: true, data: leadId ? items[0] || null : items },
+    { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } },
+  )
 }
