@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -21,7 +22,21 @@ type SupportContext = {
   returnPath?: string
 }
 
+type EvidenceAccess = {
+  fileName?: string
+  path?: string
+  openedAt?: string
+  openedBy?: string
+}
+
+const accessSchema = z.object({
+  leadId: z.string().uuid(),
+  fileName: z.string().trim().min(1).max(240),
+  path: z.string().trim().min(1).max(600),
+})
+
 const DEFAULT_DAILY_BUDGET_BYTES = 500 * 1024 * 1024
+const MAX_ACCESS_EVENTS = 50
 
 export const dynamic = 'force-dynamic'
 
@@ -90,6 +105,9 @@ export async function GET(request: NextRequest) {
     const supportContext = (details.supportContext && typeof details.supportContext === 'object'
       ? details.supportContext
       : {}) as SupportContext
+    const accessLog = Array.isArray(details.evidenceAccessLog)
+      ? details.evidenceAccessLog as EvidenceAccess[]
+      : []
     const references = Array.isArray(details.evidence) ? details.evidence as EvidenceReference[] : []
     const evidence = await Promise.all(references.map(async (reference) => {
       const bucket = reference.bucket || 'support-evidence'
@@ -127,6 +145,12 @@ export async function GET(request: NextRequest) {
         itemLabel: String(supportContext.itemLabel || ''),
         returnPath: String(supportContext.returnPath || ''),
       },
+      evidenceAccessLog: accessLog.slice(-MAX_ACCESS_EVENTS).reverse().map((entry) => ({
+        fileName: String(entry.fileName || ''),
+        path: String(entry.path || ''),
+        openedAt: String(entry.openedAt || ''),
+        openedBy: String(entry.openedBy || ''),
+      })),
       retentionDays: Number(details.evidenceRetentionDays || 0),
       retentionProcessedAt: details.evidenceRetentionProcessedAt || null,
       evidence,
@@ -151,6 +175,64 @@ export async function GET(request: NextRequest) {
         level,
       },
     },
+    { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } },
+  )
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await getAuthorizedRequest(request, ['admin'])
+  if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
+
+  const parsed = accessSchema.safeParse(await request.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ success: false, error: 'Datos de acceso inválidos.' }, { status: 400 })
+
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
+
+  const { data: lead, error: readError } = await supabase
+    .from('leads')
+    .select('id,message,source')
+    .eq('id', parsed.data.leadId)
+    .eq('source', 'support_huilo_huilo')
+    .maybeSingle()
+
+  if (readError) {
+    console.error('Error reading lead for evidence audit:', readError.message)
+    return NextResponse.json({ success: false, error: 'No fue posible registrar el acceso.' }, { status: 500 })
+  }
+  if (!lead) return NextResponse.json({ success: false, error: 'Solicitud no encontrada.' }, { status: 404 })
+
+  const details = parseDetails(lead.message)
+  const references = Array.isArray(details.evidence) ? details.evidence as EvidenceReference[] : []
+  const referenceExists = references.some((reference) => reference.path === parsed.data.path)
+  if (!referenceExists) return NextResponse.json({ success: false, error: 'La evidencia no pertenece a esta solicitud.' }, { status: 400 })
+
+  const previous = Array.isArray(details.evidenceAccessLog)
+    ? details.evidenceAccessLog as EvidenceAccess[]
+    : []
+  const event: EvidenceAccess = {
+    fileName: parsed.data.fileName,
+    path: parsed.data.path,
+    openedAt: new Date().toISOString(),
+    openedBy: auth.user.email || auth.user.id,
+  }
+  const nextLog = [...previous, event].slice(-MAX_ACCESS_EVENTS)
+
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update({
+      message: JSON.stringify({ ...details, evidenceAccessLog: nextLog }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', lead.id)
+
+  if (updateError) {
+    console.error('Error writing evidence audit:', updateError.message)
+    return NextResponse.json({ success: false, error: 'No fue posible registrar el acceso.' }, { status: 500 })
+  }
+
+  return NextResponse.json(
+    { success: true, event },
     { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } },
   )
 }
