@@ -23,6 +23,7 @@ const HUILO_HUILO_CAMERA_LABELS = [
 const HUILO_HUILO_DEMO_IMAGES = [
   '/demo/huilo-huilo/reception.jpg',
   '/demo/huilo-huilo/parking.jpg',
+  '/demo/huilo-huilo/forest-trail.jpg',
 ]
 
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
@@ -69,12 +70,6 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
               >
                 <div className="relative h-44 overflow-hidden bg-black/25">
                   <CameraSnapshot deviceId={deviceId} alt={label} fallbackSrc={fallbackSrc} />
-                  {!deviceId && !fallbackSrc ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-white/35">
-                      <CameraIcon className="h-8 w-8" strokeWidth={1.4} />
-                      Vista no disponible
-                    </div>
-                  ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/5 to-black/20" />
                   <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] text-white/75 backdrop-blur-md">
                     <span className={`h-2 w-2 rounded-full ${isHuiloHuilo ? 'bg-amber-300' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)]'}`} />
