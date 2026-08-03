@@ -19,6 +19,13 @@ const leadSchema = z.object({
   urgencia: z.enum(['normal', 'pronto', 'critica']).optional(),
   tipoServicio: z.enum(['diagnostico', 'instalacion', 'monitoreo', 'propuesta']).optional(),
   mensaje: z.string().trim().max(1000).optional(),
+  supportOrigin: z.string().trim().max(80).optional().default(''),
+  supportSection: z.string().trim().max(80).optional().default(''),
+  supportKind: z.enum(['camera', 'alert', 'incident', 'dashboard', '']).optional().default(''),
+  supportPropertyId: z.string().trim().max(120).optional().default(''),
+  supportItemId: z.string().trim().max(120).optional().default(''),
+  supportItemLabel: z.string().trim().max(180).optional().default(''),
+  supportReturnPath: z.string().trim().max(300).optional().default(''),
   website: z.string().max(0).optional(),
   consent: z.literal(true),
 })
@@ -284,12 +291,25 @@ export async function POST(request: NextRequest) {
       urgencia: parsed.data.urgencia || '',
       tipoServicio: parsed.data.tipoServicio || '',
       mensaje: parsed.data.mensaje || '',
+      supportContext: {
+        origin: parsed.data.supportOrigin || '',
+        section: parsed.data.supportSection || '',
+        kind: parsed.data.supportKind || '',
+        propertyId: parsed.data.supportPropertyId || '',
+        itemId: parsed.data.supportItemId || '',
+        itemLabel: parsed.data.supportItemLabel || '',
+        returnPath: parsed.data.supportReturnPath || '',
+      },
       evidence,
       evidenceTotalBytes: totalSize,
       evidenceRetentionDays: EVIDENCE_RETENTION_DAYS,
       evidenceDailyBudgetBytes: dailyBudget,
       evidenceDailyUsageBeforeBytes: dailyUsed,
     }
+
+    const sourcePath = parsed.data.supportReturnPath
+      ? `/contacto/huilo-huilo?origin=${encodeURIComponent(parsed.data.supportOrigin || 'portal')}`
+      : '/contacto/huilo-huilo'
 
     const { error: insertError } = await supabase.from('leads').insert({
       name: parsed.data.nombre,
@@ -301,7 +321,7 @@ export async function POST(request: NextRequest) {
       status: 'new',
       ip_hash: ipHash,
       user_agent: request.headers.get('user-agent')?.slice(0, 500) || null,
-      source_path: '/contacto/huilo-huilo',
+      source_path: sourcePath,
       consent: parsed.data.consent,
     })
     if (insertError) throw insertError
