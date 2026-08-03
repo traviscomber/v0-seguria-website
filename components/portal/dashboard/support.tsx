@@ -4,7 +4,9 @@ import type { ClientTheme } from '@/lib/client-theme'
 
 export function DashboardSupport({ theme }: { theme: ClientTheme }) {
   const isHuiloHuilo = theme.key === 'huilo-huilo'
-  const href = isHuiloHuilo ? '/contacto/huilo-huilo' : '/es/contacto'
+  const href = isHuiloHuilo
+    ? '/contacto/huilo-huilo?section=dashboard&sourcePath=%2Fapp%23camaras&propertyName=Reserva%20Biol%C3%B3gica%20Huilo%20Huilo'
+    : '/es/contacto'
 
   return (
     <Link
