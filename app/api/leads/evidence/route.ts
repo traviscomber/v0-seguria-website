@@ -11,6 +11,16 @@ type EvidenceReference = {
   retentionUntil?: string
 }
 
+type SupportContext = {
+  origin?: string
+  section?: string
+  kind?: string
+  propertyId?: string
+  itemId?: string
+  itemLabel?: string
+  returnPath?: string
+}
+
 const DEFAULT_DAILY_BUDGET_BYTES = 500 * 1024 * 1024
 
 export const dynamic = 'force-dynamic'
@@ -77,6 +87,9 @@ export async function GET(request: NextRequest) {
 
   const items = await Promise.all((itemsResult.data || []).map(async (lead) => {
     const details = parseDetails(lead.message)
+    const supportContext = (details.supportContext && typeof details.supportContext === 'object'
+      ? details.supportContext
+      : {}) as SupportContext
     const references = Array.isArray(details.evidence) ? details.evidence as EvidenceReference[] : []
     const evidence = await Promise.all(references.map(async (reference) => {
       const bucket = reference.bucket || 'support-evidence'
@@ -105,6 +118,15 @@ export async function GET(request: NextRequest) {
       location: String(details.ubicacion || ''),
       subject: String(details.necesidadPrincipal || ''),
       message: String(details.mensaje || ''),
+      supportContext: {
+        origin: String(supportContext.origin || ''),
+        section: String(supportContext.section || ''),
+        kind: String(supportContext.kind || ''),
+        propertyId: String(supportContext.propertyId || ''),
+        itemId: String(supportContext.itemId || ''),
+        itemLabel: String(supportContext.itemLabel || ''),
+        returnPath: String(supportContext.returnPath || ''),
+      },
       retentionDays: Number(details.evidenceRetentionDays || 0),
       retentionProcessedAt: details.evidenceRetentionProcessedAt || null,
       evidence,
