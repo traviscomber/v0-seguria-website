@@ -12,6 +12,7 @@ import {
   Headphones,
   KeyRound,
   Leaf,
+  MapPin,
   MessageCircle,
   Paperclip,
   Send,
@@ -28,6 +29,17 @@ type SupportForm = {
   consent: boolean
 }
 
+type SupportContext = {
+  origin: string
+  section: string
+  kind: string
+  propertyId: string
+  propertyLabel: string
+  itemId: string
+  itemLabel: string
+  returnPath: string
+}
+
 type SupportTopic = 'acceso' | 'vigilancia' | 'alertas' | 'otro'
 type SendStatus = 'idle' | 'uploading' | 'processing' | 'sent' | 'error'
 
@@ -35,6 +47,16 @@ const MAX_FILES = 4
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MAX_TOTAL_SIZE = 25 * 1024 * 1024
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'])
+const emptyContext: SupportContext = {
+  origin: '',
+  section: '',
+  kind: '',
+  propertyId: '',
+  propertyLabel: 'Reserva Biológica Huilo Huilo',
+  itemId: '',
+  itemLabel: '',
+  returnPath: '/app#resumen',
+}
 
 const supportTopics = [
   { id: 'acceso' as const, icon: KeyRound, label: 'Acceso', prompt: 'Tengo un problema de acceso o navegación en el portal.' },
@@ -46,6 +68,15 @@ const supportTopics = [
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function cleanParam(value: string | null, maxLength = 180) {
+  return (value || '').trim().slice(0, maxLength)
+}
+
+function safeReturnPath(value: string | null) {
+  const candidate = cleanParam(value, 300)
+  return candidate.startsWith('/app') ? candidate : '/app#resumen'
 }
 
 function uploadSupportRequest(
@@ -82,6 +113,7 @@ export default function HuiloHuiloSupportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const errorRef = useRef<HTMLParagraphElement>(null)
   const [form, setForm] = useState<SupportForm>({ nombre: '', telefono: '', email: '', mensaje: '', website: '', consent: false })
+  const [context, setContext] = useState<SupportContext>(emptyContext)
   const [topic, setTopic] = useState<SupportTopic>('acceso')
   const [evidence, setEvidence] = useState<File[]>([])
   const [status, setStatus] = useState<SendStatus>('idle')
@@ -90,9 +122,42 @@ export default function HuiloHuiloSupportPage() {
 
   const totalEvidenceBytes = useMemo(() => evidence.reduce((sum, file) => sum + file.size, 0), [evidence])
   const isSending = status === 'uploading' || status === 'processing'
+  const hasContext = Boolean(context.section || context.itemLabel || context.propertyId)
   const hasChanges = useMemo(() => Boolean(
     form.nombre || form.telefono || form.email || form.mensaje || form.consent || evidence.length > 0
   ), [form, evidence.length])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const nextContext: SupportContext = {
+      origin: cleanParam(params.get('origin'), 80),
+      section: cleanParam(params.get('section'), 80),
+      kind: cleanParam(params.get('kind'), 40),
+      propertyId: cleanParam(params.get('propertyId'), 120),
+      propertyLabel: cleanParam(params.get('property'), 180) || emptyContext.propertyLabel,
+      itemId: cleanParam(params.get('itemId'), 120),
+      itemLabel: cleanParam(params.get('item'), 180),
+      returnPath: safeReturnPath(params.get('return')),
+    }
+    setContext(nextContext)
+
+    if (nextContext.kind === 'camera') setTopic('vigilancia')
+    if (nextContext.kind === 'alert' || nextContext.kind === 'incident') setTopic('alertas')
+
+    if (nextContext.itemLabel) {
+      const prefix = nextContext.kind === 'camera'
+        ? 'Necesito revisar esta cámara'
+        : nextContext.kind === 'incident'
+          ? 'Necesito ayuda con este incidente'
+          : nextContext.kind === 'alert'
+            ? 'Necesito ayuda con esta alerta'
+            : 'Necesito ayuda con este elemento'
+      setForm((current) => ({
+        ...current,
+        mensaje: current.mensaje.trim() ? current.mensaje : `${prefix}: ${nextContext.itemLabel}.`,
+      }))
+    }
+  }, [])
 
   useEffect(() => {
     if (!hasChanges || status === 'sent') return
@@ -170,7 +235,7 @@ export default function HuiloHuiloSupportPage() {
       const payload = {
         ...form,
         tipoProyecto: 'propiedad',
-        ubicacion: 'Reserva Biológica Huilo Huilo',
+        ubicacion: context.propertyLabel || 'Reserva Biológica Huilo Huilo',
         necesidadPrincipal: `soporte_portal_cliente_${topic}`,
         urgencia: 'pronto',
         tipoServicio: 'monitoreo',
@@ -178,6 +243,13 @@ export default function HuiloHuiloSupportPage() {
         tieneCamaras: 'si',
         tieneInternet: 'si',
         tamanoAproximado: 'Operación Huilo Huilo',
+        supportOrigin: context.origin,
+        supportSection: context.section,
+        supportKind: context.kind,
+        supportPropertyId: context.propertyId,
+        supportItemId: context.itemId,
+        supportItemLabel: context.itemLabel,
+        supportReturnPath: context.returnPath,
       }
 
       const body = new FormData()
@@ -204,8 +276,8 @@ export default function HuiloHuiloSupportPage() {
     <main className="min-h-screen bg-[#03130e] text-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#03130e]/90 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <PortalBrandLink href="/app#resumen" name="Huilo Huilo" compact />
-          <Link onClick={confirmLeave} href="/app#resumen" className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-white/70 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">
+          <PortalBrandLink href={context.returnPath} name="Huilo Huilo" compact />
+          <Link onClick={confirmLeave} href={context.returnPath} className="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-white/70 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Volver al portal</span>
           </Link>
@@ -224,7 +296,7 @@ export default function HuiloHuiloSupportPage() {
             <h1 id="support-title" className="mt-5 text-balance text-4xl font-medium leading-[1.05] tracking-[-0.035em] sm:text-5xl lg:text-[56px]">Resolvamos lo que afecta la operación.</h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-white/72">Describe el problema y adjunta evidencia para acelerar la revisión.</p>
             <dl className="mt-8 grid gap-4 border-y border-white/10 py-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <div><dt className="text-xs uppercase tracking-[0.16em] text-white/50">Contexto</dt><dd className="mt-1 text-sm font-medium text-white/90">Huilo Huilo</dd></div>
+              <div><dt className="text-xs uppercase tracking-[0.16em] text-white/50">Contexto</dt><dd className="mt-1 text-sm font-medium text-white/90">{context.itemLabel || context.section || 'Huilo Huilo'}</dd></div>
               <div><dt className="text-xs uppercase tracking-[0.16em] text-white/50">Canal</dt><dd className="mt-1 text-sm font-medium text-white/90">SegurIA</dd></div>
               <div><dt className="text-xs uppercase tracking-[0.16em] text-white/50">Adjuntos</dt><dd className="mt-1 text-sm font-medium text-white/90">Privados y seguros</dd></div>
             </dl>
@@ -239,7 +311,7 @@ export default function HuiloHuiloSupportPage() {
                 <p className="mt-7 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-200">Solicitud enviada</p>
                 <h2 className="mt-3 text-3xl font-medium tracking-tight">El equipo ya tiene el contexto.</h2>
                 <p className="mt-4 max-w-md text-base leading-7 text-white/70">La evidencia quedó asociada de forma privada a la solicitud.</p>
-                <Link href="/app#resumen" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-200 px-5 py-3 text-sm font-semibold text-[#052117] transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Volver al portal<ChevronRight className="h-4 w-4" aria-hidden="true" /></Link>
+                <Link href={context.returnPath} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-emerald-200 px-5 py-3 text-sm font-semibold text-[#052117] transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Volver al portal<ChevronRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
             ) : (
               <form onSubmit={submit} className="p-5 sm:p-8 lg:p-9">
@@ -247,6 +319,17 @@ export default function HuiloHuiloSupportPage() {
                   <div><p className="text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-200">Nueva solicitud</p><h2 className="mt-2 text-2xl font-medium tracking-tight sm:text-3xl">¿Qué necesitas resolver?</h2></div>
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-emerald-200"><Headphones className="h-5 w-5" aria-hidden="true" /></span>
                 </div>
+
+                {hasContext ? (
+                  <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200/20 bg-emerald-200/[0.07] px-4 py-3.5">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-200" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200">Contexto recibido</p>
+                      <p className="mt-1 truncate text-sm font-medium text-white">{context.itemLabel || context.section || context.propertyLabel}</p>
+                      <p className="mt-1 text-xs text-white/55">{context.propertyLabel}{context.kind ? ` · ${context.kind}` : ''}</p>
+                    </div>
+                  </div>
+                ) : null}
 
                 <fieldset className="mt-6" disabled={isSending}>
                   <legend className="sr-only">Tipo de problema</legend>
