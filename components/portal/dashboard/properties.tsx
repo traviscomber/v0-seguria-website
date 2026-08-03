@@ -29,7 +29,7 @@ export function DashboardProperties({ sites, theme }: DashboardPropertiesProps) 
       : 'Entra a una propiedad para revisar sus cámaras, equipos e incidentes.'
 
   return (
-    <section id="propiedades" className="space-y-4">
+    <div className="space-y-4">
       <PortalSectionHeading
         eyebrow={`Mis ${theme.vocabulary.properties}`}
         title={title}
@@ -90,7 +90,7 @@ export function DashboardProperties({ sites, theme }: DashboardPropertiesProps) 
           })}
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
