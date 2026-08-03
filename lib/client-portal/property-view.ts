@@ -54,13 +54,19 @@ export async function buildClientPropertyView(
 
   const devicesWithAttention = Math.max(0, devices.length - activeDevices)
   const summarySite = mapPortalSiteToSummary(site)
+  const activity = summarySite
+    ? getPortalActivityFeed([summarySite as never]).slice(0, 10) as PortalActivityItem[]
+    : []
+  const evidence = summarySite
+    ? getPortalEvidenceGallery(summarySite as never).slice(0, 8) as PortalEvidenceItem[]
+    : []
 
   return {
     site,
     devices,
     cameras,
-    activity: getPortalActivityFeed([summarySite as never]).slice(0, 10) as PortalActivityItem[],
-    evidence: getPortalEvidenceGallery(summarySite as never).slice(0, 8) as PortalEvidenceItem[],
+    activity,
+    evidence,
     incidents,
     activeDevices,
     devicesWithAttention,
