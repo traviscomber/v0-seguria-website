@@ -3,31 +3,28 @@ import { CameraSnapshot } from '@/components/camera-snapshot'
 import { PortalSectionHeading, PortalStatusBadge } from '@/components/portal/portal-ui'
 import { formatPortalDate, getPortalDeviceLabel, getPortalTone } from '@/lib/client-portal/presentation'
 import type { ClientPropertyView } from '@/lib/client-portal/property-view'
+import { HUILO_HUILO_DEMO_CAMERAS, getHuiloHuiloDemoCamera, isHuiloHuiloSite } from '@/lib/huilo-huilo-demo'
 import type { PortalDevice } from '@/types/client-portal'
 
 interface PropertyCamerasProps {
   model: ClientPropertyView
 }
 
-const HUILO_HUILO_DEMO_CAMERAS: PortalDevice[] = [
-  { name: 'Recepción principal', location: 'Hotel Huilo Huilo', status: 'demo', statusLabel: 'Vista demo' },
-  { name: 'Estacionamiento principal', location: 'Acceso al lodge', status: 'demo', statusLabel: 'Vista demo' },
-  { name: 'Sendero bosque húmedo', location: 'Reserva biológica', status: 'demo', statusLabel: 'Vista demo' },
-  { name: 'Cruce de río', location: 'Sendero turístico', status: 'demo', statusLabel: 'Vista demo' },
-  { name: 'Área de servicio', location: 'Operaciones internas', status: 'demo', statusLabel: 'Vista demo' },
-  { name: 'Mirador del lago', location: 'Circuito de miradores', status: 'demo', statusLabel: 'Vista demo' },
-]
-
-const HUILO_HUILO_DEMO_IMAGES = [
-  '/demo/huilo-huilo/reception.jpg',
-  '/demo/huilo-huilo/parking.jpg',
-]
+const SYNTHETIC_CAMERAS: PortalDevice[] = HUILO_HUILO_DEMO_CAMERAS.map((camera) => ({
+  name: camera.name,
+  location: camera.location,
+  status: 'demo',
+  statusLabel: 'Vista demo',
+}))
 
 export function PropertyCameras({ model }: PropertyCamerasProps) {
-  const siteName = `${model.site.name || ''} ${model.site.label || ''} ${model.site.organizationName || ''}`.toLowerCase()
-  const isHuiloHuilo = siteName.includes('huilo huilo')
+  const isHuiloHuilo = isHuiloHuiloSite(
+    model.site.name,
+    model.site.label,
+    model.site.organizationName,
+  )
   const isSyntheticDemo = isHuiloHuilo && model.cameras.length === 0
-  const cameras = isSyntheticDemo ? HUILO_HUILO_DEMO_CAMERAS : model.cameras
+  const cameras = isSyntheticDemo ? SYNTHETIC_CAMERAS : model.cameras
 
   if (cameras.length === 0) return null
 
@@ -46,10 +43,9 @@ export function PropertyCameras({ model }: PropertyCamerasProps) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cameras.map((device, index) => {
           const deviceId = device.id ? String(device.id) : null
+          const demo = getHuiloHuiloDemoCamera(index)
           const label = getPortalDeviceLabel(device)
-          const fallbackSrc = isHuiloHuilo
-            ? HUILO_HUILO_DEMO_IMAGES[index % HUILO_HUILO_DEMO_IMAGES.length]
-            : model.site.imageUrl || undefined
+          const fallbackSrc = isHuiloHuilo ? demo.image : model.site.imageUrl || undefined
 
           return (
             <div
