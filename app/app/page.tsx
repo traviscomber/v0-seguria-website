@@ -34,13 +34,13 @@ export default async function ClientAppPage() {
       style={{ backgroundColor: theme.pageBackground }}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-fixed bg-center opacity-[0.055]"
+        className="pointer-events-none absolute inset-0 bg-cover bg-fixed bg-center opacity-[0.04]"
         style={{ backgroundImage: `url('${theme.backgroundImage}')` }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/35" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/30" />
 
-      <div className="relative z-10 space-y-10 pt-4">
-        <section id="resumen" className="scroll-mt-24">
+      <div className="relative z-10 space-y-8 pt-4">
+        <section id="resumen" className="scroll-mt-24 space-y-4">
           <DashboardHero
             userName={session.user.name}
             attentionRequired={model.attentionRequired}
@@ -49,15 +49,14 @@ export default async function ClientAppPage() {
             siteCount={model.sites.length}
             imageUrl={primaryImage}
           />
+          <DashboardStats
+            totals={model.totals}
+            sites={model.sites}
+            alerts={model.alerts}
+            incidents={model.incidents}
+            theme={theme}
+          />
         </section>
-
-        <DashboardStats
-          totals={model.totals}
-          sites={model.sites}
-          alerts={model.alerts}
-          incidents={model.incidents}
-          theme={theme}
-        />
 
         <section id="propiedades" className="scroll-mt-24" aria-label={theme.vocabulary.properties}>
           <DashboardProperties sites={model.sites} theme={theme} />
@@ -67,13 +66,12 @@ export default async function ClientAppPage() {
           <DashboardAttention incidents={model.incidents} alerts={model.alerts} theme={theme} />
         </section>
 
-        <section id="camaras" className="scroll-mt-24" aria-label="Vigilancia">
+        <section id="camaras" className="scroll-mt-24 space-y-8" aria-label="Vigilancia">
           <DashboardCameras cameras={model.cameras} theme={theme} />
-        </section>
-
-        <section id="actividad" className="scroll-mt-24 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <DashboardActivity activity={model.activity} theme={theme} />
-          <DashboardSupport theme={theme} />
+          <div className="mx-auto w-full max-w-5xl">
+            <DashboardActivity activity={model.activity} theme={theme} />
+            <DashboardSupport theme={theme} />
+          </div>
         </section>
       </div>
     </div>
