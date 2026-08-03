@@ -1,5 +1,4 @@
-const HUILO_HUILO_ASSET_BASE =
-  'https://nzaonaqycyyzrbxcoosk.supabase.co/storage/v1/object/public/huilo-huilo-demo'
+const HUILO_HUILO_ASSET_BASE = '/api/demo/huilo-huilo'
 
 export const HUILO_HUILO_HERO_IMAGE = `${HUILO_HUILO_ASSET_BASE}/huilo-huilo-riverside-lodge.png`
 
