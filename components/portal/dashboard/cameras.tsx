@@ -23,7 +23,6 @@ const HUILO_HUILO_CAMERA_LABELS = [
 const HUILO_HUILO_DEMO_IMAGES = [
   '/demo/huilo-huilo/reception.jpg',
   '/demo/huilo-huilo/parking.jpg',
-  '/demo/huilo-huilo/forest-trail.jpg',
 ]
 
 export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
