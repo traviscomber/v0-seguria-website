@@ -34,6 +34,7 @@ const EVIDENCE_BUCKET = 'support-evidence'
 const MAX_FILES = 4
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MAX_TOTAL_SIZE = 25 * 1024 * 1024
+const DEFAULT_DAILY_EVIDENCE_BUDGET = 500 * 1024 * 1024
 const EVIDENCE_RETENTION_DAYS = 180
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'])
 
@@ -55,6 +56,12 @@ function hashClientIp(ip: string) {
   const secret = process.env.LEAD_IP_HASH_SECRET || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!secret) return null
   return createHmac('sha256', secret).update(ip).digest('hex')
+}
+
+function getDailyEvidenceBudget() {
+  const configured = Number(process.env.SUPPORT_EVIDENCE_DAILY_BUDGET_BYTES)
+  if (!Number.isFinite(configured) || configured < MAX_TOTAL_SIZE) return DEFAULT_DAILY_EVIDENCE_BUDGET
+  return Math.floor(configured)
 }
 
 function safeFileName(extension: VerifiedFile['extension']) {
@@ -101,6 +108,28 @@ async function parseLeadRequest(request: NextRequest) {
   const payload = JSON.parse(payloadRaw)
   const files = formData.getAll('evidence').filter((value): value is File => value instanceof File && value.size > 0)
   return { payload, files }
+}
+
+async function getDailyEvidenceUsage(supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>) {
+  const dayStart = new Date()
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const { data, error } = await supabase
+    .from('leads')
+    .select('message')
+    .eq('source', 'support_huilo_huilo')
+    .gte('created_at', dayStart.toISOString())
+    .limit(2000)
+
+  if (error) throw error
+  return (data || []).reduce((total, row) => {
+    try {
+      const details = row.message ? JSON.parse(String(row.message)) as Record<string, unknown> : {}
+      const bytes = Number(details.evidenceTotalBytes || 0)
+      return total + (Number.isFinite(bytes) && bytes > 0 ? bytes : 0)
+    } catch {
+      return total
+    }
+  }, 0)
 }
 
 export async function GET(request: NextRequest) {
@@ -221,6 +250,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const dailyBudget = getDailyEvidenceBudget()
+    const dailyUsed = totalSize > 0 ? await getDailyEvidenceUsage(supabase) : 0
+    if (totalSize > 0 && dailyUsed + totalSize > dailyBudget) {
+      console.warn('Daily support evidence budget reached.', { dailyUsed, requested: totalSize, dailyBudget })
+      return NextResponse.json(
+        { success: false, error: 'El canal de adjuntos alcanzó su capacidad diaria. Envía la solicitud sin archivos o inténtalo nuevamente mañana.' },
+        { status: 429, headers: { 'Retry-After': '3600' } },
+      )
+    }
+
     const retentionUntil = new Date(Date.now() + EVIDENCE_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString()
     const evidence = [] as Array<{ name: string; type: string; size: number; bucket: string; path: string; retentionUntil: string }>
     for (const verified of verifiedFiles) {
@@ -248,6 +287,8 @@ export async function POST(request: NextRequest) {
       evidence,
       evidenceTotalBytes: totalSize,
       evidenceRetentionDays: EVIDENCE_RETENTION_DAYS,
+      evidenceDailyBudgetBytes: dailyBudget,
+      evidenceDailyUsageBeforeBytes: dailyUsed,
     }
 
     const { error: insertError } = await supabase.from('leads').insert({
@@ -265,7 +306,12 @@ export async function POST(request: NextRequest) {
     })
     if (insertError) throw insertError
 
-    return NextResponse.json({ success: true, message: 'Solicitud enviada correctamente.', evidenceCount: evidence.length })
+    return NextResponse.json({
+      success: true,
+      message: 'Solicitud enviada correctamente.',
+      evidenceCount: evidence.length,
+      evidenceUsage: { usedBytes: dailyUsed + totalSize, budgetBytes: dailyBudget },
+    })
   } catch (error) {
     console.error('Error creating lead:', error)
     if (uploadedPaths.length > 0) {
