@@ -1,463 +1,513 @@
-# SegurIA — Design and System Record
+# SegurIA Design System
 
-Last updated: 2026-08-03  
-Repository: `traviscomber/v0-seguria-website`  
-Production: `https://seguria.tech`  
-Primary branch: `main`
+Documento maestro de UI, UX y brandbook para `seguria.tech`, el portal de clientes y la administración interna.
 
-## 1. Purpose
+Este archivo define cómo debe verse, sentirse y comportarse la interfaz. No documenta arquitectura backend, infraestructura, despliegues ni procesos operativos.
 
-SegurIA is a security and operational visibility platform for properties, hospitality operations and distributed sites. The product combines a public commercial website, a protected client portal, administrative tools, incident visibility, private evidence handling and a contextual support workflow.
+## 1. Principios de diseño
 
-The current product direction is intentionally restrained. The platform is functionally complete enough for the present stage. Future work should prioritize stability, simplification, visual quality, security and removal of duplication rather than adding more modules.
+SegurIA debe comunicar seguridad, control, precisión y calma. La experiencia visual no debe parecer una plantilla genérica, una interfaz gamer ni un dashboard excesivamente técnico.
 
-## 2. Product principles
+Principios obligatorios:
 
-1. Operational clarity before feature density.
-2. A busy manager must understand status, risk and next action quickly.
-3. Evidence must remain private, scoped and auditable.
-4. Client-facing language should explain outcomes, not internal technical complexity.
-5. Existing composition, typography, spacing and brand language should remain consistent.
-6. New functionality must solve a concrete verified problem.
-7. Do not introduce parallel systems when an existing screen or data model can support the need.
-8. Production changes must be verified through deployment status and runtime observations.
+1. Claridad antes que ornamentación.
+2. Información operacional comprensible en pocos segundos.
+3. Jerarquía visual fuerte, con pocas acciones prioritarias por pantalla.
+4. Apariencia tecnológica sobria y premium.
+5. Consistencia entre sitio público, portal y administración.
+6. Uso controlado de transparencias, brillos y efectos.
+7. Interfaces densas solo cuando la tarea realmente lo requiere.
+8. Cada pantalla debe funcionar correctamente en móvil y escritorio.
 
-## 3. Current product surfaces
+## 2. Personalidad de marca
 
-### Public website
+La marca debe sentirse:
 
-The public website presents SegurIA services, projects, integrations and commercial positioning. Public pages support Spanish and English routes where implemented.
+- confiable;
+- moderna;
+- precisa;
+- discreta;
+- profesional;
+- tecnológica sin ser fría;
+- premium sin ser ostentosa.
 
-### Client portal
+No debe sentirse:
 
-Primary route: `/app`
+- futurista de ciencia ficción;
+- militarizada;
+- agresiva;
+- saturada de neón;
+- infantil;
+- demasiado corporativa o burocrática;
+- visualmente ruidosa.
 
-The client portal provides:
+## 3. Logotipo
 
-- executive operational summary;
-- properties and protected spaces;
-- cameras and devices;
-- alerts and incidents;
-- evidence and activity;
-- contextual support actions;
-- property-specific operational views.
+El logotipo SegurIA debe conservar siempre su proporción original.
 
-Property detail route:
+Reglas:
 
-`/app/properties/[propertyId]`
+- No deformar, estirar ni comprimir.
+- No aplicar sombras, biseles, bordes luminosos ni efectos 3D.
+- No recolorear salvo que exista una versión oficial preparada para ese fondo.
+- Mantener espacio libre alrededor del logotipo.
+- En navegación, usar una altura aproximada de `32px` y un ancho cercano a `142px`, con `object-contain` y alineación izquierda.
+- No colocar fondos negros o cajas visibles alrededor del símbolo cuando el recurso tenga transparencia.
+- El favicon debe conservar el círculo limpio y las esquinas transparentes.
 
-The property detail view includes:
+## 4. Paleta principal
 
-- property header and identity;
-- operational statistics;
-- current incidents and priorities;
-- cameras;
-- devices;
-- evidence;
-- recent activity;
-- support entry point.
+Paleta oficial implementada:
 
-Missing summary data must degrade safely. Property views must not fail when operational report data is temporarily unavailable.
+| Token | Valor | Uso |
+|---|---:|---|
+| SegurIA Deep | `#0A1B2E` | Fondo principal, páginas oscuras, base institucional |
+| SegurIA Medium | `#123A5A` | Navegación, paneles, popovers, superficies secundarias |
+| SegurIA Steel | `#2B5C7E` | Estados intermedios, elementos secundarios, apoyos visuales |
+| SegurIA Sky | `#4DA3D9` | Acento principal, acciones, foco, estados activos |
+| SegurIA Ice | `#E6F1F8` | Fondos claros, contraste suave, superficies informativas |
+| White | `#FFFFFF` | Texto principal y alto contraste |
+| Gray Dark | `#1F2937` | Texto oscuro sobre fondos claros |
+| Gray Medium | `#6B7280` | Texto secundario |
+| Gray Light | `#E5E7EB` | Bordes y separadores claros |
+| Destructive | `#EF4444` | Error, peligro y acciones destructivas |
 
-### Contextual support
+## 5. Tokens semánticos
 
-Primary route:
+- `background`: `#0A1B2E`
+- `foreground`: `#FFFFFF`
+- `card`: `rgba(18, 58, 90, 0.42)`
+- `popover`: `#123A5A`
+- `primary`: `rgba(77, 163, 217, 0.85)`
+- `secondary`: `rgba(255, 255, 255, 0.10)`
+- `border`: `rgba(255, 255, 255, 0.10)`
+- `input`: `rgba(255, 255, 255, 0.10)`
+- `ring`: `#4DA3D9`
+- radio base: `5px`
 
-`/contacto/huilo-huilo`
+Los tokens deben reutilizarse. No introducir colores nuevos para resolver casos aislados sin justificar primero su función semántica.
 
-Support can be opened from:
+## 6. Tipografía
 
-- dashboard;
-- cameras;
-- alerts;
-- incidents;
-- priority cards;
-- property views.
+Tipografía oficial: **Montserrat**.
 
-The support page reads trusted internal query parameters, derives the correct topic, pre-fills a useful initial message, displays the received context and preserves a safe return route.
+Pesos activos:
 
-Supported structured context includes:
+- `300` para encabezados amplios y títulos editoriales;
+- `400` para cuerpo, controles, navegación y textos funcionales.
 
-- origin;
-- section;
-- kind: camera, alert, incident or dashboard;
-- property ID;
-- item ID;
-- item label;
-- safe return path under `/app`.
+Reglas:
 
-External return URLs are not accepted.
+- No usar pesos extremadamente finos en interfaces operativas.
+- No usar bold de forma masiva.
+- Los títulos deben respirar y conservar una jerarquía clara.
+- El cuerpo debe priorizar legibilidad, especialmente en tablas y paneles.
+- Evitar textos completamente en mayúsculas salvo microetiquetas, estados o eyebrows.
+- Las mayúsculas deben tener tracking moderado, normalmente entre `0.18em` y `0.24em`.
 
-### Administrative CRM
+Escala recomendada:
 
-Primary route:
+- Hero principal: `48–72px` escritorio, `36–48px` móvil.
+- H1 de sección: `36–52px` escritorio, `30–38px` móvil.
+- H2: `28–38px`.
+- H3: `20–26px`.
+- Cuerpo principal: `16–18px`.
+- Texto funcional: `14–15px`.
+- Microtexto: `10–12px`.
 
-`/admin/leads`
+## 7. Jerarquía visual
 
-The CRM provides:
+Cada pantalla debe tener:
 
-- lead list and search;
-- lead status management;
-- notes;
-- contextual origin;
-- support item identifiers;
-- private evidence access;
-- evidence access history;
-- first response timestamp;
-- owner;
-- SLA state;
-- activity timeline.
+1. Un título principal claro.
+2. Un resumen o contexto breve.
+3. Una acción principal visible.
+4. Acciones secundarias discretas.
+5. Contenido agrupado por intención, no solo por tipo de dato.
 
-Supported lead statuses:
+Evitar:
 
-- `new`;
-- `contacted`;
-- `qualified`;
-- `proposal_sent`;
-- `won`;
-- `lost`.
+- cinco o más botones con el mismo peso visual;
+- tarjetas repetidas sin jerarquía;
+- títulos largos que expliquen lo mismo que el párrafo inferior;
+- bloques excesivamente densos sin separación;
+- dashboards donde todo parezca igualmente urgente.
 
-### Operational queue
+## 8. Espaciado y composición
 
-Primary route:
+Usar una retícula consistente basada en múltiplos de 4.
 
-`/admin/queue`
+Escala recomendada:
 
-The queue is intentionally simple and should not become a separate complex ticketing product.
+- `4px`: microajustes.
+- `8px`: separación mínima entre icono y texto.
+- `12px`: controles compactos.
+- `16px`: separación interna estándar.
+- `24px`: padding de tarjetas y bloques.
+- `32px`: separación entre grupos.
+- `48–64px`: separación entre secciones.
+- `80–120px`: respiración vertical en landing pages.
 
-It provides:
+Anchos:
 
-- priority ordering by SLA, urgency and age;
-- filters for all, mine and unassigned;
-- filters by SLA state;
-- search;
-- manual assignment;
-- quick self-assignment;
-- link back to the main CRM record.
+- Texto editorial: máximo `640–760px`.
+- Contenedor general: `1200–1440px` según pantalla.
+- Formularios: `560–720px`.
+- Paneles administrativos: utilizar todo el ancho disponible, manteniendo márgenes laterales consistentes.
 
-Assignment changes are recorded in the lead activity log.
+## 9. Bordes y radios
 
-### Private evidence administration
+Radio institucional base: `5px`.
 
-Primary route:
+Uso:
 
-`/admin/evidence`
+- Botones principales y secundarios: `5px`.
+- Tarjetas institucionales: `5px` o una variación mínima.
+- Controles operativos densos pueden usar `8–12px` cuando mejora la lectura táctil.
+- No mezclar indiscriminadamente `5px`, `16px`, `24px` y formas tipo píldora en una misma pantalla.
+- Las píldoras deben reservarse para estados, filtros y etiquetas breves.
 
-This view provides:
+## 10. Superficies y glassmorphism
 
-- support submissions containing evidence;
-- contextual origin;
-- private signed access;
-- access registration before opening;
-- recent evidence access history;
-- daily storage usage visibility.
+El lenguaje visual usa superficies oscuras y transparencias controladas.
 
-Evidence must never be exposed through permanent public URLs.
+Tarjeta oscura recomendada:
 
-## 4. Visual direction
+```css
+background: rgba(18, 58, 90, 0.42);
+backdrop-filter: blur(14px);
+border: 1px solid rgba(255, 255, 255, 0.10);
+border-radius: 5px;
+```
 
-The product uses a dark operational visual system with restrained blue accents.
+Tarjeta clara recomendada:
 
-Core characteristics:
+```css
+background: rgba(230, 241, 248, 0.78);
+box-shadow: 0 18px 45px rgba(10, 27, 46, 0.08);
+border-radius: 5px;
+```
 
-- deep navy backgrounds;
-- regular-weight typography rather than excessively thin text;
-- limited accent brightness;
-- compact operational cards;
-- restrained borders and shadows;
-- clear hierarchy between status, evidence and action;
-- consistent rounded geometry;
-- high contrast for critical actions without turning the interface into an alarm dashboard.
+Reglas:
 
-Administrative screens should remain dense enough for operations but readable. Client screens should feel calm, premium and easy to understand.
+- No usar blur intenso en todos los elementos.
+- No apilar múltiples capas translúcidas sin necesidad.
+- El contenido debe conservar contraste aun si la imagen de fondo cambia.
+- Las tarjetas no deben parecer flotantes sin relación con la composición.
 
-Do not redesign the complete interface during isolated fixes. Preserve the existing composition unless a specific redesign is approved.
+## 11. Botones
 
-## 5. Architecture
+### Primario
 
-### Frontend and application layer
+- Fondo: SegurIA Sky con opacidad aproximada de `0.85`.
+- Texto blanco.
+- Hover a opacidad completa.
+- Una sola acción primaria dominante por bloque.
 
-- Next.js App Router;
-- React server and client components;
-- TypeScript;
-- Vercel production deployment;
-- route-level authorization;
-- operational APIs under `/api`.
+### Secundario
 
-### Data and storage
+- Fondo blanco al `10%`.
+- Texto blanco.
+- Hover blanco al `15%`.
 
-Supabase project reference:
+### Ghost
 
-`nzaonaqycyyzrbxcoosk`
+- Fondo blanco al `6%`.
+- Hover blanco al `12%`.
+- Para acciones de bajo riesgo o navegación contextual.
 
-Primary systems:
+Reglas generales:
 
-- PostgreSQL data through Supabase;
-- Supabase authentication and role resolution;
-- private Supabase Storage bucket for support evidence;
-- JSON detail payloads stored in the existing `leads.message` field for CRM extensions that do not justify a new table.
+- Altura mínima recomendada: `40–44px`.
+- Área táctil mínima: `44x44px` cuando sea posible.
+- Icono antes del texto, separado por `8px`.
+- No usar botones solo con color para indicar significado.
+- Estados de carga deben reemplazar la acción de manera clara.
+- Acciones destructivas deben exigir confirmación cuando el impacto no sea reversible.
 
-Private evidence bucket:
+## 12. Formularios
 
-`support-evidence`
+Controles base:
 
-### Deployment
+- ancho completo;
+- borde blanco al `10%`;
+- fondo blanco al `5%`;
+- texto blanco;
+- tamaño mínimo `14px`;
+- padding aproximado `12px 16px`;
+- foco con SegurIA Sky;
+- transición de `200ms`.
 
-Vercel team:
+Reglas UX:
 
-`team_OZTpx87yFUvdvneuoNbJeYS1`
+- Etiqueta siempre visible; no depender solo del placeholder.
+- Mensaje de error junto al campo afectado.
+- Mantener los valores ingresados después de un error.
+- Mostrar claramente carga, éxito y fallo.
+- No solicitar datos que no se utilizan.
+- Los formularios largos deben agruparse en secciones.
+- El envío debe bloquear dobles clics.
 
-Vercel project:
+## 13. Iconografía
 
-`prj_3kTNF2QMxVmGVRjdLzfBj9mGHkEn`
+La iconografía debe ser lineal, sobria y consistente.
 
-Production alias:
+Estándar actual:
 
-`seguria.tech`
+- familia Lucide;
+- grosor habitual `1.5`;
+- tamaños frecuentes `16`, `20` y `24px`.
 
-All completed work described in this document is committed to `main`.
+Reglas:
 
-## 6. Authentication and authorization
+- No mezclar familias de iconos.
+- No usar iconos excesivamente brillantes.
+- El icono apoya el significado; no reemplaza etiquetas críticas.
+- Evitar iconos decorativos sin función.
+- Los iconos de estado deben acompañarse de texto.
 
-Roles used by the product:
+## 14. Imágenes y fotografía
 
-- `client`;
-- `technician`;
-- `admin`.
+La imagen debe sentirse real, específica y creíble.
 
-Rules:
+Reglas obligatorias:
 
-- client users are redirected to `/app`;
-- administrative routes reject client users;
-- sensitive CRM and evidence APIs require `admin`;
-- private evidence access is scoped to a selected lead and validated against the evidence record;
-- operational maintenance routes require secret-based authorization;
-- private operational routes should not be cached.
+- No “mejorar” o estilizar automáticamente imágenes de referencia.
+- Conservar composición, iluminación, suavidad, textura y realismo cuando exista una referencia aprobada.
+- Modificar únicamente los elementos solicitados.
+- No aplicar sharpen, recolor, HDR, dramatización o contraste agresivo sin instrucción explícita.
+- Evitar imágenes genéricas de bancos que contradigan el contexto operativo.
+- Recortar para preservar el sujeto y la intención narrativa.
+- Mantener calidad suficiente para pantallas retina.
+- Usar overlays para garantizar legibilidad, no para ocultar una mala selección de imagen.
 
-## 7. Support submission flow
+## 15. Temas del portal de clientes
 
-The support form sends multipart data to:
+El portal conserva la estructura SegurIA, pero adapta ambiente, vocabulario y acento al cliente.
 
-`/api/leads`
+### Huilo Huilo
 
-Current attachment policy:
+- Fondo base: `#07140F`.
+- Acentos: esmeralda suave.
+- Sensación: bosque, reserva, hospitalidad y protección discreta.
+- Texto de acento: `emerald-200`.
+- Acción principal: `emerald-400` con texto oscuro.
+- Vocabulario: espacios, reserva, protección del entorno.
 
-- maximum 4 files;
-- maximum 10 MB per file;
-- maximum 25 MB per request;
-- supported formats: JPEG, PNG, WEBP, PDF and MP4;
-- file content is checked through magic-byte signatures;
-- file MIME type must match detected content;
-- storage object names are randomized;
-- evidence is stored privately;
-- failed lead creation removes any files uploaded during that request.
+### Santa Elena
 
-The support request stores:
+- Fondo base: `#171108`.
+- Acentos: ámbar cálido.
+- Sensación: campo, producción, continuidad y operación permanente.
+- Texto de acento: `amber-200`.
+- Acción principal: `amber-300` con texto oscuro.
+- Vocabulario: predios, operación lechera, continuidad productiva.
 
-- contact information;
-- message;
-- support context;
-- evidence metadata;
-- evidence byte total;
-- retention metadata;
-- CRM activity initialization;
-- hashed client IP when a hashing secret is available;
-- user agent;
-- consent.
+### Tema general
 
-## 8. Evidence security and lifecycle
+- Fondo base: `#081725`.
+- Acentos: azul cielo.
+- Sensación: control operacional, claridad y tecnología.
+- Texto de acento: `sky-200`.
+- Acción principal: `sky-300` con texto oscuro.
 
-Evidence access requires an authenticated administrator.
+Regla principal: los temas cambian ambiente y lenguaje, pero no alteran la estructura, patrones de interacción ni jerarquía del producto.
 
-Before a private file opens, the platform records:
+## 16. Sitio público
 
-- administrator;
-- file;
-- internal path;
-- timestamp.
+El sitio público debe:
 
-Access history is kept inside the lead detail object and is capped to avoid unbounded growth.
+- explicar la propuesta de valor rápidamente;
+- demostrar capacidad técnica sin saturar;
+- usar narrativa visual clara;
+- separar soluciones, proyectos, evidencia y contacto;
+- mantener CTAs consistentes;
+- usar imágenes reales o visuales aprobados;
+- conservar continuidad entre páginas en español e inglés.
 
-Current evidence retention policy:
+El hero debe contener:
 
-- metadata target: 180 days;
-- active support cases remain protected from automated deletion;
-- closed cases can be processed by the retention maintenance endpoint after expiration;
-- retention processing is protected by `CRON_SECRET` or `SEGURIA_MONITOR_SECRET`;
-- the retention endpoint is destructive and must not be run manually without explicit authorization.
+- una promesa concreta;
+- una explicación breve;
+- un CTA primario;
+- un CTA secundario solo cuando sea necesario;
+- una imagen o fondo que refuerce la promesa.
 
-## 9. CRM activity model
+## 17. Portal de clientes
 
-The CRM activity log records:
+El portal debe priorizar:
 
-- lead creation;
-- status changes;
-- notes updates;
-- owner assignments;
-- evidence access events in the evidence-specific history.
+- estado general;
+- prioridades del día;
+- incidentes abiertos;
+- cámaras y dispositivos relevantes;
+- evidencia;
+- acciones de soporte contextual.
 
-The general activity log is capped at 100 events per lead.
+Reglas:
 
-The evidence access history is capped at 50 events per lead.
+- No convertir cada dato en una tarjeta.
+- Las alertas críticas deben distinguirse sin dominar toda la interfaz.
+- Las acciones “Reportar” deben estar cerca del elemento afectado.
+- El contexto del usuario debe preservarse al navegar a Ayuda.
+- Los estados vacíos deben explicar qué significa la ausencia de datos.
+- Los fallos parciales no deben romper toda la página.
 
-The first response timestamp is fixed when a new request first leaves `new` status.
+## 18. Administración y CRM
 
-## 10. SLA model
+La administración puede ser más densa, pero debe mantener orden y legibilidad.
 
-For new support requests:
+Reglas:
 
-- under 2 hours: `En plazo`;
-- between 2 and 4 hours: `Por vencer`;
-- over 4 hours: `SLA vencido`;
-- after first response: `Atendido`.
+- Navegación lateral fija en escritorio y panel desplegable en móvil.
+- Fondo principal SegurIA Deep.
+- Sidebar SegurIA Medium.
+- Estado activo con SegurIA Sky al `20%`.
+- Tablas con jerarquía clara y acciones discretas.
+- Filtros visibles, pero no más prominentes que el contenido.
+- Estados, SLA y responsables deben poder escanearse rápidamente.
+- La evidencia privada debe diferenciar visualmente acción, historial y metadatos.
+- No mostrar información sensible en previews innecesarias.
 
-SLA is an operational indicator, not a contractual guarantee unless separately agreed with the client.
+## 19. Estados del sistema
 
-## 11. Operational monitor
+Todo componente de datos debe contemplar:
 
-Primary route:
+- loading;
+- éxito;
+- vacío;
+- error;
+- sin permisos;
+- dato parcial o degradado.
 
-`/api/monitor/operations`
+Reglas:
 
-Responsibilities include:
+- Loading: skeleton o texto corto, no spinners permanentes.
+- Vacío: explicar qué falta y qué acción corresponde.
+- Error: describir el problema en lenguaje claro y ofrecer recuperación.
+- Sin permisos: no parecer un error técnico.
+- Dato parcial: mostrar lo disponible y señalar la limitación.
 
-- marking stale gateways;
-- escalating overdue notifications;
-- processing notification deliveries;
-- rolling back automation deployments that were not confirmed in time.
+## 20. Movimiento y transición
 
-The route is production-guarded and secret-protected.
+Movimiento sobrio y funcional.
 
-Supabase occasionally returned the transient error:
+- Duración habitual: `150–250ms`.
+- Usar `ease` o curvas suaves.
+- Animar cambios de estado, paneles y feedback inmediato.
+- No usar parallax intenso, rebotes o transiciones largas en interfaces operativas.
+- Respetar `prefers-reduced-motion`.
 
-`JWT issued at future`
+## 21. Responsive
 
-The monitor now performs one controlled retry after 1.5 seconds only for that exact error. All other failures remain immediate.
+Breakpoints deben seguir la lógica de Tailwind, pero la composición debe validarse visualmente.
 
-Do not invoke the monitor casually because it can create real escalations and automation rollbacks.
+Móvil:
 
-## 12. Daily evidence budget
+- una columna;
+- acciones principales visibles;
+- navegación colapsable;
+- tablas transformadas o con scroll horizontal controlado;
+- padding lateral mínimo de `16px`;
+- tipografía sin reducción excesiva;
+- objetivos táctiles suficientes.
 
-A daily evidence storage budget is enforced before accepting new support attachments.
+Escritorio:
 
-Default budget:
+- usar el espacio adicional para jerarquía, no para llenar con más elementos;
+- mantener límites de lectura;
+- evitar tarjetas excesivamente anchas;
+- no depender de hover para funciones esenciales.
 
-`500 MB/day`
+## 22. Accesibilidad
 
-Environment override:
+Requisitos mínimos:
 
-`SUPPORT_EVIDENCE_DAILY_BUDGET_BYTES`
+- contraste WCAG AA para texto funcional;
+- foco visible en todos los controles;
+- navegación completa por teclado;
+- labels asociados a inputs;
+- botones con nombres accesibles;
+- imágenes informativas con `alt` descriptivo;
+- imágenes decorativas con `alt=""`;
+- no depender solo del color para estados;
+- orden de encabezados correcto;
+- mensajes dinámicos anunciables cuando afecten el flujo;
+- controles táctiles de tamaño suficiente.
 
-The current calculation reads existing support lead metadata for the day. It is protective but not atomic under concurrent requests.
+## 23. Escritura UX
 
-An atomic database reservation remains a possible future hardening task, not a current product requirement.
+El lenguaje debe ser:
 
-## 13. Environment variables and secrets
+- directo;
+- breve;
+- específico;
+- comprensible para usuarios no técnicos;
+- consistente con el contexto del cliente.
 
-Important server-side variables include:
+Reglas:
 
-- `NEXT_PUBLIC_SUPABASE_URL`;
-- `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`;
-- `CRON_SECRET`;
-- `SEGURIA_MONITOR_SECRET`;
-- `LEAD_IP_HASH_SECRET`;
-- `SUPPORT_EVIDENCE_DAILY_BUDGET_BYTES`.
+- Usar verbos de acción claros.
+- Evitar jerga técnica cuando no aporta.
+- No usar frases promocionales dentro de tareas operativas.
+- Los errores deben indicar qué ocurrió y qué hacer.
+- Los estados deben ser consistentes en todas las pantallas.
+- En interfaces ejecutivas, resumir primero y permitir detalle después.
 
-`LEAD_IP_HASH_SECRET` should be configured independently rather than relying on a Supabase secret fallback.
+## 24. Reglas para nuevas pantallas
 
-Secrets must never be committed to the repository or exposed to client components.
+Antes de crear una pantalla o componente nuevo:
 
-## 14. Current known limitations
+1. Revisar si ya existe un patrón equivalente.
+2. Reutilizar tokens y componentes.
+3. Definir el objetivo principal de la pantalla.
+4. Limitar acciones de primer nivel.
+5. Diseñar estados loading, vacío y error.
+6. Validar móvil y escritorio.
+7. Comprobar contraste y navegación por teclado.
+8. Evitar introducir colores, radios o sombras nuevos sin necesidad.
 
-These are known and accepted unless a concrete operational need justifies work:
+## 25. Prohibiciones
 
-1. Evidence upload still passes through the application function rather than direct signed upload to storage.
-2. Daily evidence budget calculation is approximate under concurrency.
-3. Malware scanning is not implemented.
-4. Real end-to-end upload tests should not be run against production without explicit approval because they create data and files.
-5. Retention currently scans a bounded set and may need pagination at larger scale.
-6. Visual verification across all desktop and mobile states has not been automated.
-7. Historical runtime error groups can remain visible after the responsible deployment has already been replaced.
+No hacer:
 
-## 15. Change policy
+- restyling general sin aprobación;
+- cambiar tipografía global;
+- agregar nuevos colores de marca de forma arbitraria;
+- usar gradientes neón o efectos cyberpunk;
+- combinar demasiados radios;
+- aplicar sombras fuertes a todos los paneles;
+- usar iconos brillantes o decorativos en exceso;
+- ocultar acciones importantes dentro de menús sin necesidad;
+- usar texto demasiado fino en paneles operativos;
+- saturar dashboards con métricas sin prioridad;
+- alterar imágenes de referencia más allá de lo solicitado;
+- declarar una pantalla terminada sin revisión visual real en móvil y escritorio.
 
-The current functional structure is frozen:
+## 26. Fuente de verdad
 
-- public website;
-- client portal;
-- contextual support;
-- CRM;
-- private evidence;
-- SLA;
-- operational queue;
-- maintenance and monitoring.
+Las implementaciones principales se encuentran en:
 
-Permitted work without a new product decision:
+- `app/globals.css`: tokens globales, tipografía, superficies, botones y campos.
+- `app/layout.tsx`: carga oficial de Montserrat.
+- `lib/client-theme.ts`: temas contextuales del portal.
+- componentes compartidos del sitio, portal y administración.
 
-- bug fixes;
-- security fixes;
-- performance fixes;
-- responsive corrections;
-- visual consistency corrections;
-- copy simplification;
-- accessibility corrections;
-- removal of duplication;
-- runtime stabilization.
+Cuando el código y este documento difieran, debe revisarse cuál refleja la decisión aprobada más reciente. No se debe normalizar una inconsistencia sin validación visual y funcional.
 
-Avoid:
+## 27. Criterio de aprobación visual
 
-- new dashboards;
-- parallel ticketing systems;
-- new data models for information already stored safely;
-- additional workflow states without a demonstrated need;
-- broad redesign during isolated fixes;
-- speculative integrations.
+Una entrega de UI no se considera completa hasta validar:
 
-## 16. Verification requirements
+- escritorio;
+- móvil;
+- jerarquía;
+- contraste;
+- estados interactivos;
+- contenido realista;
+- consistencia con marca;
+- ausencia de overflow o cortes;
+- fidelidad a imágenes de referencia;
+- accesibilidad básica.
 
-Before declaring a change complete:
-
-1. confirm the commit is on `main`;
-2. confirm the matching Vercel deployment reaches `READY`;
-3. check build logs for failures;
-4. check runtime errors when the change affects server behavior;
-5. avoid destructive production tests;
-6. do not claim visual completion without direct visual verification;
-7. state clearly when something is implemented but not visually or end-to-end verified.
-
-## 17. Key implementation commits
-
-Selected milestones:
-
-- `0bca2b255f2bc4173257fa681bd28bd2eb37ae86` — support redesign and integration;
-- `2431ab7bb49333710cf3c0cb54a94e43d95e18e4` — shared shell;
-- `d4bb128bd70f3f4db2ed4c0f358fbddecbfaa7c2` — evidence backend;
-- `02da222b1d19f3e8e0dc6ebce352545cf5a5a36c` — administrative evidence page;
-- `0976766723987e1672e7490c3ba1a87eb5236ff9` — lead-scoped signed evidence access;
-- `b7e923295fe8c9d662b5df0beac12507499c636c` — evidence retention endpoint;
-- `11c72d3fc199abcfe39e705fe54a9684de8d3dd1` — evidence retention schedule;
-- `feb4f207ec666d0d5667699b03b195f28e069599` — no-cache private routes;
-- `9329d82285da29c33f71decc924220887020d348` — daily evidence budget;
-- `140e4a9c4f9ad77b781b213f8b06be51da098feb` — support context reading and display;
-- `258eca04d9fd3f91cda10f0b8570602cb0fbaedc` — structured support context persistence;
-- `768544d47065d65e1646e1c7b986b832cfefd07b` — contextual origin in evidence administration;
-- `9cf875aee433f2133e1df637d07fd907cad99e18` — evidence access audit backend;
-- `eb03556f1d6b7b2c53c5c496463f16e2927c73c9` — evidence access history UI;
-- `d6a8f8a8a80731199915fa5e9bc00d8416db48e3` — context and evidence audit in CRM;
-- `76bf594fa83d08437626fbc93e447c24ce3181d0` — first response and activity persistence;
-- `6bfc9139c59a0fb0308162a68e225a59ad36666b` — SLA and activity timeline UI;
-- `1e8ac73ed90634d437223b07ffe73ced55960a39` — assignment endpoint;
-- `3bef4c7643514dd451acac5931014996665621be` — operational queue;
-- `84dfc454995c1089d2e693e8b279ecfac4c0af3a` — queue navigation;
-- `5278038af5b0196efd907afa23f0d072d3986d6e` — defensive missing property summary handling;
-- `8aa6b56f804e2ee6bbb238b5a6b0b81d7db21adb` — transient Supabase clock-skew retry.
-
-## 18. Current production baseline
-
-Baseline commit before this documentation update:
-
-`8aa6b56f804e2ee6bbb238b5a6b0b81d7db21adb`
-
-The production deployment for that baseline was verified as `READY` and active on `seguria.tech`, with no new runtime errors observed in the immediate post-deployment window.
-
-This document is the reference for future continuation. When architecture, product scope, security behavior or operational workflow changes, update `DESIGN.md` in the same commit or immediately afterward.
+Este archivo debe actualizarse cuando se apruebe un cambio real en el sistema visual, no por cada ajuste menor de implementación.
