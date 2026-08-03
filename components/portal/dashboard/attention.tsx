@@ -32,7 +32,7 @@ export function DashboardAttention({ incidents, alerts, theme }: DashboardAttent
       : 'Revisión necesaria'
 
   return (
-    <section id="incidentes" className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <Card className={`border-white/10 ${theme.cardClass} shadow-lg shadow-black/10 backdrop-blur-xl`}>
         <CardHeader className="flex-row items-start justify-between gap-4">
           <PortalSectionHeading
@@ -121,6 +121,6 @@ export function DashboardAttention({ incidents, alerts, theme }: DashboardAttent
           )}
         </CardContent>
       </Card>
-    </section>
+    </div>
   )
 }
