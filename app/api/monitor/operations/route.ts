@@ -6,6 +6,16 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+const JWT_CLOCK_SKEW_RETRY_MS = 1500
+
+function isFutureJwtError(error: { message?: string } | null | undefined) {
+  return error?.message?.toLowerCase().includes('jwt issued at future') ?? false
+}
+
+async function wait(milliseconds: number) {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
 export async function GET(request: NextRequest) {
   const guard = getOperationalGuardResponse({ operation: 'monitor.operations', requireProductionDeployment: true })
   if (guard) return guard
@@ -17,10 +27,20 @@ export async function GET(request: NextRequest) {
   if (!supabase) return NextResponse.json({ success: false, error: 'Servicio no configurado.' }, { status: 503 })
   const now = new Date()
   const expiredDeploymentBefore = new Date(now.getTime() - 10 * 60 * 1000).toISOString()
-  const [gateways, notifications] = await Promise.all([
+
+  const runMonitorRpcs = () => Promise.all([
     supabase.rpc('mark_stale_gateways', { stale_before: new Date(now.getTime() - 3 * 60 * 1000).toISOString() }),
     supabase.rpc('escalate_overdue_notifications', { check_at: now.toISOString() }),
   ])
+
+  let [gateways, notifications] = await runMonitorRpcs()
+  const firstError = gateways.error || notifications.error
+  if (isFutureJwtError(firstError)) {
+    console.warn('Operations monitor detected transient JWT clock skew; retrying once.')
+    await wait(JWT_CLOCK_SKEW_RETRY_MS)
+    ;[gateways, notifications] = await runMonitorRpcs()
+  }
+
   const error = gateways.error || notifications.error
   if (error) {
     console.error('Operations monitor failed:', error.message)
