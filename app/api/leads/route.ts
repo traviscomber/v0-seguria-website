@@ -33,7 +33,16 @@ const RATE_LIMIT_MAX_REQUESTS = 8
 const EVIDENCE_BUCKET = 'support-evidence'
 const MAX_FILES = 4
 const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_TOTAL_SIZE = 25 * 1024 * 1024
+const EVIDENCE_RETENTION_DAYS = 180
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'])
+
+type VerifiedFile = {
+  file: File
+  bytes: Uint8Array
+  mime: 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf' | 'video/mp4'
+  extension: 'jpg' | 'png' | 'webp' | 'pdf' | 'mp4'
+}
 
 function getClientIp(request: NextRequest) {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -48,9 +57,36 @@ function hashClientIp(ip: string) {
   return createHmac('sha256', secret).update(ip).digest('hex')
 }
 
-function safeFileName(name: string) {
-  const extension = name.includes('.') ? `.${name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '')}` : ''
-  return `${randomUUID()}${extension}`
+function safeFileName(extension: VerifiedFile['extension']) {
+  return `${randomUUID()}.${extension}`
+}
+
+function startsWith(bytes: Uint8Array, signature: number[]) {
+  return signature.every((value, index) => bytes[index] === value)
+}
+
+async function verifyFile(file: File): Promise<VerifiedFile | null> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let detected: Pick<VerifiedFile, 'mime' | 'extension'> | null = null
+
+  if (startsWith(bytes, [0xff, 0xd8, 0xff])) {
+    detected = { mime: 'image/jpeg', extension: 'jpg' }
+  } else if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+    detected = { mime: 'image/png', extension: 'png' }
+  } else if (
+    bytes.length >= 12 &&
+    String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' &&
+    String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+  ) {
+    detected = { mime: 'image/webp', extension: 'webp' }
+  } else if (bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === '%PDF-') {
+    detected = { mime: 'application/pdf', extension: 'pdf' }
+  } else if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === 'ftyp') {
+    detected = { mime: 'video/mp4', extension: 'mp4' }
+  }
+
+  if (!detected || detected.mime !== file.type) return null
+  return { file, bytes, ...detected }
 }
 
 async function parseLeadRequest(request: NextRequest) {
@@ -153,15 +189,29 @@ export async function POST(request: NextRequest) {
     if (parsed.data.website) return NextResponse.json({ success: true, message: 'Solicitud recibida.' })
     if (files.length > MAX_FILES) return NextResponse.json({ success: false, error: `Puedes adjuntar hasta ${MAX_FILES} archivos.` }, { status: 400 })
 
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+    if (totalSize > MAX_TOTAL_SIZE) {
+      return NextResponse.json({ success: false, error: 'El total de adjuntos supera el límite de 25 MB.' }, { status: 400 })
+    }
+
+    const verifiedFiles: VerifiedFile[] = []
     for (const file of files) {
       if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ success: false, error: `Formato no permitido: ${file.name}` }, { status: 400 })
       if (file.size > MAX_FILE_SIZE) return NextResponse.json({ success: false, error: `${file.name} supera el límite de 10 MB.` }, { status: 400 })
+      const verified = await verifyFile(file)
+      if (!verified) {
+        return NextResponse.json({ success: false, error: `${file.name} no coincide con un formato de archivo válido.` }, { status: 400 })
+      }
+      verifiedFiles.push(verified)
     }
 
     const supabase = createSupabaseAdminClient()
     if (!supabase) return NextResponse.json({ success: false, error: 'El formulario no esta disponible temporalmente.' }, { status: 503 })
 
     const ipHash = hashClientIp(getClientIp(request))
+    if (!ipHash && process.env.NODE_ENV === 'production') {
+      console.error('Evidence rate limiting is disabled because no hashing secret is configured.')
+    }
     if (ipHash) {
       const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString()
       const { count, error: countError } = await supabase.from('leads').select('id', { count: 'exact', head: true }).eq('ip_hash', ipHash).gte('created_at', cutoff)
@@ -171,16 +221,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const evidence = [] as Array<{ name: string; type: string; size: number; bucket: string; path: string }>
-    for (const file of files) {
-      const path = `huilo-huilo/${new Date().toISOString().slice(0, 10)}/${safeFileName(file.name)}`
-      const { error: uploadError } = await supabase.storage.from(EVIDENCE_BUCKET).upload(path, new Uint8Array(await file.arrayBuffer()), {
-        contentType: file.type,
+    const retentionUntil = new Date(Date.now() + EVIDENCE_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    const evidence = [] as Array<{ name: string; type: string; size: number; bucket: string; path: string; retentionUntil: string }>
+    for (const verified of verifiedFiles) {
+      const path = `huilo-huilo/${new Date().toISOString().slice(0, 10)}/${safeFileName(verified.extension)}`
+      const { error: uploadError } = await supabase.storage.from(EVIDENCE_BUCKET).upload(path, verified.bytes, {
+        contentType: verified.mime,
         upsert: false,
+        cacheControl: 'private, max-age=0',
       })
       if (uploadError) throw uploadError
       uploadedPaths.push(path)
-      evidence.push({ name: file.name, type: file.type, size: file.size, bucket: EVIDENCE_BUCKET, path })
+      evidence.push({ name: verified.file.name, type: verified.mime, size: verified.file.size, bucket: EVIDENCE_BUCKET, path, retentionUntil })
     }
 
     const details = {
@@ -194,6 +246,8 @@ export async function POST(request: NextRequest) {
       tipoServicio: parsed.data.tipoServicio || '',
       mensaje: parsed.data.mensaje || '',
       evidence,
+      evidenceTotalBytes: totalSize,
+      evidenceRetentionDays: EVIDENCE_RETENTION_DAYS,
     }
 
     const { error: insertError } = await supabase.from('leads').insert({
