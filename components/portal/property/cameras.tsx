@@ -10,63 +10,26 @@ interface PropertyCamerasProps {
 }
 
 const HUILO_HUILO_DEMO_CAMERAS: PortalDevice[] = [
-  {
-    name: 'Recepción principal',
-    location: 'Hotel Huilo Huilo',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
-  {
-    name: 'Estacionamiento principal',
-    location: 'Acceso al lodge',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
-  {
-    name: 'Sendero bosque húmedo',
-    location: 'Reserva biológica',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
-  {
-    name: 'Cruce de río',
-    location: 'Sendero turístico',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
-  {
-    name: 'Área de servicio',
-    location: 'Operaciones internas',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
-  {
-    name: 'Mirador del lago',
-    location: 'Circuito de miradores',
-    status: 'demo',
-    statusLabel: 'Vista demo',
-  },
+  { name: 'Recepción principal', location: 'Hotel Huilo Huilo', status: 'demo', statusLabel: 'Vista demo' },
+  { name: 'Estacionamiento principal', location: 'Acceso al lodge', status: 'demo', statusLabel: 'Vista demo' },
+  { name: 'Sendero bosque húmedo', location: 'Reserva biológica', status: 'demo', statusLabel: 'Vista demo' },
+  { name: 'Cruce de río', location: 'Sendero turístico', status: 'demo', statusLabel: 'Vista demo' },
+  { name: 'Área de servicio', location: 'Operaciones internas', status: 'demo', statusLabel: 'Vista demo' },
+  { name: 'Mirador del lago', location: 'Circuito de miradores', status: 'demo', statusLabel: 'Vista demo' },
 ]
 
-const DEMO_IMAGE_POSITIONS = [
-  'center',
-  'center 62%',
-  '32% center',
-  '68% center',
-  'center 74%',
-  'center 38%',
+const HUILO_HUILO_DEMO_IMAGES = [
+  '/demo/huilo-huilo/reception.jpg',
+  '/demo/huilo-huilo/parking.jpg',
 ]
 
 export function PropertyCameras({ model }: PropertyCamerasProps) {
-  const siteName = `${model.site.name || ''} ${model.site.label || ''} ${model.site.organizationName || ''}`
-    .toLowerCase()
+  const siteName = `${model.site.name || ''} ${model.site.label || ''} ${model.site.organizationName || ''}`.toLowerCase()
   const isHuiloHuilo = siteName.includes('huilo huilo')
   const isSyntheticDemo = isHuiloHuilo && model.cameras.length === 0
   const cameras = isSyntheticDemo ? HUILO_HUILO_DEMO_CAMERAS : model.cameras
 
   if (cameras.length === 0) return null
-
-  const fallbackSrc = model.site.imageUrl || (isHuiloHuilo ? '/portal/huilo-huilo.jpg' : undefined)
 
   return (
     <section id="camaras" className="space-y-4">
@@ -84,6 +47,9 @@ export function PropertyCameras({ model }: PropertyCamerasProps) {
         {cameras.map((device, index) => {
           const deviceId = device.id ? String(device.id) : null
           const label = getPortalDeviceLabel(device)
+          const fallbackSrc = isHuiloHuilo
+            ? HUILO_HUILO_DEMO_IMAGES[index % HUILO_HUILO_DEMO_IMAGES.length]
+            : model.site.imageUrl || undefined
 
           return (
             <div
@@ -91,12 +57,7 @@ export function PropertyCameras({ model }: PropertyCamerasProps) {
               className="overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.04]"
             >
               <div className="relative h-52 overflow-hidden bg-[#071524]">
-                <CameraSnapshot
-                  deviceId={deviceId}
-                  alt={label}
-                  fallbackSrc={fallbackSrc}
-                  fallbackPosition={DEMO_IMAGE_POSITIONS[index % DEMO_IMAGE_POSITIONS.length]}
-                />
+                <CameraSnapshot deviceId={deviceId} alt={label} fallbackSrc={fallbackSrc} />
                 {!deviceId && !fallbackSrc ? (
                   <div className="flex h-full items-center justify-center text-sm text-white/35">
                     Vista no disponible
