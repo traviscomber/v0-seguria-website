@@ -29,9 +29,11 @@ type SupportForm = {
 }
 
 type SupportTopic = 'acceso' | 'vigilancia' | 'alertas' | 'otro'
+type SendStatus = 'idle' | 'uploading' | 'processing' | 'sent' | 'error'
 
 const MAX_FILES = 4
 const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_TOTAL_SIZE = 25 * 1024 * 1024
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4'])
 
 const supportTopics = [
@@ -46,14 +48,22 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function uploadSupportRequest(body: FormData, onProgress: (progress: number) => void) {
+function uploadSupportRequest(
+  body: FormData,
+  onProgress: (progress: number) => void,
+  onTransferComplete: () => void,
+) {
   return new Promise<{ success?: boolean; error?: string }>((resolve, reject) => {
     const request = new XMLHttpRequest()
     request.open('POST', '/api/leads')
     request.responseType = 'json'
     request.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100))
+      if (!event.lengthComputable) return
+      const progress = Math.round((event.loaded / event.total) * 100)
+      onProgress(progress)
+      if (progress >= 100) onTransferComplete()
     }
+    request.upload.onload = onTransferComplete
     request.onerror = () => reject(new Error('No se pudo conectar con soporte.'))
     request.onload = () => {
       const result = request.response || {}
@@ -74,10 +84,12 @@ export default function HuiloHuiloSupportPage() {
   const [form, setForm] = useState<SupportForm>({ nombre: '', telefono: '', email: '', mensaje: '', website: '', consent: false })
   const [topic, setTopic] = useState<SupportTopic>('acceso')
   const [evidence, setEvidence] = useState<File[]>([])
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [status, setStatus] = useState<SendStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
 
+  const totalEvidenceBytes = useMemo(() => evidence.reduce((sum, file) => sum + file.size, 0), [evidence])
+  const isSending = status === 'uploading' || status === 'processing'
   const hasChanges = useMemo(() => Boolean(
     form.nombre || form.telefono || form.email || form.mensaje || form.consent || evidence.length > 0
   ), [form, evidence.length])
@@ -128,6 +140,11 @@ export default function HuiloHuiloSupportPage() {
         setError(`Puedes adjuntar hasta ${MAX_FILES} archivos.`)
         return current
       }
+      const total = next.reduce((sum, file) => sum + file.size, 0)
+      if (total > MAX_TOTAL_SIZE) {
+        setError('El total de adjuntos no puede superar 25 MB.')
+        return current
+      }
       return next
     })
     event.target.value = ''
@@ -145,7 +162,7 @@ export default function HuiloHuiloSupportPage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setStatus('sending')
+    setStatus(evidence.length > 0 ? 'uploading' : 'processing')
     setUploadProgress(0)
     setError('')
 
@@ -166,7 +183,7 @@ export default function HuiloHuiloSupportPage() {
       const body = new FormData()
       body.append('payload', JSON.stringify(payload))
       evidence.forEach((file) => body.append('evidence', file))
-      await uploadSupportRequest(body, setUploadProgress)
+      await uploadSupportRequest(body, setUploadProgress, () => setStatus('processing'))
       setUploadProgress(100)
       setStatus('sent')
     } catch (caught) {
@@ -175,11 +192,13 @@ export default function HuiloHuiloSupportPage() {
     }
   }
 
-  const sendLabel = status === 'sending'
-    ? evidence.length > 0 ? `Subiendo evidencia · ${uploadProgress}%` : 'Registrando solicitud…'
-    : evidence.length > 0
-      ? `Enviar solicitud con ${evidence.length} adjunto${evidence.length === 1 ? '' : 's'}`
-      : 'Enviar solicitud'
+  const sendLabel = status === 'uploading'
+    ? `Subiendo evidencia · ${uploadProgress}%`
+    : status === 'processing'
+      ? evidence.length > 0 ? 'Validando y registrando…' : 'Registrando solicitud…'
+      : evidence.length > 0
+        ? `Enviar solicitud con ${evidence.length} adjunto${evidence.length === 1 ? '' : 's'}`
+        : 'Enviar solicitud'
 
   return (
     <main className="min-h-screen bg-[#03130e] text-white">
@@ -213,7 +232,7 @@ export default function HuiloHuiloSupportPage() {
           </div>
 
           <div className="overflow-hidden rounded-[24px] border border-white/12 bg-[#071b14]/90 shadow-[0_32px_100px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
-            <div className="sr-only" aria-live="polite">{status === 'sending' ? sendLabel : status === 'sent' ? 'Solicitud enviada' : evidence.length > 0 ? `${evidence.length} archivos seleccionados` : ''}</div>
+            <div className="sr-only" aria-live="polite">{isSending ? sendLabel : status === 'sent' ? 'Solicitud enviada' : evidence.length > 0 ? `${evidence.length} archivos seleccionados, ${formatBytes(totalEvidenceBytes)} en total` : ''}</div>
             {status === 'sent' ? (
               <div className="flex min-h-[520px] flex-col items-center justify-center px-8 py-12 text-center">
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-200 text-[#062017]"><Check className="h-6 w-6" aria-hidden="true" /></span>
@@ -229,7 +248,7 @@ export default function HuiloHuiloSupportPage() {
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-emerald-200"><Headphones className="h-5 w-5" aria-hidden="true" /></span>
                 </div>
 
-                <fieldset className="mt-6">
+                <fieldset className="mt-6" disabled={isSending}>
                   <legend className="sr-only">Tipo de problema</legend>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {supportTopics.map(({ id, icon: Icon, label }) => {
@@ -241,37 +260,41 @@ export default function HuiloHuiloSupportPage() {
 
                 <div className="sr-only" aria-hidden="true"><label htmlFor={`${formId}-website`}>Website</label><input id={`${formId}-website`} name="website" value={form.website} onChange={update} tabIndex={-1} autoComplete="off" /></div>
 
-                <div className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2">
+                <fieldset disabled={isSending} className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2">
                   <Field id={`${formId}-nombre`} label="Nombre"><Input id={`${formId}-nombre`} name="nombre" value={form.nombre} onChange={update} autoComplete="name" required /></Field>
                   <Field id={`${formId}-telefono`} label="Teléfono"><Input id={`${formId}-telefono`} name="telefono" value={form.telefono} onChange={update} autoComplete="tel" inputMode="tel" required /></Field>
                   <div className="sm:col-span-2"><Field id={`${formId}-email`} label="Email"><Input id={`${formId}-email`} name="email" type="email" value={form.email} onChange={update} autoComplete="email" required /></Field></div>
                   <div className="sm:col-span-2"><Field id={`${formId}-mensaje`} label="Detalle"><Textarea id={`${formId}-mensaje`} name="mensaje" rows={4} value={form.mensaje} onChange={update} placeholder="Indica la sección, espacio, cámara o alerta." required /></Field></div>
-                </div>
+                </fieldset>
 
                 <div className="mt-5">
-                  <input ref={fileInputRef} id={`${formId}-evidence`} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,video/mp4" onChange={selectEvidence} className="sr-only" aria-describedby={`${formId}-evidence-help`} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex w-full items-center justify-between rounded-xl border border-dashed border-white/25 bg-white/[0.04] px-4 py-3.5 text-left transition hover:border-emerald-200/50 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">
-                    <span className="flex items-center gap-3"><Paperclip className="h-5 w-5 text-emerald-200" aria-hidden="true" /><span><span className="block text-sm font-medium text-white">Adjuntar evidencia</span><span id={`${formId}-evidence-help`} className="mt-0.5 block text-xs text-white/60">Fotos, PDF o video · máximo 4 archivos de 10 MB</span></span></span>
+                  <input ref={fileInputRef} id={`${formId}-evidence`} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,video/mp4" onChange={selectEvidence} disabled={isSending} className="sr-only" aria-describedby={`${formId}-evidence-help`} />
+                  <button type="button" disabled={isSending} onClick={() => fileInputRef.current?.click()} className="flex w-full items-center justify-between rounded-xl border border-dashed border-white/25 bg-white/[0.04] px-4 py-3.5 text-left transition hover:border-emerald-200/50 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-55">
+                    <span className="flex items-center gap-3"><Paperclip className="h-5 w-5 text-emerald-200" aria-hidden="true" /><span><span className="block text-sm font-medium text-white">Adjuntar evidencia</span><span id={`${formId}-evidence-help`} className="mt-0.5 block text-xs text-white/60">Máximo 4 archivos · 10 MB cada uno · 25 MB en total</span></span></span>
                     <span className="text-xs font-medium text-emerald-200">Seleccionar</span>
                   </button>
 
                   {evidence.length > 0 ? (
-                    <ul className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Evidencia seleccionada">
-                      {evidence.map((file, index) => <EvidencePreview key={`${file.name}-${file.lastModified}-${index}`} file={file} onRemove={() => removeEvidence(index)} />)}
-                    </ul>
+                    <div className="mt-3">
+                      <div className="mb-2 flex items-center justify-between text-xs text-white/55"><span>{evidence.length} adjunto{evidence.length === 1 ? '' : 's'}</span><span>{formatBytes(totalEvidenceBytes)} / 25 MB</span></div>
+                      <ul className="grid max-h-60 gap-2 overflow-y-auto pr-1 sm:grid-cols-2" aria-label="Evidencia seleccionada">
+                        {evidence.map((file, index) => <EvidencePreview key={`${file.name}-${file.lastModified}-${index}`} file={file} disabled={isSending} onRemove={() => removeEvidence(index)} />)}
+                      </ul>
+                    </div>
                   ) : null}
                 </div>
 
-                <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6 text-white/70"><input type="checkbox" name="consent" checked={form.consent} onChange={update} required className="mt-1 h-4 w-4 shrink-0 accent-emerald-200" /><span>Acepto el uso de estos datos para responder la solicitud.</span></label>
+                <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6 text-white/70"><input type="checkbox" name="consent" checked={form.consent} onChange={update} required disabled={isSending} className="mt-1 h-4 w-4 shrink-0 accent-emerald-200" /><span>Acepto el uso de estos datos para responder la solicitud.</span></label>
                 {error ? <p ref={errorRef} tabIndex={-1} className="mt-5 border-l-2 border-red-300 bg-red-400/10 px-4 py-3 text-sm text-red-100 outline-none" role="alert">{error}</p> : null}
 
-                {status === 'sending' ? (
-                  <div className="mt-5" aria-label={`Progreso de envío ${uploadProgress}%`}>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-200 transition-[width]" style={{ width: `${Math.max(uploadProgress, 5)}%` }} /></div>
+                {isSending ? (
+                  <div className="mt-5" aria-label={sendLabel}>
+                    <div className="mb-2 flex items-center justify-between text-xs text-white/60"><span>{status === 'uploading' ? 'Subiendo evidencia' : 'Validando y registrando solicitud'}</span><span>{status === 'uploading' ? `${uploadProgress}%` : 'Procesando'}</span></div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full bg-emerald-200 transition-[width] ${status === 'processing' ? 'animate-pulse' : ''}`} style={{ width: status === 'processing' ? '100%' : `${Math.max(uploadProgress, 5)}%` }} /></div>
                   </div>
                 ) : null}
 
-                <button type="submit" disabled={status === 'sending'} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-200 px-6 py-3.5 text-sm font-semibold text-[#052117] transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70"><Send className="h-4 w-4" aria-hidden="true" />{sendLabel}</button>
+                <button type="submit" disabled={isSending} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-200 px-6 py-3.5 text-sm font-semibold text-[#052117] transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70"><Send className="h-4 w-4" aria-hidden="true" />{sendLabel}</button>
               </form>
             )}
           </div>
@@ -281,7 +304,7 @@ export default function HuiloHuiloSupportPage() {
   )
 }
 
-function EvidencePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+function EvidencePreview({ file, onRemove, disabled }: { file: File; onRemove: () => void; disabled?: boolean }) {
   const [preview, setPreview] = useState<string | null>(null)
 
   useEffect(() => {
@@ -298,7 +321,7 @@ function EvidencePreview({ file, onRemove }: { file: File; onRemove: () => void 
       </div>
       <div className="flex items-center gap-3 px-3 py-2.5">
         <span className="min-w-0 flex-1"><span className="block truncate text-sm text-white/90">{file.name}</span><span className="block text-xs text-white/55">{formatBytes(file.size)}</span></span>
-        <button type="button" onClick={onRemove} aria-label={`Quitar ${file.name}`} className="rounded-lg p-2 text-white/55 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"><X className="h-4 w-4" aria-hidden="true" /></button>
+        <button type="button" disabled={disabled} onClick={onRemove} aria-label={`Quitar ${file.name}`} className="rounded-lg p-2 text-white/55 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:opacity-40"><X className="h-4 w-4" aria-hidden="true" /></button>
       </div>
     </li>
   )
@@ -309,9 +332,9 @@ function Field({ id, label, children }: { id: string; label: string; children: R
 }
 
 function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className="w-full border-0 border-b border-white/20 bg-transparent px-0 py-3 text-[15px] text-white outline-none transition placeholder:text-white/35 focus:border-emerald-200 focus:ring-0" />
+  return <input {...props} className="w-full border-0 border-b border-white/20 bg-transparent px-0 py-3 text-[15px] text-white outline-none transition placeholder:text-white/35 focus:border-emerald-200 focus:ring-0 disabled:opacity-60" />
 }
 
 function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className="w-full resize-none rounded-xl border border-white/15 bg-black/15 px-4 py-3.5 text-[15px] leading-6 text-white outline-none transition placeholder:text-white/35 focus:border-emerald-200/60 focus:ring-2 focus:ring-emerald-200/20" />
+  return <textarea {...props} className="w-full resize-none rounded-xl border border-white/15 bg-black/15 px-4 py-3.5 text-[15px] leading-6 text-white outline-none transition placeholder:text-white/35 focus:border-emerald-200/60 focus:ring-2 focus:ring-emerald-200/20 disabled:opacity-60" />
 }
