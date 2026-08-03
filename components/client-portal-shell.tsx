@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  BellRing,
   Building2,
   Camera,
   Headphones,
@@ -20,7 +19,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ClientTheme } from '@/lib/client-theme'
 import { cn } from '@/lib/utils'
 
-const dashboardSectionIds = ['resumen', 'propiedades', 'incidentes', 'camaras', 'actividad'] as const
+const dashboardSectionIds = ['resumen', 'propiedades', 'incidentes', 'camaras'] as const
 
 export function ClientPortalShell({
   children,
@@ -48,7 +47,6 @@ export function ClientPortalShell({
       { href: '/app#propiedades', label: spacesLabel, icon: SpacesIcon },
       { href: '/app#incidentes', label: 'Prioridades', icon: Siren },
       { href: '/app#camaras', label: 'Vigilancia', icon: Camera },
-      { href: '/app#actividad', label: 'Actividad', icon: BellRing },
     ]
   }, [theme.key])
 
