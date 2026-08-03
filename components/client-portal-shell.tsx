@@ -84,6 +84,7 @@ export function ClientPortalShell({
 
   const PortalIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Home
   const accountLabel = userRole === 'client' ? theme.vocabulary.operation : userRole
+  const helpHref = theme.key === 'huilo-huilo' ? '/contacto/huilo-huilo' : '/es/contacto'
 
   return (
     <div className="min-h-screen text-white" style={{ backgroundColor: theme.pageBackground }}>
@@ -126,7 +127,7 @@ export function ClientPortalShell({
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <Link
-              href="/es/contacto"
+              href={helpHref}
               className="hidden h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-white/60 transition-colors hover:border-white/20 hover:bg-white/[0.05] hover:text-white md:inline-flex"
             >
               <Headphones className="h-4 w-4" strokeWidth={1.7} />
@@ -198,7 +199,7 @@ export function ClientPortalShell({
                     </Link>
                   )
                 })}
-                <Link href="/es/contacto" className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm text-white/65 hover:border-white/10 hover:bg-white/[0.05] hover:text-white">
+                <Link href={helpHref} className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm text-white/65 hover:border-white/10 hover:bg-white/[0.05] hover:text-white">
                   <Headphones className="h-4 w-4" />
                   Ayuda y soporte
                 </Link>
