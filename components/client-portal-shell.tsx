@@ -14,9 +14,9 @@ import {
   Trees,
   UserRound,
   Wheat,
+  X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import type { ClientTheme } from '@/lib/client-theme'
 import { cn } from '@/lib/utils'
 
@@ -38,41 +38,17 @@ export function ClientPortalShell({
   const [activeHash, setActiveHash] = useState('')
 
   const navItems = useMemo(() => {
-    const propertiesLabel = theme.key === 'huilo-huilo' ? 'Espacios' : theme.key === 'santa-elena' ? 'Predios' : 'Propiedades'
-    const PropertiesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
+    const spacesLabel = theme.key === 'huilo-huilo' ? 'Espacios' : theme.key === 'santa-elena' ? 'Predios' : 'Propiedades'
+    const SpacesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
 
     return [
       { href: '/app', label: 'Resumen', icon: Home },
-      { href: '/app#propiedades', label: propertiesLabel, icon: PropertiesIcon },
-      { href: '/app#incidentes', label: 'Incidentes', icon: Siren },
+      { href: '/app#propiedades', label: spacesLabel, icon: SpacesIcon },
+      { href: '/app#incidentes', label: 'Prioridades', icon: Siren },
       { href: '/app#camaras', label: 'Vigilancia', icon: Camera },
       { href: '/app#actividad', label: 'Actividad', icon: BellRing },
-      { href: '/es/contacto', label: 'Soporte', icon: Headphones },
     ]
   }, [theme.key])
-
-  const quickLinks = useMemo(() => [
-    {
-      label: 'Estado general',
-      value: `Resumen de la ${theme.vocabulary.operation}`,
-      href: '/app',
-    },
-    {
-      label: `Revisar ${theme.vocabulary.properties}`,
-      value: theme.key === 'huilo-huilo' ? 'Hoteles, senderos y zonas críticas' : theme.key === 'santa-elena' ? 'Ganado, ordeña y maquinaria' : 'Cámaras, sensores y actividad',
-      href: '/app#propiedades',
-    },
-    {
-      label: 'Ver prioridades',
-      value: `Alertas e incidentes de ${theme.vocabulary.priority}`,
-      href: '/app#incidentes',
-    },
-    {
-      label: 'Solicitar ayuda',
-      value: 'Contacto directo con SegurIA',
-      href: '/es/contacto',
-    },
-  ], [theme])
 
   useEffect(() => {
     const syncHash = () => setActiveHash(window.location.hash)
@@ -80,6 +56,10 @@ export function ClientPortalShell({
     window.addEventListener('hashchange', syncHash)
     return () => window.removeEventListener('hashchange', syncHash)
   }, [pathname])
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname, activeHash])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -102,21 +82,26 @@ export function ClientPortalShell({
     return pathname === href
   }
 
+  const PortalIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Home
+  const accountLabel = userRole === 'client' ? theme.vocabulary.operation : userRole
+
   return (
     <div className="min-h-screen text-white" style={{ backgroundColor: theme.pageBackground }}>
-      <header className={`sticky top-0 z-40 border-b border-white/10 ${theme.cardClass} backdrop-blur-2xl`}>
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/app" className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] ${theme.accentTextClass}`}>
-              {theme.key === 'huilo-huilo' ? <Trees className="h-5 w-5" /> : theme.key === 'santa-elena' ? <Wheat className="h-5 w-5" /> : <Home className="h-5 w-5" />}
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">Portal de clientes</p>
-              <p className="mt-0.5 text-sm font-medium text-white">{theme.name}</p>
-            </div>
+      <header className={cn('sticky top-0 z-50 border-b border-white/10 backdrop-blur-2xl', theme.cardClass)}>
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+          <Link href="/app" className="flex min-w-0 shrink-0 items-center gap-3" aria-label={`Ir al resumen de ${theme.name}`}>
+            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]', theme.accentTextClass)}>
+              <PortalIcon className="h-5 w-5" strokeWidth={1.7} />
+            </span>
+            <span className="hidden min-w-0 sm:block">
+              <span className="block text-[9px] uppercase tracking-[0.24em] text-white/35">Portal SegurIA</span>
+              <span className="mt-0.5 block max-w-44 truncate text-sm font-medium text-white">{theme.name}</span>
+            </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegación del portal">
+          <div className="hidden h-8 w-px shrink-0 bg-white/10 lg:block" />
+
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Navegación principal del portal">
             {navItems.map((item) => {
               const active = isNavActive(item.href)
               return (
@@ -125,112 +110,112 @@ export function ClientPortalShell({
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-all',
-                    active ? `bg-white/10 text-white shadow-sm ${theme.accentTextClass}` : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    'relative inline-flex h-10 items-center gap-2 rounded-xl px-3 text-[13px] transition-colors',
+                    active
+                      ? 'bg-white/[0.09] text-white'
+                      : 'text-white/55 hover:bg-white/[0.05] hover:text-white'
                   )}
                 >
-                  <item.icon className="h-4 w-4" strokeWidth={1.8} />
-                  {item.label}
+                  <item.icon className={cn('h-4 w-4', active && theme.accentTextClass)} strokeWidth={1.7} />
+                  <span>{item.label}</span>
+                  {active ? <span className={cn('absolute inset-x-3 -bottom-[17px] h-px bg-current', theme.accentTextClass)} /> : null}
                 </Link>
               )
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 sm:flex">
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] ${theme.accentTextClass}`}>
-                <UserRound className="h-4 w-4" />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <Link
+              href="/es/contacto"
+              className="hidden h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-[13px] text-white/60 transition-colors hover:border-white/20 hover:bg-white/[0.05] hover:text-white md:inline-flex"
+            >
+              <Headphones className="h-4 w-4" strokeWidth={1.7} />
+              Ayuda
+            </Link>
+
+            <div className="hidden h-10 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 sm:flex">
+              <span className={cn('flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06]', theme.accentTextClass)}>
+                <UserRound className="h-3.5 w-3.5" />
               </span>
-              <div className="min-w-0 text-right">
-                <p className="max-w-40 truncate text-sm text-white">{userName}</p>
-                <p className="text-xs text-white/45">{userRole === 'client' ? theme.vocabulary.operation : userRole}</p>
-              </div>
+              <span className="min-w-0 text-right">
+                <span className="block max-w-32 truncate text-xs font-medium text-white">{userName}</span>
+                <span className="block max-w-32 truncate text-[10px] text-white/35">{accountLabel}</span>
+              </span>
             </div>
 
-            <Button variant="outline" size="sm" onClick={handleLogout} disabled={loggingOut} className="hidden border-white/15 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white md:inline-flex">
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="hidden h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-white/55 transition-colors hover:border-white/20 hover:bg-white/[0.05] hover:text-white disabled:opacity-50 md:inline-flex"
+            >
               <LogOut className="h-4 w-4" />
-              {loggingOut ? 'Cerrando...' : 'Salir'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white lg:hidden"
+              {loggingOut ? 'Saliendo' : 'Salir'}
+            </button>
+
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-white lg:hidden"
               onClick={() => setMobileOpen((value) => !value)}
-              aria-label="Abrir menú"
+              aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={mobileOpen}
             >
-              <Menu className="h-5 w-5" />
-            </Button>
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
 
-        {mobileOpen && (
-          <div className="border-t border-white/10 px-4 py-4 lg:hidden">
-            <div className="mx-auto flex max-w-7xl flex-col gap-2">
-              {navItems.map((item) => {
-                const active = isNavActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
-                      active ? `bg-white/10 text-white ${theme.accentTextClass}` : 'text-white/70 hover:bg-white/5 hover:text-white'
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                )
-              })}
-              <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="mt-2 flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-left text-sm text-white/70"
-              >
-                <LogOut className="h-4 w-4" />
-                {loggingOut ? 'Cerrando...' : 'Cerrar sesión'}
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
-
-      <section className={`border-b border-white/10 ${theme.cardClass} backdrop-blur-xl`}>
-        <div className="mx-auto grid max-w-7xl gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[1.05fr_1.95fr] lg:px-8">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3">
-            <div className="flex items-start gap-3">
-              <span className={`mt-0.5 rounded-full border border-white/10 bg-white/[0.06] p-2 ${theme.accentTextClass}`}>
-                <Home className="h-4 w-4" strokeWidth={1.8} />
-              </span>
-              <div>
-                <p className={`text-[11px] uppercase tracking-[0.22em] ${theme.accentTextClass}`}>{theme.badge}</p>
-                <p className="mt-1 text-sm text-white">{userName}</p>
-                <p className="mt-1 text-xs leading-5 text-white/55">
-                  {theme.description}
-                </p>
+        {mobileOpen ? (
+          <div className="border-t border-white/10 bg-black/15 px-4 py-4 lg:hidden">
+            <div className="mx-auto max-w-7xl">
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.035] p-3 sm:hidden">
+                <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.06]', theme.accentTextClass)}>
+                  <UserRound className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-medium text-white">{userName}</span>
+                  <span className="block text-xs text-white/40">{accountLabel}</span>
+                </span>
               </div>
+
+              <nav className="grid gap-2 sm:grid-cols-2" aria-label="Navegación móvil del portal">
+                {navItems.map((item) => {
+                  const active = isNavActive(item.href)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors',
+                        active
+                          ? 'border-white/15 bg-white/[0.09] text-white'
+                          : 'border-transparent text-white/65 hover:border-white/10 hover:bg-white/[0.05] hover:text-white'
+                      )}
+                    >
+                      <item.icon className={cn('h-4 w-4', active && theme.accentTextClass)} />
+                      {item.label}
+                    </Link>
+                  )
+                })}
+                <Link href="/es/contacto" className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm text-white/65 hover:border-white/10 hover:bg-white/[0.05] hover:text-white">
+                  <Headphones className="h-4 w-4" />
+                  Ayuda y soporte
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm text-white/65 hover:border-white/10 hover:bg-white/[0.05] hover:text-white disabled:opacity-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+                </button>
+              </nav>
             </div>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {quickLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]"
-              >
-                <p className={`text-[11px] uppercase tracking-[0.2em] text-white/45 group-hover:${theme.accentTextClass}`}>
-                  {item.label}
-                </p>
-                <p className="mt-2 text-sm leading-5 text-white/78">{item.value}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        ) : null}
+      </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
     </div>
