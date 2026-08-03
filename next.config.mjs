@@ -18,34 +18,19 @@ const securityHeaders = [
       'upgrade-insecure-requests',
     ].join('; '),
   },
-  {
-    key: 'Referrer-Policy',
-    value: 'strict-origin-when-cross-origin',
-  },
-  {
-    key: 'X-Content-Type-Options',
-    value: 'nosniff',
-  },
-  {
-    key: 'X-Frame-Options',
-    value: 'DENY',
-  },
-  {
-    key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
-  },
-  {
-    key: 'Cross-Origin-Opener-Policy',
-    value: 'same-origin',
-  },
-  {
-    key: 'Cross-Origin-Resource-Policy',
-    value: 'same-origin',
-  },
-  {
-    key: 'Strict-Transport-Security',
-    value: 'max-age=63072000; includeSubDomains; preload',
-  },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+]
+
+const privateHeaders = [
+  { key: 'Cache-Control', value: 'private, no-store, max-age=0, must-revalidate' },
+  { key: 'Pragma', value: 'no-cache' },
+  { key: 'Expires', value: '0' },
 ]
 
 const nextConfig = {
@@ -53,70 +38,30 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.vercel.app',
-      },
-      {
-        protocol: 'https',
-        hostname: 'inaturalist-open-data.s3.amazonaws.com',
-      },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '*.vercel.app' },
+      { protocol: 'https', hostname: 'inaturalist-open-data.s3.amazonaws.com' },
     ],
   },
   async headers() {
     return [
-      {
-        source: '/:path*',
-        headers: securityHeaders,
-      },
+      { source: '/:path*', headers: securityHeaders },
+      { source: '/contacto/huilo-huilo', headers: privateHeaders },
+      { source: '/admin/:path*', headers: privateHeaders },
+      { source: '/api/leads/:path*', headers: privateHeaders },
+      { source: '/api/maintenance/:path*', headers: privateHeaders },
     ]
   },
   async redirects() {
     return [
-      {
-        source: '/',
-        destination: '/es',
-        permanent: false,
-      },
-      {
-        source: '/soluciones',
-        destination: '/es/soluciones',
-        permanent: false,
-      },
-      {
-        source: '/campos-inteligentes',
-        destination: '/es/campos-inteligentes',
-        permanent: false,
-      },
-      {
-        source: '/propiedades-inteligentes',
-        destination: '/es/propiedades-inteligentes',
-        permanent: false,
-      },
-      {
-        source: '/hoteleria-inteligente',
-        destination: '/es/hoteleria-inteligente',
-        permanent: false,
-      },
-      {
-        source: '/integraciones',
-        destination: '/es/integraciones',
-        permanent: false,
-      },
-      {
-        source: '/contacto',
-        destination: '/es/contacto',
-        permanent: false,
-      },
-      {
-        source: '/casas-inteligentes',
-        destination: '/es/propiedades-inteligentes',
-        permanent: true,
-      },
+      { source: '/', destination: '/es', permanent: false },
+      { source: '/soluciones', destination: '/es/soluciones', permanent: false },
+      { source: '/campos-inteligentes', destination: '/es/campos-inteligentes', permanent: false },
+      { source: '/propiedades-inteligentes', destination: '/es/propiedades-inteligentes', permanent: false },
+      { source: '/hoteleria-inteligente', destination: '/es/hoteleria-inteligente', permanent: false },
+      { source: '/integraciones', destination: '/es/integraciones', permanent: false },
+      { source: '/contacto', destination: '/es/contacto', permanent: false },
+      { source: '/casas-inteligentes', destination: '/es/propiedades-inteligentes', permanent: true },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.n3uralia.com' }],
