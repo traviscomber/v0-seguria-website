@@ -20,6 +20,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ClientTheme } from '@/lib/client-theme'
 import { cn } from '@/lib/utils'
 
+const dashboardSectionIds = ['resumen', 'propiedades', 'incidentes', 'camaras', 'actividad'] as const
+
 export function ClientPortalShell({
   children,
   userName,
@@ -51,10 +53,40 @@ export function ClientPortalShell({
   }, [theme.key])
 
   useEffect(() => {
-    const syncHash = () => setActiveHash(window.location.hash)
+    const syncHash = () => setActiveHash(window.location.hash || (pathname === '/app' ? '#resumen' : ''))
     syncHash()
     window.addEventListener('hashchange', syncHash)
     return () => window.removeEventListener('hashchange', syncHash)
+  }, [pathname])
+
+  useEffect(() => {
+    if (pathname !== '/app') return
+
+    const sections = dashboardSectionIds
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section))
+
+    if (sections.length === 0) return
+
+    const visibleSections = new Map<string, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) visibleSections.set(entry.target.id, entry.intersectionRatio)
+          else visibleSections.delete(entry.target.id)
+        })
+
+        const nextSection = [...visibleSections.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+        if (nextSection) setActiveHash(`#${nextSection}`)
+      },
+      {
+        rootMargin: '-88px 0px -58% 0px',
+        threshold: [0.08, 0.2, 0.4, 0.6],
+      }
+    )
+
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
   }, [pathname])
 
   useEffect(() => {
@@ -72,16 +104,9 @@ export function ClientPortalShell({
   }
 
   const isNavActive = (href: string) => {
-    if (href === '/app#resumen') {
-      return pathname === '/app' && (!activeHash || activeHash === '#resumen')
-    }
-    if (href === '/app#propiedades') {
-      return pathname.startsWith('/app/properties') || (pathname === '/app' && activeHash === '#propiedades')
-    }
-    if (href.startsWith('/app#')) {
-      return pathname === '/app' && activeHash === href.slice('/app'.length)
-    }
-    return pathname === href
+    if (href === '/app#propiedades' && pathname.startsWith('/app/properties')) return true
+    if (!href.startsWith('/app#')) return pathname === href
+    return pathname === '/app' && activeHash === href.slice('/app'.length)
   }
 
   const PortalIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Home
