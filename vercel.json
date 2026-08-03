@@ -18,6 +18,10 @@
     {
       "path": "/api/monitor/operations",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/maintenance/evidence-retention",
+      "schedule": "17 4 * * *"
     }
   ]
 }
