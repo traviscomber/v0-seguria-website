@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ExternalLink, FileText, ImageIcon, Loader2, RefreshCw, Search, Video } from 'lucide-react'
+import { AlertTriangle, ExternalLink, FileText, ImageIcon, Loader2, RefreshCw, Search, Video } from 'lucide-react'
 
 type EvidenceFile = {
   name?: string
@@ -25,8 +25,17 @@ type EvidenceRequest = {
   evidence: EvidenceFile[]
 }
 
+type EvidenceUsage = {
+  date: string
+  usedBytes: number
+  budgetBytes: number
+  remainingBytes: number
+  usagePercent: number
+  level: 'normal' | 'warning' | 'critical' | 'blocked'
+}
+
 function formatBytes(bytes = 0) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
@@ -34,8 +43,16 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
+const usageTone: Record<EvidenceUsage['level'], string> = {
+  normal: 'border-emerald-300/20 bg-emerald-500/8 text-emerald-100',
+  warning: 'border-amber-300/25 bg-amber-500/10 text-amber-100',
+  critical: 'border-orange-300/25 bg-orange-500/10 text-orange-100',
+  blocked: 'border-red-300/30 bg-red-500/12 text-red-100',
+}
+
 export default function EvidencePage() {
   const [items, setItems] = useState<EvidenceRequest[]>([])
+  const [usage, setUsage] = useState<EvidenceUsage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -48,6 +65,7 @@ export default function EvidencePage() {
       const result = await response.json().catch(() => null)
       if (!response.ok || !result?.success) throw new Error(result?.error || 'No fue posible cargar la evidencia.')
       setItems(result.data as EvidenceRequest[])
+      setUsage(result.usage as EvidenceUsage)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'No fue posible cargar la evidencia.')
     } finally {
@@ -76,17 +94,35 @@ export default function EvidencePage() {
           <h1 className="mt-2 text-3xl font-medium text-white">Evidencia recibida</h1>
           <p className="mt-2 max-w-3xl text-white/65">Archivos privados asociados a solicitudes de soporte. Los enlaces expiran automáticamente.</p>
         </div>
-        <div className="flex gap-3">
-          <div className="rounded-[5px] border border-white/10 bg-white/5 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-white/45">Solicitudes</p>
-            <p className="mt-1 text-2xl text-white">{items.length}</p>
-          </div>
-          <div className="rounded-[5px] border border-white/10 bg-white/5 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-white/45">Archivos</p>
-            <p className="mt-1 text-2xl text-white">{fileCount}</p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Metric label="Solicitudes" value={String(items.length)} />
+          <Metric label="Archivos" value={String(fileCount)} />
+          <Metric label="Uso hoy" value={usage ? formatBytes(usage.usedBytes) : '—'} />
+          <Metric label="Disponible" value={usage ? formatBytes(usage.remainingBytes) : '—'} />
         </div>
       </div>
+
+      {usage ? (
+        <section className={`rounded-[8px] border p-4 ${usageTone[usage.level]}`} aria-label="Presupuesto diario de evidencia">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              {usage.level !== 'normal' ? <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /> : null}
+              <div>
+                <p className="text-sm font-medium">Presupuesto diario de almacenamiento</p>
+                <p className="mt-1 text-xs opacity-75">
+                  {formatBytes(usage.usedBytes)} utilizados de {formatBytes(usage.budgetBytes)} · {usage.usagePercent}%
+                </p>
+              </div>
+            </div>
+            <p className="text-xs uppercase tracking-[0.14em] opacity-70">
+              {usage.level === 'blocked' ? 'Carga bloqueada' : usage.level === 'critical' ? 'Consumo crítico' : usage.level === 'warning' ? 'Consumo elevado' : 'Operación normal'}
+            </p>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/20">
+            <div className="h-full rounded-full bg-current transition-[width]" style={{ width: `${Math.max(usage.usagePercent, 1)}%` }} />
+          </div>
+        </section>
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -148,6 +184,15 @@ export default function EvidencePage() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[5px] border border-white/10 bg-white/5 px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{label}</p>
+      <p className="mt-1 text-xl text-white">{value}</p>
     </div>
   )
 }
