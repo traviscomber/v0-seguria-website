@@ -9,7 +9,7 @@ Este archivo define cómo debe verse, sentirse y comportarse la interfaz. No doc
 El sistema separa cuatro tipos de decisión:
 
 - **Norma obligatoria:** regla aprobada que debe cumplirse.
-- **Token implementado:** valor existente en el código y reutilizable.
+- **Token implementado:** valor existente en código y reutilizable.
 - **Dirección provisional:** decisión vigente pendiente de brandbook corporativo o activo final.
 - **Pendiente de validación:** regla que requiere revisión visual o de producto antes de consolidarse.
 
@@ -30,7 +30,7 @@ Normas obligatorias:
 
 1. Claridad antes que ornamentación.
 2. Información operacional comprensible en pocos segundos.
-3. Una jerarquía visual fuerte y pocas acciones prioritarias por pantalla.
+3. Jerarquía visual fuerte y pocas acciones prioritarias por pantalla.
 4. Apariencia tecnológica sobria y premium.
 5. Consistencia entre sitio público, portal y administración.
 6. Uso controlado de transparencias, brillos, sombras y gradientes.
@@ -46,8 +46,6 @@ La marca debe sentirse confiable, moderna, precisa, discreta, profesional, tecno
 No debe sentirse futurista de ciencia ficción, militarizada, agresiva, saturada de neón, infantil, burocrática ni visualmente ruidosa.
 
 ## 4. Logotipo y favicon
-
-Normas obligatorias:
 
 - Conservar proporción original.
 - No deformar, estirar ni comprimir.
@@ -71,8 +69,9 @@ Estos colores están implementados actualmente en el producto. Se consideran la 
 | SegurIA Ice | `#E6F1F8` | Fondos claros y superficies informativas |
 | White | `#FFFFFF` | Texto de alto contraste |
 | Gray Dark | `#1F2937` | Texto oscuro sobre fondo claro |
-| Gray Medium | `#6B7280` | Texto secundario |
+| Gray Medium | `#6B7280` | Texto secundario sobre superficies claras |
 | Gray Light | `#E5E7EB` | Bordes y separadores claros |
+| Secondary Dark | `#A7B8C8` | Texto secundario sobre superficies oscuras |
 | Destructive | `#EF4444` | Error, peligro y acciones destructivas |
 
 No introducir colores nuevos para resolver casos aislados sin definir primero su función semántica.
@@ -83,12 +82,15 @@ No introducir colores nuevos para resolver casos aislados sin definir primero su
 
 - `background`: `#0A1B2E`
 - `foreground`: `#FFFFFF`
+- `text-secondary-dark`: `#A7B8C8`
+- `text-secondary-light`: `#6B7280`
 - `card`: `rgba(18, 58, 90, 0.42)`
 - `popover`: `#123A5A`
 - `primary`: `rgba(77, 163, 217, 0.85)`
 - `secondary`: `rgba(255, 255, 255, 0.10)`
-- `border`: `rgba(255, 255, 255, 0.10)`
-- `input`: `rgba(255, 255, 255, 0.10)`
+- `border-dark`: `rgba(255, 255, 255, 0.14)`
+- `border-light`: `rgba(10, 27, 46, 0.14)`
+- `input-dark`: `rgba(255, 255, 255, 0.10)`
 - `ring`: `#4DA3D9`
 
 ### Geometría
@@ -111,35 +113,34 @@ Tipografía vigente: **Montserrat**.
 
 Pesos activos:
 
-- `300`: display, hero y títulos editoriales grandes;
-- `400`: títulos operativos, navegación, controles, tablas y cuerpo.
+- `300`: exclusivamente display, hero y títulos editoriales grandes mediante clases explícitas;
+- `400`: headings por defecto, navegación, controles, tablas y cuerpo.
 
 Normas obligatorias:
 
+- Todos los headings usan `400` por defecto.
+- `300` solo se aplica mediante `.type-display` o `.type-hero`.
 - No usar `300` en texto inferior a `20px`.
-- H1 y H2 pueden usar `300` cuando su escala y contraste lo permitan.
-- H3–H6, encabezados de tarjetas, tablas, filtros y módulos deben usar `400`.
 - No usar bold masivo para compensar una jerarquía débil.
 - No usar mayúsculas extensas salvo microetiquetas, estados o eyebrows.
 - Tracking en mayúsculas: normalmente `0.18em–0.24em`.
 - Longitud editorial recomendada: `45–75` caracteres por línea.
 
-Escala normativa:
+Escala normativa implementada:
 
-| Nivel | Tamaño / interlínea |
+| Clase | Tamaño / interlínea |
 |---|---|
-| Display | `64 / 72px` |
-| Hero móvil | `40 / 46px` |
-| H1 | `48 / 56px` |
-| H1 móvil | `36 / 44px` |
-| H2 | `36 / 44px` |
-| H3 | `24 / 32px` |
-| H4 | `18 / 26px` |
-| Body large | `18 / 28px` |
-| Body | `16 / 25px` |
-| Functional | `14 / 21px` |
-| Caption | `12 / 18px` |
-| Eyebrow | `10 / 14px` |
+| `.type-display` | `64 / 72px`, móvil `40 / 46px` |
+| `.type-hero` | `48 / 56px`, móvil `40 / 46px` |
+| `.type-h1` | `48 / 56px`, móvil `36 / 44px` |
+| `.type-h2` | `36 / 44px` |
+| `.type-h3` | `24 / 32px` |
+| `.type-h4` | `18 / 26px` |
+| `.type-body-large` | `18 / 28px` |
+| `.type-body` | `16 / 25px` |
+| `.type-functional` | `14 / 21px` |
+| `.type-caption` | `12 / 18px` |
+| `.type-eyebrow` | `10 / 14px` |
 
 Las excepciones deben responder a una necesidad de composición, no a preferencias locales.
 
@@ -160,15 +161,13 @@ Evitar cinco o más botones con el mismo peso, tarjetas repetidas sin jerarquía
 
 La retícula usa múltiplos de 4.
 
-Escala base:
-
-- `4px`: microajustes;
-- `8px`: icono y texto;
-- `12px`: controles compactos;
-- `16px`: padding denso;
-- `24px`: padding estándar de tarjeta;
-- `32px`: grupos;
-- `48–64px`: secciones de producto;
+- `4px`: microajustes.
+- `8px`: icono y texto.
+- `12px`: controles compactos.
+- `16px`: padding denso.
+- `24px`: padding estándar de tarjeta.
+- `32px`: grupos.
+- `48–64px`: secciones de producto.
 - `80–120px`: landing pages.
 
 Anchos:
@@ -194,23 +193,68 @@ Jerarquía obligatoria:
 
 1. fondo de página;
 2. superficie sólida;
-3. superficie translúcida;
-4. elemento interactivo.
+3. superficie sutil;
+4. superficie contextual;
+5. superficie translúcida;
+6. elemento interactivo.
 
-Glassmorphism no es la identidad completa. Solo debe usarse cuando exista una imagen, textura o capa ambiental detrás. En administración se prefieren superficies sólidas o casi sólidas.
+Clases compartidas:
 
-Tarjeta oscura vigente:
+- `.surface-solid`: panel oscuro estable para administración y contenido operativo.
+- `.surface-subtle`: agrupación secundaria de menor contraste.
+- `.surface-contextual`: panel contextual con mayor separación visual.
+- `.glass-card`: variante translúcida reservada para fondos con imagen o ambiente.
 
-```css
-background: rgba(18, 58, 90, 0.42);
-backdrop-filter: blur(14px);
-border: 1px solid rgba(255, 255, 255, 0.10);
-border-radius: 5px;
-```
+Glassmorphism no es la identidad completa. En administración se prefieren superficies sólidas o casi sólidas.
 
 No apilar tarjetas dentro de tarjetas salvo necesidad funcional. Evitar que cada sección parezca una caja independiente.
 
-## 11. Componentes y estados
+## 11. Botones
+
+Las clases `.btn-primary`, `.btn-secondary` y `.btn-ghost` comparten:
+
+- altura mínima `44px`;
+- radio `5px`;
+- `inline-flex`;
+- alineación centrada;
+- `gap: 8px`;
+- padding horizontal consistente;
+- estado hover;
+- estado active;
+- estado focus-visible;
+- estado disabled.
+
+Normas:
+
+- una acción primaria dominante por bloque;
+- icono de `16–20px` antes del texto;
+- loading debe mantener ancho y reemplazar claramente la acción;
+- destructive requiere confirmación cuando no sea reversible;
+- no usar solo color para comunicar significado.
+
+## 12. Formularios
+
+Los controles base usan:
+
+- altura mínima `44px`;
+- radio `8px`;
+- borde oscuro semántico;
+- texto principal blanco;
+- placeholder con `text-secondary-dark`;
+- foco con SegurIA Sky;
+- estado disabled consistente.
+
+Normas:
+
+- etiqueta siempre visible;
+- placeholder no reemplaza label;
+- error junto al campo;
+- valores preservados después del error;
+- mensajes de carga, éxito y fallo claros;
+- no solicitar datos que no se utilizan;
+- bloquear doble envío.
+
+## 13. Componentes y estados
 
 Todo componente interactivo debe definir:
 
@@ -222,31 +266,11 @@ Todo componente interactivo debe definir:
 - loading;
 - error cuando corresponda.
 
-### Botones
-
-- altura mínima: `44px`;
-- radio: `5px`;
-- icono: `16–20px` antes del texto;
-- separación icono-texto: `8px`;
-- una acción primaria dominante por bloque;
-- disabled con opacidad reducida y cursor no interactivo;
-- loading debe mantener ancho y reemplazar claramente la acción;
-- destructive requiere confirmación cuando no sea reversible.
-
-### Inputs, selects y textareas
-
-- altura mínima de controles simples: `44px`;
-- radio: `8px`;
-- etiqueta visible;
-- error junto al campo;
-- valores preservados después del error;
-- foco visible con SegurIA Sky;
-- placeholder no reemplaza label.
-
 ### Cards y paneles
 
 - card institucional: `5px`;
-- panel contextual o inmersivo: máximo `12px`;
+- control: `8px`;
+- panel contextual: máximo `12px`;
 - selected mediante borde, fondo y texto; no solo color;
 - loading con skeleton o texto breve;
 - empty state con explicación y siguiente acción.
@@ -257,13 +281,13 @@ Todo componente interactivo debe definir:
 - encabezado `400`;
 - hover discreto;
 - fila seleccionada visible sin depender solo del color;
-- acciones secundarias de bajo contraste hasta hover o foco, pero siempre accesibles por teclado.
+- acciones secundarias accesibles por teclado.
 
 ### Badges y filtros
 
 - píldoras solo para estados, filtros y etiquetas breves;
 - color semántico reservado para estados reales;
-- siempre acompañar estados críticos con texto.
+- estados críticos siempre acompañados de texto.
 
 ### Navegación
 
@@ -280,7 +304,7 @@ Todo componente interactivo debe definir:
 - cierre por `Escape` cuando sea seguro;
 - no ocultar información crítica detrás de modales sucesivos.
 
-## 12. Accesibilidad
+## 14. Accesibilidad
 
 Requisitos verificables:
 
@@ -300,7 +324,9 @@ Requisitos verificables:
 - imágenes decorativas con `alt=""`;
 - respeto a `prefers-reduced-motion`.
 
-## 13. Iconografía
+El token `text-secondary-dark` debe usarse sobre fondos oscuros. `Gray Medium` queda reservado para superficies claras.
+
+## 15. Iconografía
 
 - familia vigente: Lucide;
 - grosor habitual: `1.5`;
@@ -309,9 +335,7 @@ Requisitos verificables:
 - no usar iconos brillantes o decorativos en exceso;
 - un icono apoya el significado, no reemplaza etiquetas críticas.
 
-## 14. Imágenes y fotografía
-
-Normas obligatorias:
+## 16. Imágenes y fotografía
 
 - No mejorar, estilizar, enfocar, recolorear ni dramatizar automáticamente una imagen de referencia.
 - Conservar composición, iluminación, suavidad, textura, realismo y encuadre aprobados.
@@ -323,13 +347,11 @@ Normas obligatorias:
 
 Las imágenes remotas actuales de los temas de cliente son **provisionales**. Deben sustituirse por material aprobado y contar con fallback local antes de considerarse activos maestros.
 
-## 15. Temas del portal
+## 17. Temas del portal
 
 Los temas cambian ambiente y lenguaje, no estructura ni interacción.
 
 ### Invariantes
-
-No cambian por cliente:
 
 - logotipo;
 - Montserrat;
@@ -343,8 +365,6 @@ No cambian por cliente:
 - patrones de interacción.
 
 ### Variables permitidas
-
-Pueden cambiar:
 
 - fondo;
 - fotografía;
@@ -373,17 +393,15 @@ Pueden cambiar:
 - acento: azul cielo;
 - sensación: control operacional, claridad y tecnología.
 
-## 16. Sitio público
+## 18. Sitio público
 
 Debe explicar la propuesta de valor rápidamente, demostrar capacidad sin saturar, separar soluciones, proyectos, evidencia y contacto, mantener CTAs consistentes y conservar continuidad entre idiomas.
 
 El hero debe contener una promesa concreta, explicación breve, CTA primario, CTA secundario solo cuando sea necesario y una imagen que refuerce la promesa.
 
-## 17. Portal de clientes
+## 19. Portal de clientes
 
 Debe priorizar estado general, prioridades del día, incidentes abiertos, cámaras relevantes, evidencia y soporte contextual.
-
-Normas:
 
 - no convertir cada dato en tarjeta;
 - distinguir alertas críticas sin dominar toda la interfaz;
@@ -392,15 +410,14 @@ Normas:
 - explicar estados vacíos;
 - mostrar datos disponibles ante fallos parciales.
 
-## 18. Administración y CRM
+## 20. Administración y CRM
 
 Puede ser más densa, pero debe conservar orden, escaneabilidad y foco.
-
-Normas:
 
 - navegación lateral fija en escritorio y colapsable en móvil;
 - fondo SegurIA Deep;
 - sidebar SegurIA Medium;
+- superficies sólidas como patrón principal;
 - estado activo con SegurIA Sky moderado;
 - tablas legibles y acciones discretas;
 - filtros visibles sin competir con el contenido;
@@ -408,7 +425,7 @@ Normas:
 - evidencia diferenciada entre acción, historial y metadatos;
 - sin previews innecesarias de información sensible.
 
-## 19. Estados del sistema
+## 21. Estados del sistema
 
 Todo componente de datos debe contemplar loading, éxito, vacío, error, sin permisos y dato parcial.
 
@@ -418,7 +435,7 @@ Todo componente de datos debe contemplar loading, éxito, vacío, error, sin per
 - Sin permisos: explicar restricción sin lenguaje técnico.
 - Dato parcial: mostrar lo disponible y declarar la limitación.
 
-## 20. Movimiento
+## 22. Movimiento
 
 - duración: `150–250ms`;
 - curvas suaves;
@@ -426,7 +443,7 @@ Todo componente de datos debe contemplar loading, éxito, vacío, error, sin per
 - no usar parallax intenso, rebotes o transiciones largas en operación;
 - respetar `prefers-reduced-motion`.
 
-## 21. Responsive
+## 23. Responsive
 
 Móvil:
 
@@ -445,7 +462,7 @@ Escritorio:
 - evitar tarjetas excesivamente anchas;
 - no depender de hover para funciones esenciales.
 
-## 22. Escritura UX
+## 24. Escritura UX
 
 El lenguaje debe ser directo, breve, específico, comprensible para usuarios no técnicos y coherente con el contexto del cliente.
 
@@ -456,7 +473,7 @@ El lenguaje debe ser directo, breve, específico, comprensible para usuarios no 
 - mantener nombres de estado consistentes;
 - resumir primero y permitir detalle después.
 
-## 23. Prohibiciones
+## 25. Prohibiciones
 
 No hacer:
 
@@ -469,12 +486,13 @@ No hacer:
 - abusar de glassmorphism;
 - usar iconos decorativos o demasiado brillantes;
 - ocultar acciones esenciales;
+- aplicar `300` globalmente a headings;
 - usar `300` en títulos pequeños u operativos;
 - saturar dashboards con métricas sin prioridad;
 - alterar imágenes más allá de lo solicitado;
 - declarar una pantalla terminada sin verla en móvil y escritorio.
 
-## 24. Fuente de verdad
+## 26. Fuente de verdad
 
 Implementaciones principales:
 
@@ -483,7 +501,7 @@ Implementaciones principales:
 - `lib/client-theme.ts`: temas contextuales.
 - componentes compartidos: comportamiento real de UI.
 
-## 25. Criterio de aprobación
+## 27. Criterio de aprobación
 
 Una entrega no se considera completa hasta validar:
 
