@@ -27,7 +27,7 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
       : `Acceso rápido a las cámaras disponibles en tus ${theme.vocabulary.properties}.`
 
   return (
-    <section id="camaras" className="space-y-4">
+    <div className="space-y-4">
       <PortalSectionHeading eyebrow="Vigilancia" title={title} description={description} />
 
       {cameras.length === 0 ? (
@@ -82,6 +82,6 @@ export function DashboardCameras({ cameras, theme }: DashboardCamerasProps) {
           })}
         </div>
       )}
-    </section>
+    </div>
   )
 }
