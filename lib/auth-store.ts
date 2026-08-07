@@ -11,8 +11,6 @@ export interface AuthUser {
   email: string
   role: AuthRole
   organizationIds: string[]
-  /** @deprecated QA-only compatibility alias. Remove after residual clientIds audit. */
-  clientIds: string[]
   propertyIds: string[]
   operationIds: string[]
   createdAt: string
@@ -58,7 +56,6 @@ export function mapSupabaseUserToAuthUser(
     email,
     role: getPlatformRole(user),
     organizationIds: scope.organizationIds,
-    clientIds: scope.organizationIds,
     propertyIds: scope.propertyIds,
     operationIds: scope.operationIds,
     createdAt: user.created_at,
