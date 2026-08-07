@@ -171,14 +171,14 @@ export default async function AuditPage() {
   let gatewaysQuery = supabase.from('gateways').select('id,name,public_id,property_id')
 
   if (auth.user.role !== 'admin') {
-    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+    if (auth.user.organizationIds.length === 0 || auth.user.propertyIds.length === 0) {
       auditQuery = auditQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
       organizationsQuery = organizationsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
       propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
       gatewaysQuery = gatewaysQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
     } else {
       auditQuery = auditQuery.in('property_id', auth.user.propertyIds)
-      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      organizationsQuery = organizationsQuery.in('id', auth.user.organizationIds)
       propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
       gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
     }
