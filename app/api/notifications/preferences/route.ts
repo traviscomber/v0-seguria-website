@@ -33,7 +33,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     data: {
-      organizations: auth.user.clientIds,
+      organizations: auth.user.organizationIds,
       preferences: data || [],
       defaults: channels.map((channel) => ({ channel, enabled: false, target: '', min_severity: 'warning' })),
     },
@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest) {
 
   const parsed = preferenceSchema.safeParse(await request.json())
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Preferencias invalidas.' }, { status: 400 })
-  if (!auth.user.clientIds.includes(parsed.data.organizationId)) {
+  if (!auth.user.organizationIds.includes(parsed.data.organizationId)) {
     return NextResponse.json({ success: false, error: 'No autorizado para esta cuenta.' }, { status: 403 })
   }
 
