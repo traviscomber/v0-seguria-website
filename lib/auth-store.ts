@@ -12,6 +12,7 @@ export interface AuthUser {
   role: AuthRole
   clientIds: string[]
   propertyIds: string[]
+  operationIds: string[]
   createdAt: string
   updatedAt: string
 }
@@ -25,6 +26,13 @@ export interface AuthSession {
 type AuthScope = {
   organizationIds: string[]
   propertyIds: string[]
+  operationIds: string[]
+}
+
+const EMPTY_AUTH_SCOPE: AuthScope = {
+  organizationIds: [],
+  propertyIds: [],
+  operationIds: [],
 }
 
 function getPlatformRole(user: User): AuthRole {
@@ -35,7 +43,7 @@ function getPlatformRole(user: User): AuthRole {
 
 export function mapSupabaseUserToAuthUser(
   user: User,
-  scope: AuthScope = { organizationIds: [], propertyIds: [] }
+  scope: AuthScope = EMPTY_AUTH_SCOPE
 ): AuthUser {
   const email = user.email?.toLowerCase() || ''
   const displayName = user.user_metadata?.full_name || user.user_metadata?.name
@@ -49,6 +57,7 @@ export function mapSupabaseUserToAuthUser(
     role: getPlatformRole(user),
     clientIds: scope.organizationIds,
     propertyIds: scope.propertyIds,
+    operationIds: scope.operationIds,
     createdAt: user.created_at,
     updatedAt: user.updated_at || user.created_at,
   }
@@ -67,7 +76,10 @@ export async function getCurrentAuthSession() {
 
   let organizationIds: string[] = []
   let propertyIds: string[] = []
+  let operationIds: string[] = []
 
+  // Portal scope: organizations -> properties. These IDs must never be populated
+  // from SegurIA Vision operations.
   try {
     const { data: memberships, error: membershipsError } = await supabase
       .from('memberships')
@@ -98,7 +110,31 @@ export async function getCurrentAuthSession() {
     )
   }
 
-  const user = mapSupabaseUserToAuthUser(userData.user, { organizationIds, propertyIds })
+  // SegurIA Vision scope: operations. Keep this independent from portal scope so
+  // a failure in one model cannot contaminate or erase the other model's IDs.
+  try {
+    const { data: operationLinks, error: operationsError } = await supabase
+      .from('user_operations')
+      .select('operation_id')
+      .eq('user_id', userData.user.id)
+
+    if (operationsError) throw operationsError
+
+    operationIds = Array.from(
+      new Set((operationLinks || []).map((link) => link.operation_id as string))
+    )
+  } catch (scopeError) {
+    console.error(
+      '[auth] Vision scope lookup failed:',
+      scopeError instanceof Error ? scopeError.message : 'unknown error'
+    )
+  }
+
+  const user = mapSupabaseUserToAuthUser(userData.user, {
+    organizationIds,
+    propertyIds,
+    operationIds,
+  })
   const expiresAt = sessionData.session?.expires_at
     ? new Date(sessionData.session.expires_at * 1000).toISOString()
     : null
@@ -121,4 +157,9 @@ export function canAccessProperty(user: AuthUser, propertyId: string) {
 export function canAccessClient(user: AuthUser, clientId: string) {
   if (user.role === 'admin') return true
   return user.clientIds.includes(clientId)
+}
+
+export function canAccessOperation(user: AuthUser, operationId: string) {
+  if (user.role === 'admin') return true
+  return user.operationIds.includes(operationId)
 }
