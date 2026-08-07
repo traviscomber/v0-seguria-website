@@ -17,6 +17,8 @@ import numpy as np
 import requests
 import yaml
 
+from sources import CameraSource, build_camera_source
+
 LOG = logging.getLogger("seguria-edge-vision")
 
 
@@ -156,13 +158,13 @@ class CameraWorker:
         changed = delta > threshold
         return float(np.count_nonzero(changed)) / float(changed.size)
 
-    def _capture_burst(self, capture: cv2.VideoCapture) -> list[np.ndarray]:
+    def _capture_burst(self, source: CameraSource) -> list[np.ndarray]:
         cfg = self.camera.get("burst", {})
         count = int(cfg.get("frames", 6))
         interval = max(0.0, float(cfg.get("interval_ms", 250)) / 1000.0)
         frames: list[np.ndarray] = []
         for _ in range(count):
-            ok, frame = capture.read()
+            ok, frame = source.read()
             if ok and frame is not None:
                 frames.append(frame.copy())
             if interval:
@@ -199,7 +201,6 @@ class CameraWorker:
     def run(self) -> None:
         name = self.camera["name"]
         device_id = self.camera["device_id"]
-        url = self.camera["rtsp_url"]
         motion_cfg = self.camera.get("motion", {})
         sample_fps = max(0.2, float(motion_cfg.get("sample_fps", 2.0)))
         sample_interval = 1.0 / sample_fps
@@ -207,22 +208,27 @@ class CameraWorker:
         cooldown = float(motion_cfg.get("cooldown_seconds", 12))
         reconnect_delay = float(self.edge_cfg.get("reconnect_delay_seconds", 5))
 
+        try:
+            source = build_camera_source(self.camera)
+        except Exception as exc:
+            LOG.error("%s: configuración de fuente inválida: %s", name, exc)
+            return
+
         while not self.stop_event.is_set():
-            capture = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
-            if not capture.isOpened():
-                LOG.warning("%s: RTSP no disponible; reintento en %.1fs", name, reconnect_delay)
-                capture.release()
+            if not source.open():
+                LOG.warning("%s: fuente no disponible; reintento en %.1fs", name, reconnect_delay)
+                source.close()
                 self.stop_event.wait(reconnect_delay)
                 continue
 
-            LOG.info("%s: RTSP conectado", name)
+            LOG.info("%s: fuente conectada", name)
             self.previous_gray = None
             next_sample = 0.0
 
             while not self.stop_event.is_set():
-                ok, frame = capture.read()
+                ok, frame = source.read()
                 if not ok or frame is None:
-                    LOG.warning("%s: stream interrumpido", name)
+                    LOG.warning("%s: fuente interrumpida", name)
                     break
 
                 now = time.monotonic()
@@ -235,7 +241,7 @@ class CameraWorker:
                     continue
 
                 self.last_event_at = now
-                frames = [frame.copy(), *self._capture_burst(capture)]
+                frames = [frame.copy(), *self._capture_burst(source)]
                 selected = self._best_frame(frames)
                 if selected is None:
                     LOG.info("%s: evento descartado por duplicado/calidad", name)
@@ -249,7 +255,7 @@ class CameraWorker:
                     LOG.warning("%s: Core no disponible, guardando localmente: %s", name, exc)
                     self.spool.enqueue(device_id, captured_at, selected)
 
-            capture.release()
+            source.close()
             self.stop_event.wait(reconnect_delay)
 
     def stop(self) -> None:
@@ -272,7 +278,7 @@ def load_config(path: str) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="SegurIA Edge Vision - RTSP photo-first sampler")
+    parser = argparse.ArgumentParser(description="SegurIA Edge Vision - N3uralia photo-first intelligence layer")
     parser.add_argument("--config", default=os.environ.get("SEGURIA_EDGE_CONFIG", "config.yaml"))
     parser.add_argument("--log-level", default=os.environ.get("SEGURIA_EDGE_LOG_LEVEL", "INFO"))
     args = parser.parse_args()
