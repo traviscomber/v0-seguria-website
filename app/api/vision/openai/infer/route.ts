@@ -495,7 +495,7 @@ export async function POST(request: NextRequest) {
   const image = Buffer.from(await request.arrayBuffer())
   if (image.length === 0 || image.length > MAX_IMAGE_BYTES) return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
 
-  const organizationId = auth.user.clientIds[0] ?? null
+  const organizationId = auth.user.organizationIds[0] ?? null
   const quota = await enforceQuota(auth.user.id, organizationId)
   if (!quota.allowed) return NextResponse.json({ error: 'monthly_quota_exceeded', limit: quota.limit, used: quota.used }, { status: 429 })
 
