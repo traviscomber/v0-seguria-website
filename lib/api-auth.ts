@@ -26,7 +26,6 @@ async function canInvokeRawVisionProvider(request: NextRequest, auth: RequestAut
     .from('user_operations')
     .select('operation_id, role')
     .eq('user_id', auth.user.id)
-    .eq('active', true)
     .in('operation_id', auth.user.operationIds)
     .order('created_at', { ascending: true })
 
