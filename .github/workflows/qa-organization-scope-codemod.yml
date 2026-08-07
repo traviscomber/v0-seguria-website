@@ -1,0 +1,66 @@
+name: QA organization scope codemod
+
+on:
+  push:
+    branches:
+      - feature/huilo-huilo-wildlife-preservation
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-client-ids:
+    if: github.event.head_commit.message == 'chore(qa): add one-time organization scope codemod'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace residual clientIds accessors
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('app'), Path('lib'), Path('components')]
+          changed = []
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob('*'):
+                  if path.suffix not in {'.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'}:
+                      continue
+                  text = path.read_text(encoding='utf-8')
+                  count = text.count('.clientIds')
+                  if not count:
+                      continue
+                  path.write_text(text.replace('.clientIds', '.organizationIds'), encoding='utf-8')
+                  changed.append((str(path), count))
+
+          print('Residual accessors migrated:')
+          for path, count in changed:
+              print(f'  {path}: {count}')
+
+          if not changed:
+              print('  none')
+          PY
+
+      - name: Verify no residual accessor remains
+        run: |
+          if grep -RIn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.mjs' --include='*.cjs' '\.clientIds' app lib components 2>/dev/null; then
+            echo 'Residual .clientIds accessors remain.' >&2
+            exit 1
+          fi
+
+      - name: Commit codemod result
+        run: |
+          if git diff --quiet; then
+            echo 'No source changes required.'
+            exit 0
+          fi
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app lib components
+          git commit -m 'refactor(auth): finish organization scope migration'
+          git push origin HEAD:${GITHUB_REF_NAME}
