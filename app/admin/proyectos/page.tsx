@@ -127,7 +127,7 @@ export default async function ProjectsPage() {
   let wildlifeJobsQuery = supabase.from('wildlife_inference_jobs').select('id,organization_id,camera_id,status,review_status,zone_label,captured_at,created_at,is_demo').order('created_at', { ascending: false }).limit(1000)
 
   if (auth.user.role !== 'admin') {
-    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+    if (auth.user.organizationIds.length === 0 || auth.user.propertyIds.length === 0) {
       const emptyId = '00000000-0000-0000-0000-000000000000'
       propertiesQuery = propertiesQuery.eq('id', emptyId)
       organizationsQuery = organizationsQuery.eq('id', emptyId)
@@ -138,12 +138,12 @@ export default async function ProjectsPage() {
       wildlifeJobsQuery = wildlifeJobsQuery.eq('organization_id', emptyId)
     } else {
       propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
-      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      organizationsQuery = organizationsQuery.in('id', auth.user.organizationIds)
       devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
       incidentsQuery = incidentsQuery.in('property_id', auth.user.propertyIds)
       gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
-      wildlifeCamerasQuery = wildlifeCamerasQuery.in('organization_id', auth.user.clientIds)
-      wildlifeJobsQuery = wildlifeJobsQuery.in('organization_id', auth.user.clientIds)
+      wildlifeCamerasQuery = wildlifeCamerasQuery.in('organization_id', auth.user.organizationIds)
+      wildlifeJobsQuery = wildlifeJobsQuery.in('organization_id', auth.user.organizationIds)
     }
   }
 
