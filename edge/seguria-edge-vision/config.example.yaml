@@ -1,0 +1,28 @@
+core:
+  base_url: "https://seguria.tech"
+  gateway_id: "GATEWAY_PUBLIC_ID"
+  gateway_secret: "CHANGE_ME"
+  request_timeout_seconds: 20
+
+edge:
+  spool_dir: "./spool"
+  reconnect_delay_seconds: 5
+  retry_interval_seconds: 30
+  jpeg_quality: 88
+
+cameras:
+  - name: "Sendero Bosque 01"
+    device_id: "camera-sendero-01"
+    rtsp_url: "rtsp://user:password@192.168.1.101:554/stream1"
+    enabled: true
+    motion:
+      sample_fps: 2.0
+      resize_width: 640
+      threshold: 24
+      min_changed_ratio: 0.012
+      cooldown_seconds: 12
+    burst:
+      frames: 6
+      interval_ms: 250
+      duplicate_hamming_distance: 6
+      min_blur_score: 40.0
