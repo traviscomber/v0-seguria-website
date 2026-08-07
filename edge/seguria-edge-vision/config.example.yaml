@@ -13,8 +13,10 @@ edge:
 cameras:
   - name: "Sendero Bosque 01"
     device_id: "camera-sendero-01"
-    rtsp_url: "rtsp://user:password@192.168.1.101:554/stream1"
     enabled: true
+    source:
+      type: "rtsp"
+      url: "rtsp://user:password@192.168.1.101:554/stream1"
     motion:
       sample_fps: 2.0
       resize_width: 640
