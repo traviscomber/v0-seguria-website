@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
   if (auth.user.role === 'client') redirect('/app')
 
   const supabase = createSupabaseAdminClient()
-  const hasScopedAccess = auth.user.role === 'admin' || (auth.user.clientIds.length > 0 && auth.user.propertyIds.length > 0)
+  const hasScopedAccess = auth.user.role === 'admin' || (auth.user.organizationIds.length > 0 && auth.user.propertyIds.length > 0)
 
   let organizations: OrganizationRow[] = []
   let properties: PropertyRow[] = []
@@ -115,7 +115,7 @@ export default async function AdminDashboard() {
   if (supabase && hasScopedAccess) {
     const orgQuery = auth.user.role === 'admin'
       ? supabase.from('organizations').select('id,name,status').order('name')
-      : supabase.from('organizations').select('id,name,status').in('id', auth.user.clientIds).order('name')
+      : supabase.from('organizations').select('id,name,status').in('id', auth.user.organizationIds).order('name')
     const propertyQuery = auth.user.role === 'admin'
       ? supabase.from('properties').select('id,organization_id,name,address,status,updated_at').order('updated_at', { ascending: false })
       : supabase.from('properties').select('id,organization_id,name,address,status,updated_at').in('id', auth.user.propertyIds).order('updated_at', { ascending: false })
