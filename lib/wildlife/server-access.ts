@@ -54,7 +54,6 @@ export async function resolveWildlifeAccess(
     .from('user_operations')
     .select('operation_id, role, operations(name)')
     .eq('user_id', auth.user.id)
-    .eq('active', true)
     .order('created_at', { ascending: true })
 
   if (error) console.error('Wildlife operation access lookup failed:', error.message)
