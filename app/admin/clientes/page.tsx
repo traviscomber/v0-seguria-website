@@ -147,7 +147,7 @@ export default async function ClientsPage() {
   let credentialsQuery = supabase.from('integration_credentials').select('id,organization_id,property_id,status,last_validated_at')
 
   if (auth.user.role !== 'admin') {
-    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+    if (auth.user.organizationIds.length === 0 || auth.user.propertyIds.length === 0) {
       organizationsQuery = organizationsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
       propertiesQuery = propertiesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
       membershipsQuery = membershipsQuery.eq('organization_id', '00000000-0000-0000-0000-000000000000')
@@ -156,9 +156,9 @@ export default async function ClientsPage() {
       incidentsQuery = incidentsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
       credentialsQuery = credentialsQuery.eq('property_id', '00000000-0000-0000-0000-000000000000')
     } else {
-      organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+      organizationsQuery = organizationsQuery.in('id', auth.user.organizationIds)
       propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
-      membershipsQuery = membershipsQuery.in('organization_id', auth.user.clientIds)
+      membershipsQuery = membershipsQuery.in('organization_id', auth.user.organizationIds)
       devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
       gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
       incidentsQuery = incidentsQuery.in('property_id', auth.user.propertyIds)
