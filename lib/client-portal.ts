@@ -952,7 +952,7 @@ export async function getAccessiblePortalSites(user: AuthUser): Promise<PortalSi
     notificationsResult,
   ] = await Promise.all([
     supabase.from('properties').select('id, organization_id, name, address, updated_at').in('id', user.propertyIds),
-    supabase.from('organizations').select('id, name').in('id', user.clientIds),
+    supabase.from('organizations').select('id, name').in('id', user.organizationIds),
     supabase.from('spaces').select('id, property_id, name').in('property_id', user.propertyIds),
     supabase
       .from('devices')
