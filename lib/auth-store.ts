@@ -10,7 +10,7 @@ export interface AuthUser {
   name: string
   email: string
   role: AuthRole
-  clientIds: string[]
+  organizationIds: string[]
   propertyIds: string[]
   operationIds: string[]
   createdAt: string
@@ -55,7 +55,7 @@ export function mapSupabaseUserToAuthUser(
       : email.split('@')[0] || 'Usuario',
     email,
     role: getPlatformRole(user),
-    clientIds: scope.organizationIds,
+    organizationIds: scope.organizationIds,
     propertyIds: scope.propertyIds,
     operationIds: scope.operationIds,
     createdAt: user.created_at,
@@ -154,9 +154,9 @@ export function canAccessProperty(user: AuthUser, propertyId: string) {
   return user.propertyIds.includes(propertyId)
 }
 
-export function canAccessClient(user: AuthUser, clientId: string) {
+export function canAccessOrganization(user: AuthUser, organizationId: string) {
   if (user.role === 'admin') return true
-  return user.clientIds.includes(clientId)
+  return user.organizationIds.includes(organizationId)
 }
 
 export function canAccessOperation(user: AuthUser, operationId: string) {
