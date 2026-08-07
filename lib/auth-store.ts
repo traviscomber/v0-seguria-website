@@ -110,14 +110,13 @@ export async function getCurrentAuthSession() {
     )
   }
 
-  // SegurIA Vision scope: active operations only. Keep this independent from
-  // portal scope so a failure in one model cannot contaminate the other IDs.
+  // SegurIA Vision scope: operations. Keep this independent from portal scope so
+  // a failure in one model cannot contaminate the other IDs.
   try {
     const { data: operationLinks, error: operationsError } = await supabase
       .from('user_operations')
       .select('operation_id')
       .eq('user_id', userData.user.id)
-      .eq('active', true)
 
     if (operationsError) throw operationsError
 
