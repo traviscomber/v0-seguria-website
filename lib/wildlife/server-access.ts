@@ -54,13 +54,20 @@ export async function resolveWildlifeAccess(
     .from('user_operations')
     .select('operation_id, role, operations(name)')
     .eq('user_id', auth.user.id)
+    .eq('active', true)
     .order('created_at', { ascending: true })
 
   if (error) console.error('Wildlife operation access lookup failed:', error.message)
+
   const links = (data || []) as unknown as OperationLink[]
+  const sessionOperationIds = new Set(auth.user.operationIds)
+  const scopedLinks = auth.user.role === 'admin'
+    ? links
+    : links.filter((link) => sessionOperationIds.has(link.operation_id))
+
   const selected = requestedOperationId
-    ? links.find((link) => link.operation_id === requestedOperationId) || null
-    : links[0] || null
+    ? scopedLinks.find((link) => link.operation_id === requestedOperationId) || null
+    : scopedLinks[0] || null
 
   if (!selected) {
     const role = auth.user.role === 'admin' ? 'owner' : auth.user.role === 'technician' ? 'technician' : 'viewer'
