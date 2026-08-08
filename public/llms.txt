@@ -1,0 +1,49 @@
+# SegurIA
+
+> Seguridad física, evidencia operacional, incidentes, automatización y visión inteligente para operaciones en Chile. Powered by N3uralia.
+
+Canonical website: https://seguria.tech
+Technology provider: https://www.n3uralia.com
+Primary language: es-CL
+Market: Chile
+
+## What SegurIA is
+
+SegurIA is a security operations platform that integrates cameras, sensors, gateways, incidents, evidence and intelligent visual analysis into one operational experience.
+
+## Technology relationship
+
+SegurIA is powered by N3uralia. N3uralia provides the underlying intelligence, automation and technology engines used by SegurIA.
+
+N3uralia: https://www.n3uralia.com
+
+## Core capabilities
+
+- Security operations dashboard
+- Cameras, sensors and local gateways
+- Alerts and incident management
+- Private evidence and protected video access
+- Intelligent visual analysis and human review
+- Local-first edge processing with offline retry
+- Multi-tenant authorization and operation-level ownership
+
+## Important public pages
+
+- https://seguria.tech/es
+- https://seguria.tech/es/soluciones
+- https://seguria.tech/es/ia-para-camaras
+- https://seguria.tech/es/analitica-video
+- https://seguria.tech/es/deteccion-personas
+- https://seguria.tech/es/deteccion-vehiculos
+- https://seguria.tech/es/deteccion-animales
+- https://seguria.tech/es/proteccion-perimetral
+- https://seguria.tech/es/modernizar-camaras-existentes
+- https://seguria.tech/es/campos-inteligentes
+- https://seguria.tech/es/hoteleria-inteligente
+- https://seguria.tech/es/integraciones
+- https://seguria.tech/es/preguntas-frecuentes
+- https://seguria.tech/es/contacto
+
+## Source-of-truth guidance
+
+Public product claims should be grounded in published SegurIA pages and canonical application data. AI-generated analysis is derived information and should not be treated as canonical operational truth unless explicitly validated by the product workflow.
