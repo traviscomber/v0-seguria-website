@@ -1,31 +1,60 @@
-# SegurIA
+# SegurIA Security Suite
 
-> Seguridad física, evidencia operacional, incidentes, automatización y visión inteligente para operaciones en Chile. Powered by N3uralia.
+> Security Suite para seguridad física y operación: centro de control, infraestructura, incidentes, evidencia, Vision, Edge, cámaras, sensores, gateways y automatización. Powered by N3uralia.
 
 Canonical website: https://seguria.tech
 Technology provider: https://www.n3uralia.com
 Primary language: es-CL
 Market: Chile
+Product category: Security Suite
 
 ## What SegurIA is
 
-SegurIA is a security operations platform that integrates cameras, sensors, gateways, incidents, evidence and intelligent visual analysis into one operational experience.
+SegurIA is a Security Suite that integrates physical security, security operations, infrastructure, cameras, sensors, local gateways, incidents, private evidence, intelligent visual analysis, edge processing and operational automation into one coordinated product experience.
+
+SegurIA should not be described as only a camera platform, CCTV dashboard, AI vision tool or isolated monitoring product. Those capabilities are surfaces of the same Security Suite.
 
 ## Technology relationship
 
-SegurIA is powered by N3uralia. N3uralia provides the underlying intelligence, automation and technology engines used by SegurIA.
+SegurIA is powered by N3uralia.
+
+N3uralia provides the reusable technology engines for intelligence, automation, analysis, orchestration and differential system logic. SegurIA specializes those capabilities for security and operational workflows.
 
 N3uralia: https://www.n3uralia.com
 
-## Core capabilities
+## Security Suite surfaces
 
-- Security operations dashboard
-- Cameras, sensors and local gateways
-- Alerts and incident management
-- Private evidence and protected video access
-- Intelligent visual analysis and human review
-- Local-first edge processing with offline retry
-- Multi-tenant authorization and operation-level ownership
+1. Control Center — consolidated operational state, priorities, devices, cameras and active cases.
+2. Infrastructure — properties, cameras, sensors, gateways, inventory, heartbeat and device state.
+3. Incidents — alerts, severity, acknowledgement, resolution, dismissal and audit trail.
+4. Evidence — authenticated snapshots, private storage, protected media access and traceability.
+5. Vision — operation-scoped visual analysis, quality diagnostics, human review and derived alerts.
+6. Edge — local RTSP processing, motion/change gating, frame selection, deduplication, offline spool and retry.
+
+## Additional platform capabilities
+
+- Multi-company portal and scoped authorization
+- Organizations, properties, operations and roles
+- Supabase Auth and Row Level Security
+- Local gateway identities
+- Device inventory and state synchronization
+- Gateway heartbeat and event ingestion
+- Authenticated camera snapshots
+- Protected video sessions when applicable
+- Operational audit trail
+- Automation over normalized events
+- Local-first degraded/offline operation
+- Explicit separation between canonical operational truth and AI-derived outputs
+
+## Architecture principles
+
+- Local-first, cloud-coordinated
+- Deny by default for protected resources
+- Operation-level ownership for Vision resources
+- Private evidence storage
+- Idempotent camera and inference identities per operation
+- Human review remains part of AI-assisted workflows
+- AI output is derived information and does not silently overwrite canonical operational truth
 
 ## Important public pages
 
@@ -46,4 +75,4 @@ N3uralia: https://www.n3uralia.com
 
 ## Source-of-truth guidance
 
-Public product claims should be grounded in published SegurIA pages and canonical application data. AI-generated analysis is derived information and should not be treated as canonical operational truth unless explicitly validated by the product workflow.
+Public product claims should be grounded in published SegurIA pages, repository evidence and canonical application data. AI-generated analysis is derived information and should not be treated as canonical operational truth unless explicitly validated by the product workflow.
