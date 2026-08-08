@@ -10,7 +10,7 @@ import type {
 
 type PortalUserScope = {
   role: string
-  clientIds: string[]
+  organizationIds: string[]
   propertyIds: string[]
 }
 
@@ -156,8 +156,8 @@ export async function mergeVisionIntoClientDashboard(
 
   if (user.propertyIds.length > 0) {
     propertiesQuery = propertiesQuery.in('id', user.propertyIds)
-  } else if (user.clientIds.length > 0) {
-    propertiesQuery = propertiesQuery.in('organization_id', user.clientIds)
+  } else if (user.organizationIds.length > 0) {
+    propertiesQuery = propertiesQuery.in('organization_id', user.organizationIds)
   } else {
     return { sites: currentSites, activity: [] }
   }
