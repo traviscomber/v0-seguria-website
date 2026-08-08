@@ -8,6 +8,7 @@ import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/ser
 
 const cameraSchema = z.object({
   id: z.string().uuid().optional(),
+  operationId: z.string().uuid(),
   code: z.string().trim().min(1).max(80),
   name: z.string().trim().min(1).max(160),
   zoneLabel: z.string().trim().max(160).optional().nullable(),
@@ -77,18 +78,33 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
-  const access = await resolveWildlifeAccess(auth)
-  if (!access.capabilities.manageCameras) {
-    return NextResponse.json({ success: false, error: 'Tu rol no permite administrar camaras.' }, { status: 403 })
-  }
-
-  const parsed = cameraSchema.safeParse(await request.json())
+  const parsed = cameraSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Datos de camara invalidos.' }, { status: 400 })
   }
 
+  const operationId = parsed.data.operationId
+  const access = await resolveWildlifeAccess(auth, operationId)
+  if (access.operationId !== operationId || !access.capabilities.manageCameras) {
+    return NextResponse.json({ success: false, error: 'Tu rol no permite administrar camaras en esta operacion.' }, { status: 403 })
+  }
+
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
+
+  const { data: property, error: propertyError } = await supabase
+    .from('properties')
+    .select('organization_id')
+    .eq('operation_id', operationId)
+    .maybeSingle()
+
+  if (propertyError) {
+    console.error('Wildlife camera property lookup failed:', propertyError.message)
+    return NextResponse.json({ success: false, error: 'No fue posible resolver la propiedad de la operacion.' }, { status: 500 })
+  }
+  if (!property) {
+    return NextResponse.json({ success: false, error: 'La operacion no esta vinculada a una propiedad canonica.' }, { status: 422 })
+  }
 
   const now = new Date().toISOString()
   const mutablePayload = {
@@ -103,15 +119,16 @@ export async function POST(request: NextRequest) {
 
   let query
   if (parsed.data.id) {
-    query = supabase.from('wildlife_cameras').update(mutablePayload).eq('id', parsed.data.id)
-    query = access.operationId
-      ? query.eq('operation_id', access.operationId)
-      : query.eq('created_by_user_id', auth.user.id)
+    query = supabase
+      .from('wildlife_cameras')
+      .update(mutablePayload)
+      .eq('id', parsed.data.id)
+      .eq('operation_id', operationId)
   } else {
     query = supabase.from('wildlife_cameras').insert({
       ...mutablePayload,
-      operation_id: access.operationId,
-      organization_id: null,
+      operation_id: operationId,
+      organization_id: property.organization_id,
       created_by_user_id: auth.user.id,
     })
   }
@@ -123,7 +140,7 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error('Wildlife camera registry save failed:', error.message)
     const duplicate = error.code === '23505'
-    return NextResponse.json({ success: false, error: duplicate ? 'Ya existe una camara con ese codigo.' : 'No fue posible guardar la camara.' }, { status: duplicate ? 409 : 500 })
+    return NextResponse.json({ success: false, error: duplicate ? 'Ya existe una camara con ese codigo en esta operacion.' : 'No fue posible guardar la camara.' }, { status: duplicate ? 409 : 500 })
   }
 
   await writeTerritorialAudit({

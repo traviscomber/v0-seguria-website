@@ -17,12 +17,12 @@ async function getVisibleOperatorIds(
   auth: NonNullable<Awaited<ReturnType<typeof getAuthorizedRequest>>>
 ) {
   if (auth.user.role === 'admin') return null
-  if (auth.user.clientIds.length === 0) return new Set<string>([auth.user.id])
+  if (auth.user.organizationIds.length === 0) return new Set<string>([auth.user.id])
 
   const { data } = await supabase
     .from('memberships')
     .select('user_id')
-    .in('organization_id', auth.user.clientIds)
+    .in('organization_id', auth.user.organizationIds)
     .in('role', ['owner', 'admin', 'operator', 'technician'])
 
   return new Set<string>([auth.user.id, ...((data || []).map((row) => row.user_id as string))])

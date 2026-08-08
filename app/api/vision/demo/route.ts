@@ -5,7 +5,10 @@ import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { resolveWildlifeAccess, writeTerritorialAudit } from '@/lib/wildlife/server-access'
 
-const toggleSchema = z.object({ enabled: z.boolean() })
+const toggleSchema = z.object({
+  operationId: z.string().uuid(),
+  enabled: z.boolean(),
+})
 
 async function loadDemoState(operationId: string) {
   const supabase = createSupabaseAdminClient()
@@ -68,7 +71,11 @@ export async function GET(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
-  const access = await resolveWildlifeAccess(auth, request.nextUrl.searchParams.get('operation_id'))
+  const requestedOperationId = request.nextUrl.searchParams.get('operation_id')
+  const access = await resolveWildlifeAccess(auth, requestedOperationId)
+  if (requestedOperationId && access.operationId !== requestedOperationId) {
+    return NextResponse.json({ success: false, error: 'No autorizado para esta operacion.' }, { status: 403 })
+  }
   if (!access.operationId) {
     return NextResponse.json({ success: true, data: { available: false, enabled: false, canManage: false } })
   }
@@ -100,25 +107,29 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ success: false, error: 'No autorizado.' }, { status: 401 })
 
-  const access = await resolveWildlifeAccess(auth)
-  if (!access.operationId || !access.operationName?.toLocaleLowerCase('es-CL').includes('huilo huilo')) {
+  const body = await request.json().catch(() => null)
+  const parsed = toggleSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: 'Operacion o estado demo invalido.' }, { status: 400 })
+  }
+
+  const operationId = parsed.data.operationId
+  const access = await resolveWildlifeAccess(auth, operationId)
+  if (access.operationId !== operationId) {
+    return NextResponse.json({ success: false, error: 'No autorizado para esta operacion.' }, { status: 403 })
+  }
+  if (!access.operationName?.toLocaleLowerCase('es-CL').includes('huilo huilo')) {
     return NextResponse.json({ success: false, error: 'El modo demo solo esta disponible para Huilo Huilo.' }, { status: 409 })
   }
   if (!access.capabilities.manageMembers) {
     return NextResponse.json({ success: false, error: 'Solo propietarios y administradores pueden cambiar el modo demo.' }, { status: 403 })
   }
 
-  const body = await request.json().catch(() => null)
-  const parsed = toggleSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ success: false, error: 'Estado demo invalido.' }, { status: 400 })
-  }
-
   const supabase = createSupabaseAdminClient()
   if (!supabase) return NextResponse.json({ success: false, error: 'Base de datos no configurada.' }, { status: 503 })
 
   const { data, error } = await supabase.rpc('set_huilo_huilo_demo_mode', {
-    p_operation_id: access.operationId,
+    p_operation_id: operationId,
     p_actor_user_id: auth.user.id,
     p_enabled: parsed.data.enabled,
   })
@@ -137,9 +148,9 @@ export async function POST(request: NextRequest) {
     payload: { version: 'huilo-huilo-v1', result: data },
   })
 
-  const state = await loadDemoState(access.operationId)
+  const state = await loadDemoState(operationId)
   if (state.error) {
-    return NextResponse.json({ success: true, data: { enabled: parsed.data.enabled, canManage: true } })
+    return NextResponse.json({ success: true, data: { enabled: parsed.data.enabled, canManage: true, operationId } })
   }
 
   return NextResponse.json({
@@ -147,7 +158,7 @@ export async function POST(request: NextRequest) {
     data: {
       available: true,
       canManage: true,
-      operationId: access.operationId,
+      operationId,
       operationName: access.operationName,
       ...state.data,
     },

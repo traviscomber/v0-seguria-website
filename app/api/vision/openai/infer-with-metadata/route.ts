@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 import { getAuthorizedRequest } from '@/lib/api-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -15,9 +16,15 @@ export async function POST(request: NextRequest) {
   const auth = await getAuthorizedRequest(request, ['admin', 'technician', 'client'])
   if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const access = await resolveWildlifeAccess(auth)
-  if (!access.capabilities.processEvidence) {
-    return NextResponse.json({ error: 'forbidden', message: 'Tu rol no permite procesar evidencia.' }, { status: 403 })
+  const parsedOperationId = z.string().uuid().safeParse(request.headers.get('x-operation-id')?.trim() || null)
+  if (!parsedOperationId.success) {
+    return NextResponse.json({ error: 'operation_required', message: 'x-operation-id must be a valid operation UUID.' }, { status: 400 })
+  }
+
+  const operationId = parsedOperationId.data
+  const access = await resolveWildlifeAccess(auth, operationId)
+  if (access.operationId !== operationId || !access.capabilities.processEvidence) {
+    return NextResponse.json({ error: 'operation_forbidden', message: 'Tu rol no permite procesar evidencia en esta operacion.' }, { status: 403 })
   }
 
   const contentType = (request.headers.get('x-image-content-type') || '').toLowerCase()
@@ -30,6 +37,7 @@ export async function POST(request: NextRequest) {
   const headers = new Headers()
   for (const [key, value] of request.headers.entries()) headers.set(key, value)
   headers.delete('content-length')
+  headers.set('x-operation-id', operationId)
 
   const manualCapturedAt = request.headers.get('x-captured-at')
   if (!manualCapturedAt && metadata.capturedAt) headers.set('x-captured-at', metadata.capturedAt)
@@ -43,18 +51,36 @@ export async function POST(request: NextRequest) {
 
   const payload = await upstream.json() as Record<string, unknown>
   const jobId = typeof payload.job_id === 'string' ? payload.job_id : null
+  const upstreamOperationId = typeof payload.operation_id === 'string' ? payload.operation_id : null
 
-  if (jobId) {
+  if (upstream.ok && upstreamOperationId !== operationId) {
+    console.error('Wildlife metadata inference scope mismatch:', { operationId, upstreamOperationId, jobId })
+    return NextResponse.json({
+      error: 'upstream_scope_mismatch',
+      message: 'La inferencia no confirmo la operacion solicitada.',
+    }, { status: 502 })
+  }
+
+  if (jobId && upstream.ok) {
     const supabase = createSupabaseAdminClient()
     if (supabase) {
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from('wildlife_inference_jobs')
-        .select('result_json, camera_id')
+        .select('result_json, camera_id, operation_id')
         .eq('id', jobId)
         .eq('submitted_by_user_id', auth.user.id)
         .maybeSingle()
 
-      const currentResult = existing?.result_json && typeof existing.result_json === 'object'
+      if (existingError) {
+        console.error('Wildlife EXIF job lookup failed:', existingError.message)
+        return NextResponse.json({ error: 'job_lookup_failed', message: 'No fue posible validar el trabajo procesado.' }, { status: 503 })
+      }
+      if (!existing || existing.operation_id !== operationId) {
+        console.error('Wildlife EXIF job scope conflict:', { jobId, operationId, persistedOperationId: existing?.operation_id || null })
+        return NextResponse.json({ error: 'job_scope_conflict', message: 'El trabajo procesado pertenece a otra operacion.' }, { status: 409 })
+      }
+
+      const currentResult = existing.result_json && typeof existing.result_json === 'object'
         ? existing.result_json as Record<string, unknown>
         : {}
 
@@ -67,23 +93,17 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase
         .from('wildlife_inference_jobs')
         .update({
-          operation_id: access.operationId,
           result_json: { ...currentResult, image_metadata: imageMetadata },
           captured_at: metadata.capturedAt || manualCapturedAt || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', jobId)
         .eq('submitted_by_user_id', auth.user.id)
+        .eq('operation_id', operationId)
 
-      if (error) console.error('Wildlife EXIF persistence failed:', error.message)
-
-      if (existing?.camera_id && access.operationId) {
-        const { error: cameraError } = await supabase
-          .from('wildlife_cameras')
-          .update({ operation_id: access.operationId, updated_at: new Date().toISOString() })
-          .eq('id', existing.camera_id)
-          .eq('created_by_user_id', auth.user.id)
-        if (cameraError) console.error('Wildlife camera operation scope failed:', cameraError.message)
+      if (error) {
+        console.error('Wildlife EXIF persistence failed:', error.message)
+        return NextResponse.json({ error: 'metadata_persistence_failed', message: 'La inferencia termino, pero no fue posible guardar sus metadatos.' }, { status: 503 })
       }
 
       payload.image_metadata = imageMetadata
@@ -93,7 +113,7 @@ export async function POST(request: NextRequest) {
         request,
         auth,
         access,
-        action: upstream.ok ? 'evidence.processed' : 'evidence.processing_failed',
+        action: 'evidence.processed',
         resourceType: 'wildlife_inference_job',
         resourceId: jobId,
         payload: {

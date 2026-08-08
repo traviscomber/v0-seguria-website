@@ -35,7 +35,7 @@ export default async function PropertyPage({
   }
 
   const theme = getClientTheme(
-    ...session.user.clientIds,
+    ...session.user.organizationIds,
     model.site.organizationName,
     model.site.name,
     model.site.label,

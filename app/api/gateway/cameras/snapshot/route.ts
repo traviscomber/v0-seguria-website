@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { getCameraRole, routesToWildlife } from '@/lib/camera-role'
 import { getOperationalGuardResponse } from '@/lib/environment-guard'
 import { verifyGatewayCredential } from '@/lib/secret-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -45,13 +46,15 @@ export async function POST(request: NextRequest) {
 
     const { data: device } = await supabase
       .from('devices')
-      .select('id')
+      .select('id, metadata')
       .eq('gateway_id', gateway.id)
       .eq('external_id', externalDeviceId)
       .eq('kind', 'camera')
       .maybeSingle()
     if (!device) return NextResponse.json({ success: false, error: 'Camara no encontrada.' }, { status: 404 })
 
+    const cameraRole = getCameraRole(device.metadata)
+    const wildlifeEligible = routesToWildlife(cameraRole)
     const objectPath = `${gateway.organization_id}/${gateway.property_id}/${device.id}/${crypto.randomUUID()}.${extension}`
     const bytes = await file.arrayBuffer()
     const { error: uploadError } = await supabase.storage
@@ -78,6 +81,28 @@ export async function POST(request: NextRequest) {
       throw recordError
     }
 
+    let wildlifeCandidateId: string | null = null
+    if (wildlifeEligible) {
+      const { data: candidate, error: candidateError } = await supabase
+        .from('wildlife_snapshot_candidates')
+        .insert({
+          organization_id: gateway.organization_id,
+          property_id: gateway.property_id,
+          device_id: device.id,
+          camera_snapshot_id: snapshot.id,
+          status: 'pending',
+          source: 'seguria_edge',
+        })
+        .select('id')
+        .single()
+
+      if (candidateError) {
+        console.error('Wildlife snapshot routing failed:', candidateError.message)
+      } else {
+        wildlifeCandidateId = candidate.id
+      }
+    }
+
     await supabase.from('audit_log').insert({
       organization_id: gateway.organization_id,
       property_id: gateway.property_id,
@@ -91,10 +116,17 @@ export async function POST(request: NextRequest) {
         mimeType: file.type,
         size: file.size,
         capturedAt: snapshot.captured_at,
+        cameraRole,
+        wildlifeEligible,
+        wildlifeCandidateId,
       },
     })
 
-    return NextResponse.json({ success: true, data: snapshot, message: 'Snapshot recibido.' })
+    return NextResponse.json({
+      success: true,
+      data: { ...snapshot, cameraRole, wildlifeEligible, wildlifeCandidateId },
+      message: wildlifeEligible ? 'Snapshot recibido y encolado para Vision.' : 'Snapshot recibido.',
+    })
   } catch (error) {
     console.error('Camera snapshot ingestion failed', error)
     return NextResponse.json({ success: false, error: 'No fue posible guardar el snapshot.' }, { status: 500 })

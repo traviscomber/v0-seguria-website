@@ -355,6 +355,64 @@ function applyVerification(analysis: z.infer<typeof analysisSchema>, verificatio
   }
 }
 
+async function resolveOperationContext(
+  auth: NonNullable<Awaited<ReturnType<typeof getAuthorizedRequest>>>,
+  rawOperationId: string | null,
+) {
+  const parsed = z.string().uuid().safeParse(rawOperationId)
+  if (!parsed.success) {
+    return { ok: false as const, status: 400, error: 'operation_required', message: 'x-operation-id must be a valid operation UUID.' }
+  }
+
+  const operationId = parsed.data
+  if (auth.user.role !== 'admin' && !auth.user.operationIds.includes(operationId)) {
+    return { ok: false as const, status: 403, error: 'operation_forbidden', message: 'No autorizado para esta operacion.' }
+  }
+
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) {
+    return { ok: false as const, status: 503, error: 'database_not_configured', message: 'Base de datos no configurada.' }
+  }
+
+  const { data: property, error: propertyError } = await supabase
+    .from('properties')
+    .select('id,organization_id,operation_id')
+    .eq('operation_id', operationId)
+    .maybeSingle()
+
+  if (propertyError) {
+    console.error('Vision operation property lookup failed:', propertyError.message)
+    return { ok: false as const, status: 500, error: 'operation_lookup_failed', message: 'No fue posible resolver la operacion.' }
+  }
+  if (!property) {
+    return { ok: false as const, status: 422, error: 'operation_unlinked', message: 'La operacion no esta vinculada a una propiedad canonica.' }
+  }
+
+  if (auth.user.role !== 'admin') {
+    const { data: link, error: linkError } = await supabase
+      .from('user_operations')
+      .select('role')
+      .eq('user_id', auth.user.id)
+      .eq('operation_id', operationId)
+      .maybeSingle()
+
+    if (linkError) {
+      console.error('Vision operation authorization lookup failed:', linkError.message)
+      return { ok: false as const, status: 500, error: 'operation_access_lookup_failed', message: 'No fue posible validar el acceso a la operacion.' }
+    }
+    if (!link || !['owner', 'admin', 'operator'].includes(link.role || '')) {
+      return { ok: false as const, status: 403, error: 'operation_forbidden', message: 'El rol de la operacion no permite inferencia directa.' }
+    }
+  }
+
+  return {
+    ok: true as const,
+    operationId,
+    propertyId: property.id as string,
+    organizationId: property.organization_id as string,
+  }
+}
+
 async function enforceQuota(userId: string, organizationId: string | null) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return { allowed: true, limit: null as number | null, used: 0 }
@@ -378,29 +436,65 @@ async function enforceQuota(userId: string, organizationId: string | null) {
   return { allowed: used < limit, limit, used }
 }
 
-async function resolveCamera(input: { userId: string; organizationId: string | null; code: string | null; name: string | null; zoneLabel: string | null }) {
+async function resolveCamera(input: { userId: string; operationId: string; organizationId: string; code: string | null; name: string | null; zoneLabel: string | null }) {
   if (!input.code) return null
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-  const { data, error } = await supabase.from('wildlife_cameras').upsert({
+
+  const { data: scopedCamera, error: scopedError } = await supabase
+    .from('wildlife_cameras')
+    .select('id')
+    .eq('operation_id', input.operationId)
+    .eq('code', input.code)
+    .maybeSingle()
+  if (scopedError) {
+    console.error('Wildlife camera scope lookup failed:', scopedError.message)
+    return null
+  }
+
+  if (scopedCamera) {
+    const { data, error } = await supabase
+      .from('wildlife_cameras')
+      .update({ name: input.name || input.code, zone_label: input.zoneLabel, updated_at: new Date().toISOString() })
+      .eq('id', scopedCamera.id)
+      .eq('operation_id', input.operationId)
+      .select('id')
+      .single()
+    if (error) {
+      console.error('Wildlife camera update failed:', error.message)
+      return null
+    }
+    return data.id as string
+  }
+
+  const { data, error } = await supabase.from('wildlife_cameras').insert({
+    operation_id: input.operationId,
     organization_id: input.organizationId,
     created_by_user_id: input.userId,
     code: input.code,
     name: input.name || input.code,
     zone_label: input.zoneLabel,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'created_by_user_id,code' }).select('id').single()
+  }).select('id').single()
   if (error) {
-    console.error('Wildlife camera resolution failed:', error.message)
+    if (error.code === '23505') {
+      const { data: concurrentCamera, error: concurrentError } = await supabase
+        .from('wildlife_cameras')
+        .select('id')
+        .eq('operation_id', input.operationId)
+        .eq('code', input.code)
+        .maybeSingle()
+      if (!concurrentError && concurrentCamera) return concurrentCamera.id as string
+    }
+    console.error('Wildlife camera creation failed:', error.message)
     return null
   }
   return data.id as string
 }
 
-async function storeEvidence(input: { userId: string; sha256: string; mimeType: string; image: Buffer }) {
+async function storeEvidence(input: { userId: string; operationId: string; sha256: string; mimeType: string; image: Buffer }) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-  const storagePath = `${input.userId}/${input.sha256}.${EXTENSIONS[input.mimeType]}`
+  const storagePath = `${input.operationId}/${input.userId}/${input.sha256}.${EXTENSIONS[input.mimeType]}`
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, input.image, {
     contentType: input.mimeType,
     upsert: true,
@@ -415,7 +509,8 @@ async function storeEvidence(input: { userId: string; sha256: string; mimeType: 
 
 async function persistJob(input: {
   userId: string
-  organizationId: string | null
+  operationId: string
+  organizationId: string
   filename: string
   mimeType: string
   byteSize: number
@@ -438,8 +533,21 @@ async function persistJob(input: {
 }) {
   const supabase = createSupabaseAdminClient()
   if (!supabase) return null
-  const { data, error } = await supabase.from('wildlife_inference_jobs').upsert({
-    submitted_by_user_id: input.userId,
+
+  const { data: existing, error: lookupError } = await supabase
+    .from('wildlife_inference_jobs')
+    .select('id,submitted_by_user_id')
+    .eq('operation_id', input.operationId)
+    .eq('sha256', input.sha256)
+    .eq('model_name', input.model)
+    .maybeSingle()
+  if (lookupError) {
+    console.error('Wildlife inference idempotency lookup failed:', lookupError.message)
+    return null
+  }
+
+  const payload = {
+    operation_id: input.operationId,
     organization_id: input.organizationId,
     original_filename: input.filename,
     mime_type: input.mimeType,
@@ -465,12 +573,16 @@ async function persistJob(input: {
     error_code: input.errorCode ?? null,
     error_message: input.errorMessage ?? null,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'submitted_by_user_id,sha256,model_name' }).select('id').single()
-  if (error) {
-    console.error('Wildlife inference persistence failed:', error.message)
+  }
+
+  const result = existing
+    ? await supabase.from('wildlife_inference_jobs').update(payload).eq('id', existing.id).eq('operation_id', input.operationId).select('id').single()
+    : await supabase.from('wildlife_inference_jobs').insert({ ...payload, submitted_by_user_id: input.userId }).select('id').single()
+  if (result.error) {
+    console.error('Wildlife inference persistence failed:', result.error.message)
     return null
   }
-  return data.id as string
+  return result.data.id as string
 }
 
 function safeHeader(request: NextRequest, name: string, maxLength: number) {
@@ -495,7 +607,11 @@ export async function POST(request: NextRequest) {
   const image = Buffer.from(await request.arrayBuffer())
   if (image.length === 0 || image.length > MAX_IMAGE_BYTES) return NextResponse.json({ error: 'invalid_image_size' }, { status: 422 })
 
-  const organizationId = auth.user.clientIds[0] ?? null
+  const operationContext = await resolveOperationContext(auth, safeHeader(request, 'x-operation-id', 64))
+  if (!operationContext.ok) {
+    return NextResponse.json({ error: operationContext.error, message: operationContext.message }, { status: operationContext.status })
+  }
+  const { operationId, organizationId } = operationContext
   const quota = await enforceQuota(auth.user.id, organizationId)
   if (!quota.allowed) return NextResponse.json({ error: 'monthly_quota_exceeded', limit: quota.limit, used: quota.used }, { status: 429 })
 
@@ -511,8 +627,8 @@ export async function POST(request: NextRequest) {
     ? new Date(capturedAtHeader).toISOString()
     : null
   const sha256 = createHash('sha256').update(image).digest('hex')
-  const cameraId = await resolveCamera({ userId: auth.user.id, organizationId, code: cameraCode, name: cameraName, zoneLabel })
-  const evidence = await storeEvidence({ userId: auth.user.id, sha256, mimeType: contentType, image })
+  const cameraId = await resolveCamera({ userId: auth.user.id, operationId, organizationId, code: cameraCode, name: cameraName, zoneLabel })
+  const evidence = await storeEvidence({ userId: auth.user.id, operationId, sha256, mimeType: contentType, image })
   if (!evidence) return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
 
   const imageUrl = `data:${contentType};base64,${image.toString('base64')}`
@@ -541,7 +657,7 @@ export async function POST(request: NextRequest) {
     const completedAt = new Date()
     const message = first.payload.error?.message || `OpenAI returned ${first.response.status}`
     const jobId = await persistJob({
-      userId: auth.user.id, organizationId, filename, mimeType: contentType,
+      userId: auth.user.id, operationId, organizationId, filename, mimeType: contentType,
       byteSize: image.length, sha256, model, status: 'failed', cameraId,
       zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
       retryCount: first.retryCount, latencyMs: completedAt.getTime() - startedAt.getTime(), estimatedCostUsd,
@@ -587,7 +703,7 @@ export async function POST(request: NextRequest) {
   }
 
   const jobId = await persistJob({
-    userId: auth.user.id, organizationId, filename, mimeType: contentType,
+    userId: auth.user.id, operationId, organizationId, filename, mimeType: contentType,
     byteSize: image.length, sha256, model, status: 'completed', cameraId,
     zoneLabel, capturedAt, storageBucket: evidence.bucket, storagePath: evidence.path,
     retryCount: first.retryCount + verificationRetryCount, latencyMs, estimatedCostUsd,
@@ -611,6 +727,8 @@ export async function POST(request: NextRequest) {
     retry_count: first.retryCount + verificationRetryCount,
     latency_ms: latencyMs,
     estimated_cost_usd: estimatedCostUsd,
+    operation_id: operationId,
+    organization_id: organizationId,
     quota: { limit: quota.limit, used_before_request: quota.used },
     camera_id: cameraId,
     zone_label: zoneLabel,

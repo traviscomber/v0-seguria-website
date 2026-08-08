@@ -26,7 +26,7 @@ export default async function ClientAppPage() {
     site.name,
     site.propertyId,
   ])
-  const theme = getClientTheme(...session.user.clientIds, ...organizationIdentifiers)
+  const theme = getClientTheme(...session.user.organizationIds, ...organizationIdentifiers)
   const primaryImage = model.sites.find((site) => Boolean(site.imageUrl))?.imageUrl
   const firstIncident = model.incidents[0]
   const firstAlert = model.alerts[0]

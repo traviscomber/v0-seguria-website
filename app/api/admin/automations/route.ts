@@ -17,7 +17,7 @@ const commandSchema = z.discriminatedUnion('action', [
 function canManageOrganization(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, organizationId: string) {
   if (!auth) return false
   if (auth.user.role === 'admin') return true
-  return auth.user.clientIds.includes(organizationId)
+  return auth.user.organizationIds.includes(organizationId)
 }
 
 function canManageProperty(auth: Awaited<ReturnType<typeof getAuthorizedRequest>>, propertyId: string) {
@@ -39,12 +39,12 @@ export async function GET(request: NextRequest) {
   let runsQuery = supabase.from('automation_runs').select('id,automation_id,property_id,result,details,started_at,completed_at').order('started_at', { ascending: false }).limit(50)
 
   if (auth.user.role !== 'admin') {
-    if (auth.user.clientIds.length === 0 || auth.user.propertyIds.length === 0) {
+    if (auth.user.organizationIds.length === 0 || auth.user.propertyIds.length === 0) {
       return NextResponse.json({ success: true, data: { organizations: [], properties: [], templates: [], automations: [], runs: [] } })
     }
-    organizationsQuery = organizationsQuery.in('id', auth.user.clientIds)
+    organizationsQuery = organizationsQuery.in('id', auth.user.organizationIds)
     propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
-    templatesQuery = templatesQuery.in('organization_id', auth.user.clientIds)
+    templatesQuery = templatesQuery.in('organization_id', auth.user.organizationIds)
     automationsQuery = automationsQuery.in('property_id', auth.user.propertyIds)
     runsQuery = runsQuery.in('property_id', auth.user.propertyIds)
   }

@@ -25,7 +25,7 @@ export default async function ClientAppLayout({
     site.name,
     site.propertyId,
   ])
-  const theme = getClientTheme(...session.user.clientIds, ...organizationIdentifiers)
+  const theme = getClientTheme(...session.user.organizationIds, ...organizationIdentifiers)
 
   return (
     <ClientPortalShell
@@ -33,7 +33,7 @@ export default async function ClientAppLayout({
       userRole={session.user.role}
       theme={theme}
     >
-      <PortalRealtimeRefresh organizationIds={session.user.clientIds} />
+      <PortalRealtimeRefresh organizationIds={session.user.organizationIds} />
       {children}
     </ClientPortalShell>
   )
