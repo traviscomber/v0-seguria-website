@@ -5,10 +5,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Building2,
   Camera,
+  Cpu,
+  FileImage,
   Headphones,
   Home,
   LogOut,
   Menu,
+  ScanSearch,
   Siren,
   Trees,
   UserRound,
@@ -20,7 +23,7 @@ import { PortalBrandLink } from '@/components/portal/portal-brand-link'
 import type { ClientTheme } from '@/lib/client-theme'
 import { cn } from '@/lib/utils'
 
-const dashboardSectionIds = ['resumen', 'propiedades', 'incidentes', 'camaras'] as const
+const dashboardSectionIds = ['control', 'infraestructura', 'incidentes', 'evidencia', 'vision', 'edge'] as const
 
 export function ClientPortalShell({
   children,
@@ -39,19 +42,17 @@ export function ClientPortalShell({
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeHash, setActiveHash] = useState('')
 
-  const navItems = useMemo(() => {
-    const spacesLabel = theme.key === 'huilo-huilo' ? 'Espacios' : theme.key === 'santa-elena' ? 'Predios' : 'Propiedades'
-    const SpacesIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Building2
-    return [
-      { href: '/app#resumen', label: 'Resumen', icon: Home },
-      { href: '/app#propiedades', label: spacesLabel, icon: SpacesIcon },
-      { href: '/app#incidentes', label: 'Prioridades', icon: Siren },
-      { href: '/app#camaras', label: 'Vigilancia', icon: Camera },
-    ]
-  }, [theme.key])
+  const navItems = useMemo(() => [
+    { href: '/app#control', label: 'Control', icon: Home },
+    { href: '/app#infraestructura', label: 'Infraestructura', icon: Building2 },
+    { href: '/app#incidentes', label: 'Incidentes', icon: Siren },
+    { href: '/app#evidencia', label: 'Evidencia', icon: FileImage },
+    { href: '/app#vision', label: 'Vision', icon: ScanSearch },
+    { href: '/app#edge', label: 'Edge', icon: Cpu },
+  ], [])
 
   useEffect(() => {
-    const syncHash = () => setActiveHash(window.location.hash || (pathname === '/app' ? '#resumen' : ''))
+    const syncHash = () => setActiveHash(window.location.hash || (pathname === '/app' ? '#control' : ''))
     syncHash()
     window.addEventListener('hashchange', syncHash)
     return () => window.removeEventListener('hashchange', syncHash)
@@ -92,12 +93,12 @@ export function ClientPortalShell({
   }
 
   const isNavActive = (href: string) => {
-    if (href === '/app#propiedades' && pathname.startsWith('/app/properties')) return true
+    if (href === '/app#infraestructura' && pathname.startsWith('/app/properties')) return true
     if (!href.startsWith('/app#')) return pathname === href
     return pathname === '/app' && activeHash === href.slice('/app'.length)
   }
 
-  const PortalIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Home
+  const PortalIcon = theme.key === 'huilo-huilo' ? Trees : theme.key === 'santa-elena' ? Wheat : Camera
   const accountLabel = userRole === 'client' ? theme.vocabulary.operation : userRole
   const helpHref = theme.key === 'huilo-huilo' ? '/contacto/huilo-huilo' : '/es/contacto'
   const focusClass = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black'
@@ -107,15 +108,15 @@ export function ClientPortalShell({
       <header className={cn('sticky top-0 z-50 border-b border-white/10 backdrop-blur-2xl', theme.cardClass)}>
         <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
           <div className="hidden sm:block">
-            <PortalBrandLink href="/app#resumen" name={theme.name} icon={PortalIcon} accentClass={theme.accentTextClass} />
+            <PortalBrandLink href="/app#control" name={theme.name} icon={PortalIcon} accentClass={theme.accentTextClass} />
           </div>
           <div className="sm:hidden">
-            <PortalBrandLink href="/app#resumen" name={theme.name} icon={PortalIcon} accentClass={theme.accentTextClass} compact />
+            <PortalBrandLink href="/app#control" name={theme.name} icon={PortalIcon} accentClass={theme.accentTextClass} compact />
           </div>
 
           <div className="hidden h-8 w-px shrink-0 bg-white/10 lg:block" />
 
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Navegación principal del portal">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex" aria-label="Navegación principal del portal">
             {navItems.map((item) => {
               const active = isNavActive(item.href)
               return (
@@ -124,14 +125,14 @@ export function ClientPortalShell({
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'relative inline-flex h-10 items-center gap-2 rounded-xl px-3 text-[13px] transition-colors',
+                    'relative inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-[12px] transition-colors',
                     focusClass,
                     active ? 'bg-white/[0.09] text-white' : 'text-white/60 hover:bg-white/[0.05] hover:text-white'
                   )}
                 >
-                  <item.icon className={cn('h-4 w-4', active && theme.accentTextClass)} strokeWidth={1.7} aria-hidden="true" />
+                  <item.icon className={cn('h-3.5 w-3.5', active && theme.accentTextClass)} strokeWidth={1.7} aria-hidden="true" />
                   <span>{item.label}</span>
-                  {active ? <span className={cn('absolute inset-x-3 -bottom-[17px] h-px bg-current', theme.accentTextClass)} /> : null}
+                  {active ? <span className={cn('absolute inset-x-2.5 -bottom-[17px] h-px bg-current', theme.accentTextClass)} /> : null}
                 </Link>
               )
             })}
@@ -158,21 +159,21 @@ export function ClientPortalShell({
               {loggingOut ? 'Saliendo' : 'Salir'}
             </button>
 
-            <button type="button" className={cn('flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-white lg:hidden', focusClass)} onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="portal-mobile-menu">
+            <button type="button" className={cn('flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-white xl:hidden', focusClass)} onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileOpen} aria-controls="portal-mobile-menu">
               {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
             </button>
           </div>
         </div>
 
         {mobileOpen ? (
-          <div id="portal-mobile-menu" className="border-t border-white/10 bg-black/20 px-4 py-4 lg:hidden">
+          <div id="portal-mobile-menu" className="border-t border-white/10 bg-black/20 px-4 py-4 xl:hidden">
             <div className="mx-auto max-w-7xl">
               <div className="mb-4 flex items-center gap-3 rounded-xl bg-white/[0.035] p-3 sm:hidden">
                 <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.06]', theme.accentTextClass)}><UserRound className="h-4 w-4" aria-hidden="true" /></span>
                 <span><span className="block text-sm font-medium text-white">{userName}</span><span className="block text-xs text-white/50">{accountLabel}</span></span>
               </div>
 
-              <nav className="grid gap-2 sm:grid-cols-2" aria-label="Navegación móvil del portal">
+              <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Navegación móvil del portal">
                 {navItems.map((item) => {
                   const active = isNavActive(item.href)
                   return (
