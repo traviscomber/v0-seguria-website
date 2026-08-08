@@ -11,6 +11,7 @@ const montserrat = Montserrat({
 })
 
 const siteUrl = 'https://seguria.tech'
+const n3uraliaUrl = 'https://www.n3uralia.com'
 const siteTitle = 'SegurIA Chile | Seguridad integral, cámaras, redes e IA'
 const siteDescription =
   'Diseñamos e instalamos sistemas de seguridad integral en Chile: cámaras, alarmas, sensores, control de acceso, redes, conectividad satelital de alta velocidad y analítica con inteligencia artificial.'
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   applicationName: 'SegurIA',
-  authors: [{ name: 'SegurIA', url: siteUrl }],
+  authors: [
+    { name: 'SegurIA', url: siteUrl },
+    { name: 'N3uralia', url: n3uraliaUrl },
+  ],
   creator: 'SegurIA',
   publisher: 'SegurIA',
   category: 'Sistemas de seguridad integral y conectividad',
@@ -53,6 +57,8 @@ export const metadata: Metadata = {
     'seguridad para condominios',
     'automatización de seguridad',
     'SegurIA Chile',
+    'N3uralia',
+    'SegurIA powered by N3uralia',
   ],
   alternates: {
     canonical: '/',
@@ -94,6 +100,8 @@ export const metadata: Metadata = {
     'geo.region': 'CL',
     'geo.placename': 'Chile',
     'content-language': 'es-CL',
+    'powered-by': 'N3uralia',
+    'technology-provider': n3uraliaUrl,
   },
 }
 
@@ -106,6 +114,13 @@ export default function RootLayout({
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'Organization',
+        '@id': `${n3uraliaUrl}/#organization`,
+        name: 'N3uralia',
+        url: n3uraliaUrl,
+        description: 'Tecnología, motores de inteligencia artificial, automatización y sistemas inteligentes aplicados a productos digitales y operaciones.',
+      },
+      {
         '@type': 'WebSite',
         '@id': `${siteUrl}/#website`,
         url: siteUrl,
@@ -114,6 +129,7 @@ export default function RootLayout({
         description: siteDescription,
         inLanguage: 'es-CL',
         publisher: { '@id': `${siteUrl}/#organization` },
+        mentions: { '@id': `${n3uraliaUrl}/#organization` },
       },
       {
         '@type': ['Organization', 'ProfessionalService'],
@@ -153,6 +169,11 @@ export default function RootLayout({
           'Automatización e inteligencia artificial aplicada a seguridad',
         ],
         sameAs: ['https://segur-ia.cl'],
+        subjectOf: {
+          '@type': 'WebPage',
+          url: n3uraliaUrl,
+          name: 'N3uralia',
+        },
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'sales',
@@ -162,6 +183,17 @@ export default function RootLayout({
           areaServed: 'CL',
           url: `${siteUrl}/contacto`,
         },
+      },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${siteUrl}/#platform`,
+        name: 'SegurIA',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Web',
+        url: siteUrl,
+        description: 'Plataforma operacional de seguridad física, evidencia, incidentes y visión inteligente, powered by N3uralia.',
+        provider: { '@id': `${siteUrl}/#organization` },
+        mentions: { '@id': `${n3uraliaUrl}/#organization` },
       },
       {
         '@type': 'Service',
@@ -209,6 +241,17 @@ export default function RootLayout({
       </head>
       <body className={`${montserrat.className} antialiased`}>
         {children}
+        <footer className="border-t border-white/10 bg-[#071521] px-4 py-5 text-center text-xs text-white/45">
+          Powered by{' '}
+          <a
+            href={n3uraliaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+          >
+            N3uralia
+          </a>
+        </footer>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
