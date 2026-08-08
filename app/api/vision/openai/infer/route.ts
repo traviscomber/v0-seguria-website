@@ -542,8 +542,8 @@ async function persistJob(input: {
 
   const { data: existing, error: lookupError } = await supabase
     .from('wildlife_inference_jobs')
-    .select('id,operation_id')
-    .eq('submitted_by_user_id', input.userId)
+    .select('id,submitted_by_user_id')
+    .eq('operation_id', input.operationId)
     .eq('sha256', input.sha256)
     .eq('model_name', input.model)
     .maybeSingle()
@@ -551,13 +551,8 @@ async function persistJob(input: {
     console.error('Wildlife inference idempotency lookup failed:', lookupError.message)
     return null
   }
-  if (existing && existing.operation_id !== input.operationId) {
-    console.error('Wildlife inference scope conflict:', existing.id)
-    return SCOPE_CONFLICT
-  }
 
   const payload = {
-    submitted_by_user_id: input.userId,
     operation_id: input.operationId,
     organization_id: input.organizationId,
     original_filename: input.filename,
@@ -587,8 +582,8 @@ async function persistJob(input: {
   }
 
   const result = existing
-    ? await supabase.from('wildlife_inference_jobs').update(payload).eq('id', existing.id).select('id').single()
-    : await supabase.from('wildlife_inference_jobs').insert(payload).select('id').single()
+    ? await supabase.from('wildlife_inference_jobs').update(payload).eq('id', existing.id).eq('operation_id', input.operationId).select('id').single()
+    : await supabase.from('wildlife_inference_jobs').insert({ ...payload, submitted_by_user_id: input.userId }).select('id').single()
   if (result.error) {
     console.error('Wildlife inference persistence failed:', result.error.message)
     return null
@@ -676,7 +671,6 @@ export async function POST(request: NextRequest) {
       processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(),
       errorCode: 'openai_request_failed', errorMessage: message,
     })
-    if (jobId === SCOPE_CONFLICT) return NextResponse.json({ error: 'inference_scope_conflict', message: 'La misma evidencia ya existe en otra operacion.' }, { status: 409 })
     return NextResponse.json({ error: 'openai_request_failed', message, job_id: jobId, model_version: model }, { status: 502 })
   }
 
@@ -723,7 +717,6 @@ export async function POST(request: NextRequest) {
     processingStartedAt: startedAt.toISOString(), processingCompletedAt: completedAt.toISOString(), result,
   })
 
-  if (jobId === SCOPE_CONFLICT) return NextResponse.json({ error: 'inference_scope_conflict', message: 'La misma evidencia ya existe en otra operacion.' }, { status: 409 })
   if (!jobId) return NextResponse.json({ error: 'job_persistence_failed', message: 'La imagen fue analizada, pero no fue posible guardar el trabajo.' }, { status: 503 })
 
   return NextResponse.json({
