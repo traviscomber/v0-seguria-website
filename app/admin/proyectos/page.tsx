@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 type PropertyRow = {
   id: string
   organization_id: string
+  operation_id: string | null
   name: string
   address: string | null
   status: string | null
@@ -46,7 +47,7 @@ type GatewayRow = {
 
 type WildlifeCameraRow = {
   id: string
-  organization_id: string | null
+  operation_id: string | null
   name: string
   zone_label: string | null
   active: boolean
@@ -55,7 +56,7 @@ type WildlifeCameraRow = {
 
 type WildlifeJobRow = {
   id: string
-  organization_id: string | null
+  operation_id: string | null
   camera_id: string | null
   status: string
   review_status: string
@@ -118,13 +119,13 @@ export default async function ProjectsPage() {
     )
   }
 
-  let propertiesQuery = supabase.from('properties').select('id,organization_id,name,address,status,created_at,updated_at').order('updated_at', { ascending: false })
+  let propertiesQuery = supabase.from('properties').select('id,organization_id,operation_id,name,address,status,created_at,updated_at').order('updated_at', { ascending: false })
   let organizationsQuery = supabase.from('organizations').select('id,name,status')
   let devicesQuery = supabase.from('devices').select('id,property_id,kind,status,last_seen_at')
   let incidentsQuery = supabase.from('incidents').select('id,property_id,status,severity')
   let gatewaysQuery = supabase.from('gateways').select('id,property_id,status,last_seen_at')
-  let wildlifeCamerasQuery = supabase.from('wildlife_cameras').select('id,organization_id,name,zone_label,active,is_demo')
-  let wildlifeJobsQuery = supabase.from('wildlife_inference_jobs').select('id,organization_id,camera_id,status,review_status,zone_label,captured_at,created_at,is_demo').order('created_at', { ascending: false }).limit(1000)
+  let wildlifeCamerasQuery = supabase.from('wildlife_cameras').select('id,operation_id,name,zone_label,active,is_demo')
+  let wildlifeJobsQuery = supabase.from('wildlife_inference_jobs').select('id,operation_id,camera_id,status,review_status,zone_label,captured_at,created_at,is_demo').order('created_at', { ascending: false }).limit(1000)
 
   if (auth.user.role !== 'admin') {
     if (auth.user.organizationIds.length === 0 || auth.user.propertyIds.length === 0) {
@@ -134,16 +135,22 @@ export default async function ProjectsPage() {
       devicesQuery = devicesQuery.eq('property_id', emptyId)
       incidentsQuery = incidentsQuery.eq('property_id', emptyId)
       gatewaysQuery = gatewaysQuery.eq('property_id', emptyId)
-      wildlifeCamerasQuery = wildlifeCamerasQuery.eq('organization_id', emptyId)
-      wildlifeJobsQuery = wildlifeJobsQuery.eq('organization_id', emptyId)
+      wildlifeCamerasQuery = wildlifeCamerasQuery.eq('operation_id', emptyId)
+      wildlifeJobsQuery = wildlifeJobsQuery.eq('operation_id', emptyId)
     } else {
       propertiesQuery = propertiesQuery.in('id', auth.user.propertyIds)
       organizationsQuery = organizationsQuery.in('id', auth.user.organizationIds)
       devicesQuery = devicesQuery.in('property_id', auth.user.propertyIds)
       incidentsQuery = incidentsQuery.in('property_id', auth.user.propertyIds)
       gatewaysQuery = gatewaysQuery.in('property_id', auth.user.propertyIds)
-      wildlifeCamerasQuery = wildlifeCamerasQuery.in('organization_id', auth.user.organizationIds)
-      wildlifeJobsQuery = wildlifeJobsQuery.in('organization_id', auth.user.organizationIds)
+      if (auth.user.operationIds.length === 0) {
+        const emptyId = '00000000-0000-0000-0000-000000000000'
+        wildlifeCamerasQuery = wildlifeCamerasQuery.eq('operation_id', emptyId)
+        wildlifeJobsQuery = wildlifeJobsQuery.eq('operation_id', emptyId)
+      } else {
+        wildlifeCamerasQuery = wildlifeCamerasQuery.in('operation_id', auth.user.operationIds)
+        wildlifeJobsQuery = wildlifeJobsQuery.in('operation_id', auth.user.operationIds)
+      }
     }
   }
 
@@ -220,8 +227,8 @@ export default async function ProjectsPage() {
               .at(-1) || property.updated_at
             const organization = organizationById.get(property.organization_id)
             const showPreservation = isHuiloHuilo(organization?.name || '') || isHuiloHuilo(property.name)
-            const orgWildlifeCameras = wildlifeCameras.filter((camera) => camera.organization_id === property.organization_id)
-            const orgWildlifeJobs = wildlifeJobs.filter((job) => job.organization_id === property.organization_id)
+            const orgWildlifeCameras = property.operation_id ? wildlifeCameras.filter((camera) => camera.operation_id === property.operation_id) : []
+            const orgWildlifeJobs = property.operation_id ? wildlifeJobs.filter((job) => job.operation_id === property.operation_id) : []
             const activeWildlifeCameras = orgWildlifeCameras.filter((camera) => camera.active).length
             const analyzedDetections = orgWildlifeJobs.filter((job) => ['completed', 'succeeded', 'success'].includes(job.status)).length
             const pendingReview = orgWildlifeJobs.filter((job) => ['pending', 'in_review'].includes(job.review_status)).length
@@ -265,7 +272,7 @@ export default async function ProjectsPage() {
                         </div>
                       </div>
                       <Link
-                        href={`/admin/vision?organizationId=${encodeURIComponent(property.organization_id)}`}
+                        href={property.operation_id ? `/admin/vision?operationId=${encodeURIComponent(property.operation_id)}` : '/admin/vision'}
                         className="inline-flex w-fit items-center gap-2 rounded-[5px] bg-emerald-300/10 px-3 py-2 text-sm text-emerald-100 transition hover:bg-emerald-300/15"
                       >
                         <Eye className="h-4 w-4" strokeWidth={1.5} />

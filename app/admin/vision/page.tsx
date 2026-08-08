@@ -1,32 +1,45 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Camera, Leaf, PawPrint } from 'lucide-react'
 import { WildlifeMediaReviewCenter } from '@/components/wildlife-media-review-center'
+import { getCurrentAuthSession } from '@/lib/auth-store'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
 type PageProps = {
-  searchParams: Promise<{ organizationId?: string }>
+  searchParams: Promise<{ operationId?: string }>
 }
 
 export default async function WildlifeVisionReviewPage({ searchParams }: PageProps) {
-  const { organizationId } = await searchParams
+  const { operationId } = await searchParams
+  const auth = await getCurrentAuthSession()
+  if (!auth) redirect('/login?next=/admin/vision')
+  if (operationId && auth.user.role !== 'admin' && !auth.user.operationIds.includes(operationId)) redirect('/admin/proyectos')
   const supabase = createSupabaseAdminClient()
 
   let organizationName: string | null = null
   let cameraCount = 0
   let detectionCount = 0
 
-  if (organizationId && supabase) {
-    const [organizationResult, camerasResult, detectionsResult] = await Promise.all([
-      supabase.from('organizations').select('name').eq('id', organizationId).maybeSingle(),
-      supabase.from('wildlife_cameras').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
-      supabase.from('wildlife_inference_jobs').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
-    ])
+  if (operationId && supabase) {
+    const { data: property } = await supabase
+      .from('properties')
+      .select('organization_id')
+      .eq('operation_id', operationId)
+      .maybeSingle()
 
-    organizationName = organizationResult.data?.name || null
-    cameraCount = camerasResult.count || 0
-    detectionCount = detectionsResult.count || 0
+    if (property) {
+      const [organizationResult, camerasResult, detectionsResult] = await Promise.all([
+        supabase.from('organizations').select('name').eq('id', property.organization_id).maybeSingle(),
+        supabase.from('wildlife_cameras').select('id', { count: 'exact', head: true }).eq('operation_id', operationId),
+        supabase.from('wildlife_inference_jobs').select('id', { count: 'exact', head: true }).eq('operation_id', operationId),
+      ])
+
+      organizationName = organizationResult.data?.name || null
+      cameraCount = camerasResult.count || 0
+      detectionCount = detectionsResult.count || 0
+    }
   }
 
   return (
@@ -48,7 +61,7 @@ export default async function WildlifeVisionReviewPage({ searchParams }: PagePro
             </div>
           </div>
 
-          {organizationId && (
+          {operationId && (
             <div className="grid grid-cols-2 gap-3 sm:min-w-[300px]">
               <div className="rounded-[6px] bg-black/15 p-3">
                 <Camera className="h-4 w-4 text-emerald-200/80" strokeWidth={1.5} />
@@ -64,7 +77,7 @@ export default async function WildlifeVisionReviewPage({ searchParams }: PagePro
           )}
         </div>
 
-        {organizationId && cameraCount === 0 && (
+        {operationId && cameraCount === 0 && (
           <div className="mt-4 flex flex-col gap-3 rounded-[6px] bg-black/15 px-4 py-3 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
             <span>Aun no hay camaras de fauna conectadas para esta organizacion. La vista permanece preparada para incorporar evidencia real.</span>
             <Link href="/admin/proyectos" className="shrink-0 text-emerald-200 hover:text-emerald-100">Volver al proyecto</Link>
