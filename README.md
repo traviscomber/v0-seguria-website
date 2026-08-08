@@ -1,43 +1,54 @@
 # SegurIA
 
-## Distributed Security Intelligence
+## Seguridad física inteligente impulsada por motores N3uralia
 
-SegurIA es una plataforma de seguridad física y visión operacional diseñada para convertir cámaras, sensores, eventos y evidencia en decisiones claras.
+SegurIA es una solución vertical de seguridad física, monitoreo e inteligencia visual construida sobre los **motores tecnológicos de N3uralia**.
 
-No está pensada como otro dashboard de cámaras. Su arquitectura combina operación local, software cloud, seguridad multiempresa, automatización, evidencia privada e inteligencia visual dentro de un mismo modelo operacional.
+SegurIA no define una familia independiente de motores. La propiedad intelectual, lógica diferencial, automatización, inteligencia, orquestación y capacidades reutilizables pertenecen a la capa N3uralia. SegurIA utiliza esas capacidades para resolver un dominio específico: proteger personas, infraestructura, activos y entornos naturales.
 
-La idea central es simple:
+La separación conceptual es:
 
-> **procesar cerca del lugar, mover solo la información necesaria y mantener en el Core una verdad operacional segura, auditable y accionable.**
+```text
+N3uralia
+  -> motores, inteligencia, automatización, datos y orquestación
+       -> SegurIA
+            -> producto vertical de seguridad física y visión operacional
+```
+
+La idea operacional es simple:
+
+> **procesar cerca del lugar, mover solo la información necesaria y mantener una verdad operacional segura, auditable y accionable.**
 
 ---
 
-## Qué hace diferente a SegurIA
+## Qué es SegurIA
 
-SegurIA une capacidades que normalmente viven separadas:
+SegurIA reúne en una sola experiencia capacidades que normalmente viven separadas:
 
 - infraestructura física y gateways locales;
-- cámaras y sensores de múltiples orígenes;
+- cámaras y sensores de múltiples fabricantes;
 - operación degradada cuando Internet falla;
-- portal cliente y centro de operaciones;
+- portal cliente y administración operacional;
 - eventos, alertas, incidentes y automatizaciones;
 - evidencia privada y trazable;
-- SegurIA Vision para análisis avanzado de imágenes;
+- análisis visual basado en motores N3uralia;
 - control de acceso multiempresa y por operación;
 - revisión humana de resultados de IA;
-- arquitectura Edge photo-first para reducir ancho de banda, exposición y costo de inferencia.
+- arquitectura edge photo-first para reducir ancho de banda, exposición y costo de inferencia.
 
 La plataforma distingue explícitamente entre **estado operacional canónico** y **resultados derivados por IA**. Una clasificación automática puede enriquecer la operación, pero no reemplaza silenciosamente la verdad del sistema.
 
 ---
 
-## Principio arquitectónico
+## Arquitectura de producto
+
+SegurIA es la capa de producto. Los motores reutilizables y la lógica diferencial pertenecen a N3uralia.
 
 ```text
 Cámaras / sensores / sistemas locales
                 |
                 v
-     SegurIA Edge / Gateway
+      Gateway / agente local
   - RTSP y dispositivos locales
   - motion gate / frame selection
   - buffer y spool offline
@@ -51,22 +62,30 @@ Cámaras / sensores / sistemas locales
   - media proxy cuando aplica
                 |
                 v
-          SegurIA Core
-  - Supabase / PostgreSQL
+      Plataforma SegurIA
+  - portal cliente
+  - administración operacional
+  - propiedades y operaciones
+  - alertas e incidentes
+  - evidencia y revisión humana
+                |
+                v
+       Motores N3uralia
+  - inteligencia
+  - automatización
+  - análisis
+  - orquestación
+  - procesamiento de datos
+                |
+                v
+      Supabase / PostgreSQL
+  - estado canónico
   - Auth + RLS
   - Storage privado
-  - eventos e incidentes
-  - automatizaciones
-  - SegurIA Vision
   - auditoría
-                |
-        +-------+-------+
-        |               |
-        v               v
- Portal cliente    Operaciones / Admin
 ```
 
-La arquitectura es **local-first, cloud-coordinated**: el sitio puede seguir capturando y acumulando trabajo durante una interrupción de conectividad, mientras el Core conserva identidad, ownership, políticas y estado canónico.
+La arquitectura es **local-first, cloud-coordinated**: el sitio puede seguir capturando y acumulando trabajo durante una interrupción de conectividad, mientras la plataforma conserva identidad, ownership, políticas y estado canónico.
 
 ---
 
@@ -78,7 +97,7 @@ La arquitectura es **local-first, cloud-coordinated**: el sitio puede seguir cap
 - Memberships y roles persistentes.
 - Autenticación SSR con Supabase Auth.
 - Row Level Security para recursos protegidos.
-- Separación entre scope empresarial y scope operacional de Vision.
+- Separación entre scope empresarial y scope operacional.
 - Provisioning interno de clientes y propiedades.
 
 ### Gateway e infraestructura local
@@ -120,13 +139,13 @@ La plataforma consolida:
 - alertas;
 - actividad reciente;
 - evidencia;
-- estado de SegurIA Vision.
+- resultados de análisis visual.
 
 Los dashboards se construyen desde datos persistidos; no se utilizan métricas simuladas para representar readiness u operación real.
 
 ### Alertas e incident response
 
-El Core soporta alertas derivadas de condiciones operacionales y de Vision, incluyendo reglas verificadas para:
+SegurIA soporta alertas derivadas de condiciones operacionales y de análisis visual, incluyendo reglas verificadas para:
 
 - detecciones de fauna relevantes;
 - presencia humana en zonas sensibles;
@@ -135,11 +154,11 @@ El Core soporta alertas derivadas de condiciones operacionales y de Vision, incl
 
 El sistema conserva estado y trazabilidad para reconocimiento, resolución, descarte y auditoría.
 
-### Automatizaciones
+### Automatización impulsada por N3uralia
 
-SegurIA incluye una capa de automatización operacional con persistencia y control de cambios.
+La lógica reutilizable de automatización y orquestación pertenece a la capa N3uralia. SegurIA la aplica al dominio de seguridad para transformar eventos normalizados en acciones operacionales.
 
-La arquitectura está diseñada para que las automatizaciones actúen sobre eventos normalizados en vez de depender directamente de una marca específica de hardware.
+La arquitectura está diseñada para no depender directamente de una marca específica de hardware.
 
 ### Video y evidencia protegida
 
@@ -151,17 +170,17 @@ La arquitectura está diseñada para que las automatizaciones actúen sobre even
 
 ---
 
-## SegurIA Vision
+## Inteligencia visual en SegurIA
 
-SegurIA Vision es la capa de análisis visual de la plataforma.
+SegurIA expone workflows de análisis visual sobre los motores N3uralia.
 
-Su modelo de ownership es explícito:
+El modelo de ownership es explícito:
 
 ```text
-Organization -> Property -> Operation -> Vision resources
+Organization -> Property -> Operation -> visual resources
 ```
 
-Para Vision, `operation_id` es el scope operacional canónico.
+Para estos recursos, `operation_id` es el scope operacional canónico.
 
 Esto evita que una cámara, evidencia o inferencia quede autorizada simplemente porque un usuario pertenece a otra organización o conoce un UUID.
 
@@ -171,7 +190,7 @@ Esto evita que una cámara, evidencia o inferencia quede autorizada simplemente 
 - Los writes de cámaras requieren una operación explícita.
 - Los writes de demo requieren una operación explícita.
 - `organization_id` se deriva desde la propiedad vinculada a la operación.
-- La membresía de Vision se resuelve mediante `user_operations`.
+- La membresía operacional se resuelve mediante `user_operations`.
 
 ### Identidad e idempotencia
 
@@ -202,9 +221,11 @@ El dominio Wildlife/Vision incluye lógica para:
 
 ---
 
-## SegurIA Edge Vision v1
+## Agente local de visión
 
-[`edge/seguria-edge-vision`](edge/seguria-edge-vision) contiene un agente local photo-first para Mini PC.
+El directorio [`edge/seguria-edge-vision`](edge/seguria-edge-vision) contiene la implementación técnica actual del agente photo-first para Mini PC.
+
+El nombre del directorio es una referencia de implementación del repositorio; **no representa un motor independiente de N3uralia**.
 
 Flujo actual:
 
@@ -217,13 +238,14 @@ RTSP local
    -> deduplicación
    -> mejor fotografía
    -> snapshot autenticado
-   -> SegurIA Core
+   -> plataforma SegurIA
+   -> motores N3uralia cuando corresponde
 ```
 
 Principios:
 
 - el video continuo permanece en la LAN;
-- al Core llega una fotografía seleccionada del evento;
+- al cloud llega una fotografía seleccionada del evento;
 - no se ejecuta identificación avanzada en cada frame;
 - el agente está diseñado principalmente para CPU;
 - puede trabajar con cámaras que expongan RTSP accesible localmente;
@@ -244,7 +266,7 @@ SegurIA evita tratar todos los IDs como si fueran el mismo tipo de scope.
 organization -> property -> resource
 ```
 
-### Vision operacional
+### Operación visual
 
 ```text
 operation -> property -> organization
@@ -263,9 +285,9 @@ Reglas estructurales:
 
 ---
 
-## Stack
+## Stack de implementación
 
-### Application
+### Aplicación SegurIA
 
 - Next.js 16
 - React 19
@@ -273,7 +295,7 @@ Reglas estructurales:
 - Tailwind CSS
 - Radix UI
 
-### Data & identity
+### Datos e identidad
 
 - Supabase PostgreSQL
 - Supabase Auth
@@ -283,16 +305,17 @@ Reglas estructurales:
 ### Runtime
 
 - Vercel
-- SegurIA Gateway
-- SegurIA Edge Vision / Python
+- Gateway local
+- agente Python photo-first
+- motores N3uralia integrados mediante contratos internos y APIs del producto
 
-### Observability & verification
+### Observabilidad y verificación
 
 El build productivo ejecuta automáticamente pruebas de:
 
-- SegurIA alerts;
-- Vision quality diagnostics;
-- Vision access control;
+- alertas;
+- quality diagnostics;
+- access control;
 - TypeScript / Next.js production build.
 
 El repositorio también incluye verificaciones adicionales para providers, licencias Wildlife, review proxy, seguridad, database health y smoke tests operacionales.
@@ -339,24 +362,55 @@ pnpm smoke:operational
 - [`ROADMAP.md`](ROADMAP.md) — arquitectura, estado y secuencia de evolución.
 - [`DESIGN.md`](DESIGN.md) — sistema visual, UX y reglas de marca.
 - [`docs/security/gateway-connector-contract.md`](docs/security/gateway-connector-contract.md) — contrato del gateway.
-- [`edge/seguria-edge-vision/ARCHITECTURE.md`](edge/seguria-edge-vision/ARCHITECTURE.md) — arquitectura del agente Vision local.
+- [`edge/seguria-edge-vision/ARCHITECTURE.md`](edge/seguria-edge-vision/ARCHITECTURE.md) — arquitectura técnica del agente local.
+
+---
+
+## Arquitectura de marca e IP
+
+Esta separación es obligatoria:
+
+### N3uralia
+
+Es la capa propietaria y reutilizable de tecnología:
+
+- motores de inteligencia;
+- lógica diferencial;
+- automatización;
+- orquestación;
+- procesamiento y análisis;
+- capacidades reutilizables entre productos.
+
+### SegurIA
+
+Es la solución vertical que utiliza esa tecnología para seguridad física y operación:
+
+- experiencia de usuario;
+- workflows de seguridad;
+- gateways e integración de terreno;
+- cámaras y sensores;
+- incidentes y alertas;
+- evidencia;
+- operación y administración del cliente.
+
+SegurIA puede evolucionar rápidamente porque no necesita reinventar los motores tecnológicos en cada módulo; consume y especializa capacidades N3uralia según el contexto de seguridad.
 
 ---
 
 ## Dirección de producto
 
-SegurIA busca que la seguridad física deje de ser una colección de cámaras, apps y paneles aislados y se comporte como un **sistema distribuido de inteligencia operacional**.
+SegurIA busca que la seguridad física deje de ser una colección de cámaras, apps y paneles aislados y se comporte como una **solución inteligente integrada sobre motores N3uralia**.
 
 La dirección es:
 
 1. mantener captura y resiliencia cerca del lugar;
 2. normalizar hardware y proveedores detrás de contratos propios;
-3. conservar ownership, autorización y auditoría en un Core canónico;
+3. conservar ownership, autorización y auditoría en estado canónico;
 4. mover evidencia en lugar de video continuo cuando el caso lo permita;
-5. utilizar IA como una capa explicable y revisable, no como una fuente de verdad incuestionable;
+5. utilizar inteligencia N3uralia como una capa explicable y revisable;
 6. convertir eventos en decisiones, alertas, incidentes y acciones medibles.
 
-Ese modelo permite que SegurIA evolucione desde seguridad tradicional hacia una plataforma común para **protección de personas, infraestructura, activos y entornos naturales**, sin romper el mismo núcleo de identidad, operación y evidencia.
+Ese modelo permite que SegurIA evolucione desde seguridad tradicional hacia protección de **personas, infraestructura, activos y entornos naturales**, mientras la tecnología reusable permanece centralizada en N3uralia.
 
 ---
 
