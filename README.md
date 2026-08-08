@@ -1,90 +1,99 @@
 # SegurIA
 
-**Plataforma de seguridad física inteligente, operación y visión aplicada.**
+**Security Suite integral para seguridad física, operación, evidencia, inteligencia visual y continuidad operacional.**
 
 [Powered by N3uralia](https://www.n3uralia.com)
 
-SegurIA es una solución vertical de seguridad que integra infraestructura física, gateways locales, cámaras, sensores, eventos, evidencia, incidentes y análisis visual dentro de una misma experiencia operacional.
+SegurIA es una **Security Suite** diseñada para unificar en una sola plataforma las capas que normalmente están fragmentadas entre CCTV, alarmas, sensores, control operacional, incidentes, evidencia, analítica visual, edge computing y administración multiempresa.
 
-Los motores tecnológicos reutilizables —inteligencia, automatización, análisis, orquestación y lógica diferencial— pertenecen a **N3uralia**. SegurIA los utiliza y especializa para resolver seguridad física, continuidad operacional y protección de personas, activos, infraestructura y entornos naturales.
+No es solo un portal de cámaras ni una aplicación de monitoreo. SegurIA conecta infraestructura física, software, operación, evidencia e inteligencia para convertir señales de terreno en contexto, decisiones, alertas, incidentes y acciones trazables.
+
+Los motores tecnológicos reutilizables —inteligencia, automatización, análisis, orquestación y lógica diferencial— pertenecen a **N3uralia**. SegurIA los utiliza para construir una suite especializada en seguridad y continuidad operacional.
 
 ```text
 N3uralia
   -> motores tecnológicos e inteligencia reutilizable
-       -> SegurIA
-            -> producto vertical de seguridad física y operación
+       -> SegurIA Security Suite
+            -> seguridad física + operación + evidencia + Vision + Edge
 ```
 
-La arquitectura sigue un principio simple:
+Principio de arquitectura:
 
 > procesar cerca del lugar, mover solo la información necesaria y mantener una verdad operacional segura, auditable y accionable.
 
 ---
 
-## Qué tenemos hoy
+## Qué es la SegurIA Security Suite
 
-La plataforma ya permite demostrar una operación completa de seguridad conectada:
+La suite reúne actualmente:
 
-- portal cliente multiempresa;
-- organizaciones, propiedades, operaciones y roles;
-- autenticación y control de acceso con Supabase Auth + RLS;
+- Centro de Control operacional;
+- infraestructura de seguridad;
+- cámaras, sensores y dispositivos;
 - gateways por instalación;
-- inventario y estado de dispositivos;
-- cámaras y sensores;
-- eventos y heartbeat;
-- snapshots autenticados;
-- evidencia privada;
-- video protegido cuando aplica;
+- inventario y estado de hardware;
+- heartbeat y continuidad de conectividad;
+- eventos normalizados;
 - alertas e incidentes;
-- actividad y trazabilidad operacional;
-- automatizaciones sobre eventos normalizados;
-- análisis visual con scope por operación;
+- evidencia privada y trazable;
+- snapshots autenticados;
+- video protegido cuando aplica;
+- automatizaciones sobre eventos;
+- Vision y análisis inteligente;
 - revisión humana de resultados de IA;
-- operación local resiliente y spool offline;
-- discovery técnico para buscadores y motores generativos mediante metadata, JSON-LD, sitemap, robots y `llms.txt`.
+- Edge local para RTSP y procesamiento photo-first;
+- operación resiliente con spool offline y reintentos;
+- tenancy multiempresa;
+- organizaciones, propiedades, operaciones y roles;
+- Supabase Auth + Row Level Security;
+- discovery SEO, GEO y LLMO;
+- integración tecnológica explícita con N3uralia.
 
-No se usan métricas simuladas para representar readiness u operación real.
+La suite está diseñada para proteger **personas, instalaciones, activos, infraestructura crítica y entornos naturales** sin depender de una única marca de hardware.
+
+No se utilizan métricas simuladas para representar readiness u operación real.
 
 ---
 
-## Los 6 módulos visibles de SegurIA
+## Las 6 superficies principales de la suite
 
 ### 1. Centro de Control
 
-Punto de entrada operacional para entender rápidamente el estado general de la operación.
+Visión ejecutiva y operacional del estado de la seguridad.
 
 Incluye:
 
-- resumen ejecutivo;
+- resumen general;
 - propiedades o espacios operativos;
-- estado general de dispositivos;
+- estado de dispositivos;
 - señales activas;
 - casos abiertos;
-- prioridades que requieren atención;
+- prioridades;
 - acceso rápido a cámaras, incidentes y actividad.
 
-El dashboard se construye desde datos persistidos y mantiene vocabulario adaptable por cliente o tipo de operación.
+El dashboard se construye desde datos persistidos y adapta vocabulario y contexto según el cliente u operación.
 
 ### 2. Infraestructura
 
-Consolida la capa física de la operación.
+Consolida la capa física y conectada de la operación.
 
 Incluye:
 
 - propiedades y sitios;
 - cámaras;
-- sensores y dispositivos;
+- sensores;
+- dispositivos;
 - gateways locales;
 - heartbeat;
 - inventario;
 - estado operacional;
-- integración con hardware existente.
+- integración con infraestructura existente.
 
-El diseño busca desacoplar la plataforma de marcas específicas de cámaras o sensores mediante contratos propios.
+SegurIA busca desacoplar la experiencia de marcas específicas mediante contratos propios de integración.
 
 ### 3. Incidentes
 
-Convierte eventos técnicos en prioridades operacionales.
+Convierte eventos técnicos en gestión operacional.
 
 Incluye:
 
@@ -92,16 +101,17 @@ Incluye:
 - incidentes;
 - severidad;
 - estado;
-- reconocimiento y resolución;
+- reconocimiento;
+- resolución;
 - descarte;
 - trazabilidad;
 - contexto de propiedad, cámara o dispositivo.
 
-La lógica puede combinar condiciones de infraestructura y resultados derivados de análisis visual.
+Las reglas pueden combinar señales de infraestructura, actividad operacional y resultados derivados de Vision.
 
 ### 4. Evidencia
 
-Concentra la evidencia generada por la operación.
+Centraliza evidencia y contexto de seguridad.
 
 Incluye:
 
@@ -110,19 +120,20 @@ Incluye:
 - actividad reciente;
 - relación entre evento, dispositivo, propiedad y operación;
 - acceso protegido;
-- historial y trazabilidad;
+- historial;
+- trazabilidad;
 - sesiones efímeras de video cuando corresponde.
 
 Las credenciales RTSP y secretos de origen permanecen fuera del navegador.
 
 ### 5. Vision
 
-SegurIA expone workflows de análisis visual sobre motores N3uralia.
+SegurIA expone workflows de inteligencia visual sobre motores N3uralia.
 
 Capacidades actuales:
 
 - análisis de evidencia fotográfica;
-- operación explícita mediante `operation_id`;
+- scope explícito por `operation_id`;
 - identidad de cámaras por operación;
 - idempotencia de inferencias;
 - quality diagnostics;
@@ -163,7 +174,7 @@ x-operation-id: <operation UUID>
 
 ### 6. Edge
 
-La capa local permite trabajar con cámaras existentes sin enviar video continuo al cloud.
+La suite extiende inteligencia y resiliencia hacia terreno.
 
 El agente actual vive en [`edge/seguria-edge-vision`](edge/seguria-edge-vision). El nombre del directorio es una referencia técnica del repositorio y no representa un motor independiente de N3uralia.
 
@@ -185,7 +196,7 @@ RTSP local
 Principios:
 
 - video continuo permanece en la LAN;
-- al cloud llega solo la evidencia seleccionada cuando el caso lo permite;
+- al cloud llega solo evidencia seleccionada cuando el caso lo permite;
 - diseño CPU-first para Mini PC;
 - compatibilidad con cámaras que expongan RTSP local;
 - spool offline;
@@ -195,7 +206,7 @@ Principios:
 
 ---
 
-## Arquitectura operacional
+## Arquitectura de la Security Suite
 
 ```text
 Cámaras / sensores / sistemas locales
@@ -217,13 +228,14 @@ Cámaras / sensores / sistemas locales
   - media proxy cuando aplica
                 |
                 v
-         Plataforma SegurIA
+       SegurIA Security Suite
   - Centro de Control
   - Infraestructura
   - Incidentes
   - Evidencia
   - Vision
-  - operación y administración
+  - Edge
+  - administración y operación
                 |
                 v
           Motores N3uralia
@@ -270,7 +282,7 @@ Contrato técnico: [`docs/security/gateway-connector-contract.md`](docs/security
 
 ---
 
-## Seguridad y tenancy
+## Seguridad, tenancy y control de acceso
 
 SegurIA mantiene separados los scopes empresariales y operacionales.
 
@@ -299,7 +311,7 @@ Reglas estructurales:
 
 ---
 
-## Alertas verificadas
+## Alertas e inteligencia operacional
 
 Actualmente existen reglas y tests para escenarios como:
 
@@ -310,15 +322,15 @@ Actualmente existen reglas y tests para escenarios como:
 
 El sistema conserva estado y trazabilidad para reconocimiento, resolución, descarte y auditoría.
 
+El objetivo de la suite es que una señal no termine simplemente como una notificación: debe poder convertirse en contexto, prioridad, incidente y acción operacional.
+
 ---
 
 ## Powered by N3uralia
 
-SegurIA es el producto vertical. N3uralia es la capa tecnológica reutilizable.
+**SegurIA es la Security Suite. N3uralia es la capa tecnológica que la impulsa.**
 
-### N3uralia
-
-Aporta:
+N3uralia aporta:
 
 - motores de inteligencia;
 - automatización;
@@ -326,31 +338,31 @@ Aporta:
 - orquestación;
 - procesamiento de datos;
 - lógica diferencial reutilizable;
-- capacidades que pueden alimentar múltiples productos.
+- capacidades compartidas entre productos.
 
 Sitio oficial: **https://www.n3uralia.com**
 
-### SegurIA
-
-Especializa esas capacidades en:
+SegurIA especializa esas capacidades en:
 
 - seguridad física;
+- seguridad operacional;
+- monitoreo;
+- infraestructura conectada;
 - cámaras y sensores;
-- integración de terreno;
 - gateways;
-- evidencia;
-- alertas;
 - incidentes;
-- visión operacional;
-- continuidad de operación.
+- evidencia;
+- Vision;
+- Edge;
+- continuidad operacional.
 
-Esta separación evita duplicar motores dentro de cada producto y mantiene la propiedad intelectual reutilizable centralizada en N3uralia.
+Esta separación mantiene la propiedad intelectual reusable centralizada en N3uralia sin reducir SegurIA a un único módulo o vertical técnico.
 
 ---
 
 ## SEO, GEO y LLMO
 
-El sitio incorpora una capa de descubrimiento orientada tanto a buscadores tradicionales como a motores generativos.
+El sitio incorpora una capa de descubrimiento orientada a buscadores tradicionales y motores generativos.
 
 Incluye:
 
@@ -440,17 +452,19 @@ pnpm smoke:operational
 
 ## Dirección de producto
 
-SegurIA busca que la seguridad física deje de comportarse como una colección de cámaras, apps y paneles aislados.
+SegurIA busca que la seguridad deje de comportarse como una colección de cámaras, alarmas, apps, sistemas de acceso y paneles aislados.
 
-La dirección es:
+La dirección es construir una **Security Suite integrada** capaz de:
 
-1. mantener captura y resiliencia cerca del lugar;
-2. normalizar hardware y proveedores detrás de contratos propios;
-3. mantener ownership, autorización y auditoría en estado canónico;
-4. mover evidencia en lugar de video continuo cuando el caso lo permita;
-5. utilizar motores N3uralia como una capa explicable y revisable;
-6. convertir eventos en decisiones, alertas, incidentes y acciones medibles;
-7. extender el mismo modelo a personas, infraestructura, activos y entornos naturales.
+1. conectar infraestructura física heterogénea;
+2. mantener captura y resiliencia cerca del lugar;
+3. normalizar hardware y proveedores detrás de contratos propios;
+4. centralizar evidencia, incidentes y operación;
+5. mantener ownership, autorización y auditoría en estado canónico;
+6. mover evidencia en lugar de video continuo cuando el caso lo permita;
+7. aplicar motores N3uralia como capa inteligente, explicable y revisable;
+8. convertir eventos en decisiones, alertas, incidentes y acciones medibles;
+9. extender el mismo modelo a personas, infraestructura, activos y entornos naturales.
 
 ---
 
@@ -458,7 +472,7 @@ La dirección es:
 
 `main` es la rama de producción.
 
-La experiencia cliente ya está organizada alrededor de los seis módulos:
+La experiencia cliente está organizada alrededor de seis superficies principales:
 
 ```text
 Centro de Control
@@ -469,7 +483,9 @@ Vision
 Edge
 ```
 
-Los cambios recientes de producto, atribución N3uralia y discovery SEO/GEO/LLMO están integrados en producción.
+Estas superficies forman parte de una única **SegurIA Security Suite**, no productos separados.
+
+Los cambios recientes de producto, atribución N3uralia y discovery SEO/GEO/LLMO están integrados en `main`.
 
 El roadmap detallado y los gates técnicos se mantienen en [`ROADMAP.md`](ROADMAP.md).
 
