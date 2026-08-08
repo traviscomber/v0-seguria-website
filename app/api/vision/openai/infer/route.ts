@@ -15,7 +15,6 @@ const PIPELINE_VERSION = 'vision-pipeline-v9-gpt5-mini'
 const PRIMARY_MODEL = 'gpt-5-mini'
 const FALLBACK_MODEL = 'gpt-4o-mini'
 const MAX_RETRIES = 2
-const SCOPE_CONFLICT = '__scope_conflict__'
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -444,7 +443,7 @@ async function resolveCamera(input: { userId: string; operationId: string; organ
 
   const { data: scopedCamera, error: scopedError } = await supabase
     .from('wildlife_cameras')
-    .select('id,operation_id')
+    .select('id')
     .eq('operation_id', input.operationId)
     .eq('code', input.code)
     .maybeSingle()
@@ -458,6 +457,7 @@ async function resolveCamera(input: { userId: string; operationId: string; organ
       .from('wildlife_cameras')
       .update({ name: input.name || input.code, zone_label: input.zoneLabel, updated_at: new Date().toISOString() })
       .eq('id', scopedCamera.id)
+      .eq('operation_id', input.operationId)
       .select('id')
       .single()
     if (error) {
@@ -465,21 +465,6 @@ async function resolveCamera(input: { userId: string; operationId: string; organ
       return null
     }
     return data.id as string
-  }
-
-  const { data: legacyCollision, error: collisionError } = await supabase
-    .from('wildlife_cameras')
-    .select('id,operation_id')
-    .eq('created_by_user_id', input.userId)
-    .eq('code', input.code)
-    .maybeSingle()
-  if (collisionError) {
-    console.error('Wildlife camera collision lookup failed:', collisionError.message)
-    return null
-  }
-  if (legacyCollision) {
-    console.error('Wildlife camera scope conflict:', legacyCollision.id)
-    return SCOPE_CONFLICT
   }
 
   const { data, error } = await supabase.from('wildlife_cameras').insert({
@@ -491,6 +476,15 @@ async function resolveCamera(input: { userId: string; operationId: string; organ
     zone_label: input.zoneLabel,
   }).select('id').single()
   if (error) {
+    if (error.code === '23505') {
+      const { data: concurrentCamera, error: concurrentError } = await supabase
+        .from('wildlife_cameras')
+        .select('id')
+        .eq('operation_id', input.operationId)
+        .eq('code', input.code)
+        .maybeSingle()
+      if (!concurrentError && concurrentCamera) return concurrentCamera.id as string
+    }
     console.error('Wildlife camera creation failed:', error.message)
     return null
   }
@@ -634,7 +628,6 @@ export async function POST(request: NextRequest) {
     : null
   const sha256 = createHash('sha256').update(image).digest('hex')
   const cameraId = await resolveCamera({ userId: auth.user.id, operationId, organizationId, code: cameraCode, name: cameraName, zoneLabel })
-  if (cameraId === SCOPE_CONFLICT) return NextResponse.json({ error: 'camera_scope_conflict', message: 'El codigo de camara ya existe en otro scope.' }, { status: 409 })
   const evidence = await storeEvidence({ userId: auth.user.id, operationId, sha256, mimeType: contentType, image })
   if (!evidence) return NextResponse.json({ error: 'evidence_storage_failed', message: 'No fue posible guardar la imagen original.' }, { status: 503 })
 
