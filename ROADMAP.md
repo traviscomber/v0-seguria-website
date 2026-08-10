@@ -1,9 +1,9 @@
 # SegurIA Security Suite — Roadmap canónico
 
-Actualizado: 8 de agosto de 2026.
+Actualizado: 9 de agosto de 2026.
 Documento canónico: `ROADMAP.md`.
 
-> Regla de mantenimiento: todo cambio material de producto, arquitectura, seguridad, datos, integración o release debe reflejarse también en este archivo.
+> Regla de mantenimiento: todo cambio material de producto, arquitectura, seguridad, datos, integración, posicionamiento, SEO/GEO/LLMO o release debe reflejarse también en este archivo.
 
 ## Definición de producto
 
@@ -126,7 +126,7 @@ N3uralia engines -> SegurIA Security Suite -> security workflows
 
 SegurIA no define una familia independiente de motores. Los identificadores técnicos del repositorio pueden mantener nombres de implementación, pero no deben presentarse como motores propios de SegurIA.
 
-### PASS — SEO / GEO / LLMO
+### PASS — SEO / GEO / LLMO base
 
 Implementado:
 
@@ -139,7 +139,10 @@ Implementado:
 - `llms.txt`;
 - referencias semánticas SegurIA ↔ N3uralia;
 - atribución visible **Powered by N3uralia**;
-- posicionamiento principal como **SegurIA Security Suite**.
+- posicionamiento principal como **SegurIA Security Suite**;
+- metadata localizada alineada con Security Suite;
+- entity graph corregido para evitar relaciones semánticas engañosas;
+- estrategia Brandin documentada en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
 
 ## Arquitectura canónica
 
@@ -239,6 +242,25 @@ Gate: `imagen -> storage -> cámara -> job -> resultado -> lectura autorizada` d
 - mantener `Powered by N3uralia` consistente en UI, metadata y documentación;
 - actualizar este roadmap en cada cambio material.
 
+## P1 — Brandin: posicionamiento y discoverability
+
+Objetivo: convertir **SegurIA Security Suite** en una entidad de mercado clara para compradores, buscadores y motores generativos sin depender de keyword stuffing ni claims no verificables.
+
+Acciones prioritarias:
+
+1. Reescribir el hero/home visible para declarar **Security Suite** explícitamente sin perder el mensaje emocional actual.
+2. Incorporar una sección visible y citable “Qué incluye la SegurIA Security Suite” con los seis módulos.
+3. Mantener una arquitectura de contenido en tres capas: categoría -> capacidades -> industrias/casos de uso.
+4. Reforzar internal linking entre landings de intención alta, `/soluciones`, capacidades relacionadas y contacto.
+5. Añadir metadata específica a páginas que todavía dependan de metadata genérica.
+6. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
+7. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados; la visibilidad en motores generativos es una señal complementaria.
+8. Evitar páginas thin/doorway, fake FAQs, fake reviews y contenido masivo sin valor original.
+
+Documento de estrategia: `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
+
+Gate P1 Brandin: la categoría, relaciones de entidad, metadata y copy visible deben ser coherentes; las páginas principales deben poder explicar qué es SegurIA, qué incluye y cómo se relaciona con N3uralia sin depender del README o de `llms.txt`.
+
 ## P1 — observabilidad y release gates
 
 - revisar runtime después de cambios relevantes;
@@ -333,6 +355,17 @@ Negocio:
 - reducción de falsas alarmas;
 - reducción del tiempo de resolución de incidentes.
 
+Marketing y discoverability:
+
+- crecimiento de consultas no-brand relevantes;
+- crecimiento de branded search de SegurIA;
+- páginas de entrada que generan contacto;
+- conversiones medibles por landing;
+- backlinks/referrals relevantes;
+- cobertura e indexación saludables;
+- menciones/citas en motores generativos solo cuando puedan verificarse;
+- leads calificados atribuibles a superficies orgánicas.
+
 ## Criterio de release
 
 ### PASS
@@ -349,7 +382,7 @@ Existe un defecto conocido de seguridad, integridad, tenancy, migración o flujo
 
 ## Política de mantenimiento del roadmap
 
-A partir de este punto `ROADMAP.md` forma parte del Definition of Done de SegurIA.
+`ROADMAP.md` forma parte del Definition of Done de SegurIA.
 
 Cada cambio material debe actualizar, cuando corresponda:
 
@@ -358,6 +391,7 @@ Cada cambio material debe actualizar, cuando corresponda:
 - ownership y contratos;
 - módulos de la Security Suite;
 - relación con N3uralia;
+- posicionamiento y discoverability;
 - prioridades P0/P1/P2;
 - riesgos y deuda pendiente;
 - release gates;
