@@ -15,6 +15,33 @@ N3uralia es la capa tecnológica reutilizable. Los motores de inteligencia, auto
 
 Sitio N3uralia: https://www.n3uralia.com
 
+## Posicionamiento geográfico canónico
+
+La estrategia de SegurIA en Chile se define así:
+
+```text
+Chile
+  -> base operacional: Santiago
+  -> cobertura de proyectos: Chile según factibilidad
+  -> foco de crecimiento: centro-sur y sur de Chile
+      -> La Araucanía
+      -> Los Ríos
+      -> Los Lagos
+```
+
+Reglas:
+
+- **Santiago no se elimina ni se relega**: Vitacura, Santiago, sigue siendo la base operacional para coordinación comercial, arquitectura, soporte y gestión de proyectos.
+- El centro-sur y sur de Chile se trabajan como foco regional de crecimiento, especialmente para operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
+- No se crean páginas doorway por ciudad ni se declaran oficinas locales donde no existe una operación real.
+- La factibilidad de cada proyecto se valida por alcance, infraestructura, logística, conectividad y condiciones del sitio.
+- El posicionamiento regional debe reforzar las capacidades que realmente diferencian a SegurIA en terreno: integración de infraestructura existente, Edge, continuidad ante conectividad degradada, evidencia, incidentes y Vision.
+
+Página pilar implementada:
+
+- `/es/seguridad-inteligente-chile`
+- `/en/seguridad-inteligente-chile`
+
 ## Superficies principales
 
 1. **Centro de Control** — estado general, prioridades, propiedades, dispositivos, incidentes y actividad.
@@ -159,6 +186,43 @@ Commits principales:
 - `123b36507ff18778b08a06880285ec04ad81c9a7` — sitemap alineado con rutas canónicas;
 - `cd7d013b2ef5d2708c8003edb6b78a8a4c80211c` — metadata centralizada para landings.
 
+### PASS — arquitectura geográfica Santiago + sur de Chile
+
+Implementado:
+
+- Santiago preservado explícitamente como base operacional;
+- página pilar ES/EN para `seguridad-inteligente-chile`;
+- foco regional explícito en La Araucanía, Los Ríos y Los Lagos sin inventar sedes locales;
+- contenido orientado a operaciones rurales, remotas, hoteleras, productivas y patrimoniales;
+- explicación visible de Edge, conectividad degradada e integración de infraestructura existente como ventajas relevantes para terreno;
+- internal link desde el footer global;
+- sitemap actualizado;
+- `llms.txt` actualizado con geografía canónica y URLs reales;
+- README sincronizado.
+
+Commits principales:
+
+- `be6735d43e8ebf952149fd04c55778b20af6f207` — página pilar Chile/Santiago/sur;
+- `a107f9b19cb6b8c5577b7e1f7cb7297b1b7794bb` — internal link global;
+- `bc8ba442ccf29cb803a780ed35a47b3e08069e0d` — sitemap;
+- `f8f107a39a021b710383c8a1dfb5a77dbd7fffec` — LLMO/geografía;
+- `514ada917835a786c68b89483aa891c56883e4e3` — README.
+
+### HOLD — posicionamiento orgánico regional medible
+
+La implementación técnica y de contenido no equivale a ranking real.
+
+Para declarar PASS de posicionamiento regional se requiere evidencia real de:
+
+- indexación de la página pilar;
+- impresiones y consultas en Google Search Console;
+- branded search de SegurIA;
+- consultas no-brand relacionadas con seguridad inteligente, cámaras/IA, campos, hotelería y operaciones remotas;
+- tráfico por región/landing;
+- conversiones y leads calificados;
+- backlinks/referrals regionales reales;
+- menciones/citas verificables en motores generativos.
+
 ## Arquitectura canónica
 
 ```text
@@ -247,28 +311,36 @@ imagen -> storage -> cámara -> job -> resultado -> lectura autorizada
 
 ## P1 — Brandin: siguiente fase
 
-Completado en esta fase:
+Completado:
 
 - categoría visible en homepage;
 - sitemap corregido contra la arquitectura real de rutas;
-- metadata específica de las principales landings localizadas.
+- metadata específica de las principales landings localizadas;
+- arquitectura geográfica Santiago + Chile + centro-sur/sur;
+- página pilar geográfica;
+- internal link global inicial;
+- `llms.txt`, README y roadmap sincronizados.
 
 Siguiente trabajo de mayor impacto:
 
-1. Reforzar internal linking entre `/soluciones`, capacidades, industrias y `/contacto`.
+1. Reforzar internal linking entre `/soluciones`, capacidades, industrias, página geográfica y `/contacto`.
 2. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
 3. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
 4. Decidir si las páginas de capacidades deben permanecer canónicas no localizadas o migrar a una arquitectura ES/EN completa antes de publicar hreflang para ellas.
 5. Mejorar rutas de conversión desde páginas de intención alta.
-6. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
-7. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
-8. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
+6. Construir autoridad regional con casos, referencias, partners y evidencia real cuando existan.
+7. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
+8. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
+9. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
 
 Modelo de contenido:
 
 ```text
 N3uralia
   -> SegurIA Security Suite
+      -> Chile
+          -> Santiago = base operacional
+          -> centro-sur/sur = foco regional
       -> capacidades
           -> industrias / casos de uso
               -> evidencia / explicación
@@ -363,6 +435,7 @@ Marketing y discoverability:
 
 - crecimiento de consultas no-brand relevantes;
 - crecimiento de branded search de SegurIA;
+- crecimiento de consultas geográficas Santiago/Chile/centro-sur/sur cuando correspondan a demanda real;
 - páginas de entrada que generan contacto;
 - conversiones medibles por landing;
 - backlinks/referrals relevantes;
@@ -379,7 +452,7 @@ Verificaciones relevantes ejecutadas y sin blocker material conocido.
 
 ### HOLD
 
-Implementación mayormente correcta pero falta una verificación requerida. Vision autenticado E2E permanece aquí.
+Implementación mayormente correcta pero falta una verificación requerida. Vision autenticado E2E y posicionamiento orgánico regional medible permanecen aquí hasta existir evidencia suficiente.
 
 ### BLOCK
 
