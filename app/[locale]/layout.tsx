@@ -4,7 +4,7 @@ import { isLocale, locales, type Locale } from '@/lib/locales'
 
 const metadataByLocale: Record<Locale, Metadata> = {
   es: {
-    title: 'SegurIA Security Suite | Seguridad, operación, Vision y Edge',
+    title: { absolute: 'SegurIA Security Suite | Seguridad, operación, Vision y Edge' },
     description:
       'SegurIA es una Security Suite para seguridad física y operación: cámaras, sensores, infraestructura, incidentes, evidencia, Vision, Edge y automatización. Powered by N3uralia.',
     alternates: {
@@ -25,7 +25,7 @@ const metadataByLocale: Record<Locale, Metadata> = {
     },
   },
   en: {
-    title: 'SegurIA Security Suite | Security Operations, Vision and Edge',
+    title: { absolute: 'SegurIA Security Suite | Security Operations, Vision and Edge' },
     description:
       'SegurIA is a Security Suite for physical security and operations: cameras, sensors, infrastructure, incidents, evidence, Vision, Edge and automation. Powered by N3uralia.',
     alternates: {
