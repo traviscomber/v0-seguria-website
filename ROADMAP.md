@@ -118,7 +118,7 @@ Implementado:
 - metadata Next.js global y localizada;
 - Open Graph;
 - JSON-LD / Schema.org;
-- sitemap multilenguaje;
+- sitemap;
 - robots;
 - `llms.txt`;
 - referencias semánticas SegurIA ↔ N3uralia;
@@ -139,6 +139,25 @@ Implementado en ES y EN:
 - footer comercial alineado con `Security Suite. Powered by N3uralia.`
 
 Commit de implementación: `98dd748a638fc484bd5518b302a78b0853a8ba3a`.
+
+### PASS — sitemap canónico y metadata de landings
+
+Brandin detectó que el sitemap trataba todas las rutas como localizadas aunque varias capacidades existen como páginas canónicas no localizadas. Se corrigió la arquitectura para evitar anunciar URLs `/es/...` y `/en/...` inexistentes para esas capacidades.
+
+Implementado:
+
+- sitemap separado entre rutas localizadas reales y rutas canónicas de capacidades;
+- hreflang solamente en páginas que efectivamente tienen variantes ES/EN;
+- metadata específica para `/soluciones`;
+- metadata específica para campos, propiedades y hotelería;
+- metadata específica para `/integraciones`;
+- metadata específica para `/contacto`;
+- helper central `lib/marketing-page-metadata.ts` para mantener canonical, hreflang y Open Graph consistentes.
+
+Commits principales:
+
+- `123b36507ff18778b08a06880285ec04ad81c9a7` — sitemap alineado con rutas canónicas;
+- `cd7d013b2ef5d2708c8003edb6b78a8a4c80211c` — metadata centralizada para landings.
 
 ## Arquitectura canónica
 
@@ -228,12 +247,18 @@ imagen -> storage -> cámara -> job -> resultado -> lectura autorizada
 
 ## P1 — Brandin: siguiente fase
 
-La categoría ya es visible. El siguiente trabajo de mayor impacto es consolidar el grafo de contenido y conversión:
+Completado en esta fase:
 
-1. Reforzar internal linking entre `/soluciones`, páginas de capacidades, industrias y `/contacto`.
-2. Añadir metadata específica a páginas que todavía dependan de metadata genérica.
-3. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
-4. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
+- categoría visible en homepage;
+- sitemap corregido contra la arquitectura real de rutas;
+- metadata específica de las principales landings localizadas.
+
+Siguiente trabajo de mayor impacto:
+
+1. Reforzar internal linking entre `/soluciones`, capacidades, industrias y `/contacto`.
+2. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
+3. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
+4. Decidir si las páginas de capacidades deben permanecer canónicas no localizadas o migrar a una arquitectura ES/EN completa antes de publicar hreflang para ellas.
 5. Mejorar rutas de conversión desde páginas de intención alta.
 6. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
 7. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
@@ -342,6 +367,7 @@ Marketing y discoverability:
 - conversiones medibles por landing;
 - backlinks/referrals relevantes;
 - cobertura e indexación saludables;
+- sitemap sin URLs inexistentes o variantes falsas;
 - menciones/citas en motores generativos solo cuando puedan verificarse;
 - leads calificados atribuibles a superficies orgánicas.
 
