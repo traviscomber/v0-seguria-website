@@ -1,6 +1,6 @@
 # SegurIA
 
-**Security Suite integral para seguridad física, operación, evidencia, inteligencia visual y continuidad operacional.**
+**SegurIA Security Suite — seguridad física, operación, evidencia, Vision, Edge y continuidad operacional.**
 
 [Powered by N3uralia](https://www.n3uralia.com)
 
@@ -14,7 +14,9 @@ Los motores tecnológicos reutilizables —inteligencia, automatización, análi
 N3uralia
   -> motores tecnológicos e inteligencia reutilizable
        -> SegurIA Security Suite
-            -> seguridad física + operación + evidencia + Vision + Edge
+            -> capacidades
+                 -> industrias y casos de uso
+                      -> operación y conversión
 ```
 
 Principio de arquitectura:
@@ -46,7 +48,7 @@ La suite reúne actualmente:
 - tenancy multiempresa;
 - organizaciones, propiedades, operaciones y roles;
 - Supabase Auth + Row Level Security;
-- discovery SEO, GEO y LLMO;
+- discovery SEO, GEO, LLMO y AEO;
 - integración tecnológica explícita con N3uralia.
 
 La suite está diseñada para proteger **personas, instalaciones, activos, infraestructura crítica y entornos naturales** sin depender de una única marca de hardware.
@@ -61,70 +63,19 @@ No se utilizan métricas simuladas para representar readiness u operación real.
 
 Visión ejecutiva y operacional del estado de la seguridad.
 
-Incluye:
-
-- resumen general;
-- propiedades o espacios operativos;
-- estado de dispositivos;
-- señales activas;
-- casos abiertos;
-- prioridades;
-- acceso rápido a cámaras, incidentes y actividad.
-
-El dashboard se construye desde datos persistidos y adapta vocabulario y contexto según el cliente u operación.
+Incluye resumen general, propiedades o espacios operativos, estado de dispositivos, señales activas, casos abiertos, prioridades y acceso rápido a cámaras, incidentes y actividad.
 
 ### 2. Infraestructura
 
-Consolida la capa física y conectada de la operación.
-
-Incluye:
-
-- propiedades y sitios;
-- cámaras;
-- sensores;
-- dispositivos;
-- gateways locales;
-- heartbeat;
-- inventario;
-- estado operacional;
-- integración con infraestructura existente.
-
-SegurIA busca desacoplar la experiencia de marcas específicas mediante contratos propios de integración.
+Consolida propiedades, cámaras, sensores, dispositivos, gateways, heartbeat, inventario y estado operacional. SegurIA busca desacoplar la experiencia de marcas específicas mediante contratos propios de integración.
 
 ### 3. Incidentes
 
-Convierte eventos técnicos en gestión operacional.
-
-Incluye:
-
-- alertas;
-- incidentes;
-- severidad;
-- estado;
-- reconocimiento;
-- resolución;
-- descarte;
-- trazabilidad;
-- contexto de propiedad, cámara o dispositivo.
-
-Las reglas pueden combinar señales de infraestructura, actividad operacional y resultados derivados de Vision.
+Convierte eventos técnicos en gestión operacional con alertas, severidad, estado, reconocimiento, resolución, descarte, trazabilidad y contexto de propiedad, cámara o dispositivo.
 
 ### 4. Evidencia
 
-Centraliza evidencia y contexto de seguridad.
-
-Incluye:
-
-- snapshots autenticados;
-- evidencia privada en Storage;
-- actividad reciente;
-- relación entre evento, dispositivo, propiedad y operación;
-- acceso protegido;
-- historial;
-- trazabilidad;
-- sesiones efímeras de video cuando corresponde.
-
-Las credenciales RTSP y secretos de origen permanecen fuera del navegador.
+Centraliza snapshots autenticados, evidencia privada en Storage, actividad reciente, historial, trazabilidad y sesiones efímeras de video cuando corresponde. Las credenciales RTSP y secretos de origen permanecen fuera del navegador.
 
 ### 5. Vision
 
@@ -174,8 +125,6 @@ x-operation-id: <operation UUID>
 
 ### 6. Edge
 
-La suite extiende inteligencia y resiliencia hacia terreno.
-
 El agente actual vive en [`edge/seguria-edge-vision`](edge/seguria-edge-vision). El nombre del directorio es una referencia técnica del repositorio y no representa un motor independiente de N3uralia.
 
 Flujo:
@@ -203,6 +152,44 @@ Principios:
 - reintentos al recuperar conectividad;
 - deduplicación para evitar procesamiento repetido;
 - no se generan detecciones ficticias para completar estados vacíos.
+
+---
+
+## Posicionamiento y discovery — Brandin
+
+La estrategia de mercado y descubrimiento se mantiene como una capa permanente del producto.
+
+Modelo canónico:
+
+```text
+N3uralia
+  -> SegurIA Security Suite
+       -> categoría
+            -> capacidades
+                 -> industrias / casos de uso
+                      -> evidencia y páginas públicas
+                           -> conversión
+```
+
+Objetivos:
+
+- fijar **SegurIA Security Suite** como categoría principal;
+- mantener una definición consistente para personas, buscadores y motores generativos;
+- conectar cada capability con evidencia real y páginas públicas;
+- preservar siempre la relación tecnológica correcta con N3uralia;
+- evitar keyword stuffing, páginas thin, doorway pages y claims no verificables;
+- optimizar para SEO técnico, GEO, LLMO/AEO, branded search, internal linking y conversión;
+- medir resultados mediante Search Console, conversiones por landing, backlinks/referrals y leads calificados.
+
+La arquitectura de contenido se organiza en tres niveles:
+
+1. **Categoría:** SegurIA Security Suite.
+2. **Capacidades:** Centro de Control, Infraestructura, Incidentes, Evidencia, Vision, Edge, IA para cámaras, protección perimetral e integraciones.
+3. **Industrias/casos de uso:** campos, hotelería, propiedades, personas, vehículos, animales y operaciones remotas.
+
+Documento canónico de estrategia:
+
+- [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md)
 
 ---
 
@@ -269,22 +256,13 @@ POST /api/gateway/heartbeat
 POST /api/gateway/cameras/snapshot
 ```
 
-El gateway puede:
-
-- sincronizar inventario;
-- reportar estado de dispositivos;
-- enviar eventos;
-- reportar heartbeat;
-- subir snapshots autenticados;
-- mantener cola local y reintentar después de una caída de Internet.
+El gateway puede sincronizar inventario, reportar estado, enviar eventos, reportar heartbeat, subir snapshots autenticados y mantener cola local con reintentos después de una caída de Internet.
 
 Contrato técnico: [`docs/security/gateway-connector-contract.md`](docs/security/gateway-connector-contract.md).
 
 ---
 
 ## Seguridad, tenancy y control de acceso
-
-SegurIA mantiene separados los scopes empresariales y operacionales.
 
 Portal empresarial:
 
@@ -311,101 +289,57 @@ Reglas estructurales:
 
 ---
 
-## Alertas e inteligencia operacional
-
-Actualmente existen reglas y tests para escenarios como:
-
-- detecciones relevantes de fauna;
-- presencia humana en zonas sensibles;
-- fallas de inferencia;
-- inactividad prolongada de cámaras.
-
-El sistema conserva estado y trazabilidad para reconocimiento, resolución, descarte y auditoría.
-
-El objetivo de la suite es que una señal no termine simplemente como una notificación: debe poder convertirse en contexto, prioridad, incidente y acción operacional.
-
----
-
 ## Powered by N3uralia
 
 **SegurIA es la Security Suite. N3uralia es la capa tecnológica que la impulsa.**
 
-N3uralia aporta:
-
-- motores de inteligencia;
-- automatización;
-- análisis;
-- orquestación;
-- procesamiento de datos;
-- lógica diferencial reutilizable;
-- capacidades compartidas entre productos.
+N3uralia aporta motores de inteligencia, automatización, análisis, orquestación, procesamiento de datos, lógica diferencial reutilizable y capacidades compartidas entre productos.
 
 Sitio oficial: **https://www.n3uralia.com**
 
-SegurIA especializa esas capacidades en:
-
-- seguridad física;
-- seguridad operacional;
-- monitoreo;
-- infraestructura conectada;
-- cámaras y sensores;
-- gateways;
-- incidentes;
-- evidencia;
-- Vision;
-- Edge;
-- continuidad operacional.
-
-Esta separación mantiene la propiedad intelectual reusable centralizada en N3uralia sin reducir SegurIA a un único módulo o vertical técnico.
+SegurIA especializa esas capacidades en seguridad física, seguridad operacional, monitoreo, infraestructura conectada, cámaras y sensores, gateways, incidentes, evidencia, Vision, Edge y continuidad operacional.
 
 ---
 
-## SEO, GEO y LLMO
+## SEO, GEO, LLMO y AEO
 
-El sitio incorpora una capa de descubrimiento orientada a buscadores tradicionales y motores generativos.
-
-Incluye:
+La capa de descubrimiento incorpora:
 
 - canonical URLs;
-- metadata por Next.js;
-- Open Graph;
-- Twitter metadata;
-- JSON-LD / Schema.org;
+- metadata global y localizada por Next.js;
+- Open Graph y Twitter metadata;
+- JSON-LD / Schema.org con entity graph coherente;
 - referencias semánticas SegurIA ↔ N3uralia;
 - sitemap multilenguaje;
 - `robots.txt`;
 - `llms.txt`;
-- keywords relacionadas con seguridad, cámaras, IA, conectividad y operaciones;
+- hreflang y `x-default`;
+- internal linking por categoría, capability e industria;
+- definición explícita de `SegurIA Security Suite`;
 - `Powered by N3uralia` como relación tecnológica explícita.
 
 Archivos principales:
 
 - [`app/layout.tsx`](app/layout.tsx)
+- [`app/[locale]/layout.tsx`](app/[locale]/layout.tsx)
 - [`app/sitemap.ts`](app/sitemap.ts)
 - [`app/robots.ts`](app/robots.ts)
 - [`public/llms.txt`](public/llms.txt)
+- [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md)
 
 ---
 
 ## Stack
-
-Aplicación:
 
 - Next.js 16
 - React 19
 - TypeScript
 - Tailwind CSS
 - Radix UI
-
-Datos e identidad:
-
 - Supabase PostgreSQL
 - Supabase Auth
 - Row Level Security
 - Supabase Storage
-
-Runtime:
-
 - Vercel
 - gateways locales
 - agente Python photo-first
@@ -414,13 +348,6 @@ Runtime:
 ---
 
 ## Verificación
-
-El build productivo ejecuta automáticamente pruebas de:
-
-- alertas;
-- quality diagnostics;
-- access control;
-- producción Next.js.
 
 Comandos útiles:
 
@@ -442,29 +369,12 @@ pnpm smoke:operational
 
 ## Documentación canónica
 
-- [`ROADMAP.md`](ROADMAP.md) — arquitectura, estado y secuencia de evolución.
+- [`ROADMAP.md`](ROADMAP.md) — arquitectura, estado, prioridades y Definition of Done.
 - [`DESIGN.md`](DESIGN.md) — sistema visual, UX y reglas de marca.
+- [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md) — posicionamiento, SEO, GEO, LLMO/AEO y discovery.
 - [`docs/security/gateway-connector-contract.md`](docs/security/gateway-connector-contract.md) — contrato del gateway.
 - [`edge/seguria-edge-vision/ARCHITECTURE.md`](edge/seguria-edge-vision/ARCHITECTURE.md) — arquitectura técnica del agente local.
 - [`edge/seguria-edge-vision/README.md`](edge/seguria-edge-vision/README.md) — despliegue y operación Edge.
-
----
-
-## Dirección de producto
-
-SegurIA busca que la seguridad deje de comportarse como una colección de cámaras, alarmas, apps, sistemas de acceso y paneles aislados.
-
-La dirección es construir una **Security Suite integrada** capaz de:
-
-1. conectar infraestructura física heterogénea;
-2. mantener captura y resiliencia cerca del lugar;
-3. normalizar hardware y proveedores detrás de contratos propios;
-4. centralizar evidencia, incidentes y operación;
-5. mantener ownership, autorización y auditoría en estado canónico;
-6. mover evidencia en lugar de video continuo cuando el caso lo permita;
-7. aplicar motores N3uralia como capa inteligente, explicable y revisable;
-8. convertir eventos en decisiones, alertas, incidentes y acciones medibles;
-9. extender el mismo modelo a personas, infraestructura, activos y entornos naturales.
 
 ---
 
@@ -472,7 +382,7 @@ La dirección es construir una **Security Suite integrada** capaz de:
 
 `main` es la rama de producción.
 
-La experiencia cliente está organizada alrededor de seis superficies principales:
+La experiencia cliente está organizada alrededor de seis superficies de una única **SegurIA Security Suite**:
 
 ```text
 Centro de Control
@@ -483,16 +393,20 @@ Vision
 Edge
 ```
 
-Estas superficies forman parte de una única **SegurIA Security Suite**, no productos separados.
+Estado del bloque Brandin / discovery:
 
-Los cambios recientes de producto, atribución N3uralia y discovery SEO/GEO/LLMO están integrados en `main`.
+- metadata localizada alineada con **Security Suite**;
+- entity graph JSON-LD corregido;
+- `llms.txt` sincronizado;
+- estrategia Brandin documentada;
+- `ROADMAP.md` sincronizado;
+- deployments recientes verificados `READY` en Vercel;
+- sin errores runtime detectados en la última verificación del bloque.
 
-El roadmap detallado y los gates técnicos se mantienen en [`ROADMAP.md`](ROADMAP.md).
+El siguiente P1 es llevar esta misma claridad de categoría al copy visible de la homepage y reforzar la arquitectura semántica entre categoría, capacidades e industrias.
 
 ---
 
 ## Desarrollo con v0
-
-El proyecto permanece conectado a v0 para iteración de interfaz y producto:
 
 [Continue working on v0](https://v0.app/chat/projects/prj_3kTNF2QMxVmGVRjdLzfBj9mGHkEn)
