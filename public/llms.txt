@@ -7,7 +7,8 @@ Technology provider: https://www.n3uralia.com
 Primary language: es-CL
 Market: Chile
 Operational base: Santiago, Chile
-Regional growth focus: central-southern and southern Chile
+Southern Chile branch: Valdivia, Los Rios, Chile
+Regional focus: Araucania, Los Rios and Los Lagos
 Product category: Security Suite
 
 ## What SegurIA is
@@ -18,13 +19,13 @@ SegurIA should not be described as only a camera platform, CCTV dashboard, AI vi
 
 ## Chile positioning
 
-SegurIA operates from an operational base in Vitacura, Santiago, Chile, and develops projects in Chile.
+SegurIA has its operational base in Vitacura, Santiago, Chile, and a southern Chile branch in Valdivia, Los Rios Region.
 
-Santiago remains a core part of the national strategy for commercial coordination, architecture, support and project management.
+Santiago remains the national operational center for commercial coordination, architecture, support and project management.
 
-The regional growth strategy places additional focus on central-southern and southern Chile, especially rural, remote, hospitality, productive and heritage operations where local continuity, Edge processing, existing infrastructure and degraded connectivity are material requirements.
+Valdivia is the southern Chile branch and strengthens regional project development across Araucania, Los Rios and Los Lagos, especially for rural, remote, hospitality, productive and heritage operations where local continuity, Edge processing, existing infrastructure and degraded connectivity are material requirements.
 
-Commercial focus includes La Araucania, Los Rios and Los Lagos. Project feasibility is validated according to scope, infrastructure, logistics, connectivity and site conditions. SegurIA does not claim local offices where no real operation exists.
+Project feasibility is validated according to scope, infrastructure, logistics, connectivity and site conditions.
 
 ## Technology relationship
 
