@@ -167,11 +167,6 @@ export default function RootLayout({
           'Redes y conectividad para operaciones de seguridad',
         ],
         sameAs: ['https://segur-ia.cl'],
-        subjectOf: {
-          '@type': 'WebPage',
-          url: n3uraliaUrl,
-          name: 'N3uralia',
-        },
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'sales',
@@ -192,6 +187,11 @@ export default function RootLayout({
         operatingSystem: 'Web',
         url: siteUrl,
         description: siteDescription,
+        brand: {
+          '@type': 'Brand',
+          name: 'SegurIA',
+          url: siteUrl,
+        },
         provider: { '@id': `${siteUrl}/#organization` },
         mentions: { '@id': `${n3uraliaUrl}/#organization` },
         featureList: [
