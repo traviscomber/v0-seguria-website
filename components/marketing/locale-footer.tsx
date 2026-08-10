@@ -6,6 +6,8 @@ import { marketing } from '@/lib/marketing-content'
 export function LocaleFooter({ locale }: { locale: Locale }) {
   const copy = marketing[locale].footer
   const coverageLabel = locale === 'es' ? 'Santiago y sur de Chile' : 'Santiago and southern Chile'
+  const santiagoLabel = locale === 'es' ? 'Base operacional' : 'Operational base'
+  const valdiviaLabel = locale === 'es' ? 'Sucursal sur de Chile' : 'Southern Chile branch'
 
   return (
     <footer className="border-t border-white/10 bg-[#051017]">
@@ -82,7 +84,15 @@ export function LocaleFooter({ locale }: { locale: Locale }) {
               </li>
               <li className="flex items-start gap-2">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-[#4DA3D9]" />
-                <span className="text-sm text-white/50">Av. Vitacura 3439, Of. 602, Vitacura, Santiago, Chile</span>
+                <span className="text-sm text-white/50">
+                  <strong className="font-normal text-white/65">{santiagoLabel}:</strong> Av. Vitacura 3439, Of. 602, Vitacura, Santiago, Chile
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[#4DA3D9]" />
+                <span className="text-sm text-white/50">
+                  <strong className="font-normal text-white/65">{valdiviaLabel}:</strong> Valdivia, Región de Los Ríos, Chile
+                </span>
               </li>
             </ul>
           </div>
