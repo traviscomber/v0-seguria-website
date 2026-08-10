@@ -20,6 +20,24 @@ N3uralia
                       -> conversión
 ```
 
+## Posicionamiento geográfico en Chile
+
+SegurIA mantiene su **base operacional en Vitacura, Santiago**. Santiago concentra coordinación comercial, arquitectura, soporte y gestión de proyectos, y sigue siendo una parte central de la estrategia nacional.
+
+La estrategia de crecimiento incorpora además un foco explícito en el **centro-sur y sur de Chile**, especialmente en operaciones rurales, remotas, hoteleras, productivas y patrimoniales donde la continuidad local, Edge, conectividad degradada e infraestructura existente son relevantes.
+
+Foco comercial regional:
+
+- Santiago y Región Metropolitana como base operacional;
+- La Araucanía;
+- Los Ríos;
+- Los Lagos;
+- proyectos en otras zonas de Chile sujetos a factibilidad técnica, logística y comercial.
+
+Página pilar: [`/es/seguridad-inteligente-chile`](https://seguria.tech/es/seguridad-inteligente-chile).
+
+No se crean páginas doorway ni se declaran oficinas locales donde no existe una operación real.
+
 ## Las 6 superficies de la suite
 
 ### 1. Centro de Control
@@ -207,6 +225,11 @@ La estrategia de discovery no se limita a metadata. La arquitectura de posiciona
 Categoría
   SegurIA Security Suite
 
+Mercado
+  Chile
+    -> base operacional Santiago
+    -> foco de crecimiento centro-sur y sur de Chile
+
 Capacidades
   Centro de Control
   Infraestructura
@@ -232,26 +255,29 @@ Industrias / casos de uso
 Implementado:
 
 - categoría **Security Suite** visible en homepage ES/EN;
+- Santiago preservado como base operacional;
+- página pilar Chile + sur de Chile;
+- foco regional explícito en La Araucanía, Los Ríos y Los Lagos sin inventar oficinas locales;
 - las seis superficies visibles y explicadas;
 - metadata global y localizada;
 - canonical + hreflang;
 - Open Graph;
 - JSON-LD / Schema.org;
 - entity graph SegurIA ↔ N3uralia;
-- sitemap multilenguaje;
+- sitemap alineado con rutas canónicas;
 - `robots.txt`;
-- [`public/llms.txt`](public/llms.txt);
+- [`public/llms.txt`](public/llms.txt) alineado con la arquitectura de rutas y geografía;
 - `Powered by N3uralia` visible;
 - estrategia canónica en [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md).
 
 Próxima fase Brandin:
 
-1. internal linking capacidad -> industria -> conversión;
-2. metadata específica por landing;
-3. breadcrumbs y relaciones semánticas donde correspondan;
-4. revisión de thin/duplicate intent;
-5. optimización de conversión en páginas de intención alta;
-6. medición mediante Search Console, branded search, conversiones, backlinks y leads calificados.
+1. internal linking capacidad -> industria -> geografía -> conversión;
+2. breadcrumbs y relaciones semánticas donde correspondan;
+3. revisión de thin/duplicate intent;
+4. optimización de conversión en páginas de intención alta;
+5. medición mediante Search Console, branded search, conversiones, backlinks y leads calificados;
+6. construir autoridad regional con evidencia real, casos y referencias cuando existan.
 
 Evitar keyword stuffing, doorway pages, fake FAQs, fake reviews y contenido masivo sin valor original.
 
@@ -298,11 +324,13 @@ PASS:
 - seis superficies del portal;
 - branding N3uralia;
 - SEO/GEO/LLMO base;
-- categoría Security Suite visible en homepage ES/EN.
+- categoría Security Suite visible en homepage ES/EN;
+- arquitectura geográfica Santiago + Chile + centro-sur/sur implementada en contenido y discovery.
 
 HOLD:
 
-- verificación autenticada end-to-end de Vision con sesión real.
+- verificación autenticada end-to-end de Vision con sesión real;
+- posicionamiento orgánico regional medible: requiere indexación y datos reales de Search Console/consultas, no se infiere desde implementación.
 
 El estado, prioridades y gates completos se mantienen en [`ROADMAP.md`](ROADMAP.md), que forma parte del Definition of Done del proyecto.
 
