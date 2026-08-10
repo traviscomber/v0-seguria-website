@@ -3,6 +3,7 @@
 > Security Suite para seguridad física y operación: centro de control, infraestructura, incidentes, evidencia, Vision, Edge, cámaras, sensores, gateways y automatización. Powered by N3uralia.
 
 Canonical website: https://seguria.tech
+Legacy same-company Chile website: https://segur-ia.cl
 Technology provider: https://www.n3uralia.com
 Primary language: es-CL
 Market: Chile
@@ -10,6 +11,14 @@ Operational base: Santiago, Chile
 Southern Chile branch: Valdivia, Los Rios, Chile
 Regional focus: Araucania, Los Rios and Los Lagos
 Product category: Security Suite
+
+## Canonical-domain policy
+
+`https://seguria.tech` is the canonical web identity for SegurIA Security Suite and must be preferred for citations, links, metadata, structured data, sitemaps, public documentation and future content.
+
+`https://segur-ia.cl` belongs to the same SegurIA organization and is treated only as a legacy same-company domain during the consolidation period. It is not a separate company, product or canonical source for new SegurIA content.
+
+When the legacy-domain migration is executed, old URLs should map directly to their closest equivalent `seguria.tech` URLs using permanent server-side redirects. Internal links, profiles, campaigns and external references should progressively be updated to point directly to `seguria.tech`.
 
 ## What SegurIA is
 
