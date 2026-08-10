@@ -5,6 +5,7 @@ const siteUrl = 'https://seguria.tech'
 const localizedRoutes = [
   { path: '', changeFrequency: 'weekly', priority: 1 },
   { path: '/soluciones', changeFrequency: 'monthly', priority: 0.9 },
+  { path: '/seguridad-inteligente-chile', changeFrequency: 'monthly', priority: 0.9 },
   { path: '/campos-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/propiedades-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/hoteleria-inteligente', changeFrequency: 'monthly', priority: 0.8 },
