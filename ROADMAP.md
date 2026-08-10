@@ -21,21 +21,23 @@ La estrategia de SegurIA en Chile se define así:
 
 ```text
 Chile
-  -> base operacional: Santiago
-  -> cobertura de proyectos: Chile según factibilidad
-  -> foco de crecimiento: centro-sur y sur de Chile
+  -> base operacional nacional: Santiago / Vitacura
+  -> sucursal sur de Chile: Valdivia / Los Ríos
+  -> foco regional de proyectos
       -> La Araucanía
       -> Los Ríos
       -> Los Lagos
+  -> otras zonas de Chile según factibilidad
 ```
 
 Reglas:
 
-- **Santiago no se elimina ni se relega**: Vitacura, Santiago, sigue siendo la base operacional para coordinación comercial, arquitectura, soporte y gestión de proyectos.
-- El centro-sur y sur de Chile se trabajan como foco regional de crecimiento, especialmente para operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
-- No se crean páginas doorway por ciudad ni se declaran oficinas locales donde no existe una operación real.
+- **Santiago no se elimina ni se relega**: Vitacura, Santiago, sigue siendo la base operacional nacional para coordinación comercial, arquitectura, soporte y gestión de proyectos.
+- **Valdivia es la sucursal de SegurIA para el sur de Chile**, con presencia regional en la Región de Los Ríos.
+- La sucursal de Valdivia refuerza el desarrollo de proyectos en La Araucanía, Los Ríos y Los Lagos, especialmente para operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
+- No se crean páginas doorway por ciudad ni se inventan sedes adicionales.
 - La factibilidad de cada proyecto se valida por alcance, infraestructura, logística, conectividad y condiciones del sitio.
-- El posicionamiento regional debe reforzar las capacidades que realmente diferencian a SegurIA en terreno: integración de infraestructura existente, Edge, continuidad ante conectividad degradada, evidencia, incidentes y Vision.
+- El posicionamiento regional debe reforzar integración de infraestructura existente, Edge, continuidad ante conectividad degradada, evidencia, incidentes y Vision.
 
 Página pilar implementada:
 
@@ -186,16 +188,17 @@ Commits principales:
 - `123b36507ff18778b08a06880285ec04ad81c9a7` — sitemap alineado con rutas canónicas;
 - `cd7d013b2ef5d2708c8003edb6b78a8a4c80211c` — metadata centralizada para landings.
 
-### PASS — arquitectura geográfica Santiago + sur de Chile
+### PASS — arquitectura geográfica Santiago + Valdivia + sur de Chile
 
 Implementado:
 
-- Santiago preservado explícitamente como base operacional;
+- Santiago preservado explícitamente como base operacional nacional;
+- Valdivia definida como sucursal del sur de Chile;
 - página pilar ES/EN para `seguridad-inteligente-chile`;
-- foco regional explícito en La Araucanía, Los Ríos y Los Lagos sin inventar sedes locales;
+- foco regional explícito en La Araucanía, Los Ríos y Los Lagos;
 - contenido orientado a operaciones rurales, remotas, hoteleras, productivas y patrimoniales;
 - explicación visible de Edge, conectividad degradada e integración de infraestructura existente como ventajas relevantes para terreno;
-- internal link desde el footer global;
+- footer global con Santiago y Valdivia visibles;
 - sitemap actualizado;
 - `llms.txt` actualizado con geografía canónica y URLs reales;
 - README sincronizado.
@@ -203,10 +206,10 @@ Implementado:
 Commits principales:
 
 - `be6735d43e8ebf952149fd04c55778b20af6f207` — página pilar Chile/Santiago/sur;
-- `a107f9b19cb6b8c5577b7e1f7cb7297b1b7794bb` — internal link global;
-- `bc8ba442ccf29cb803a780ed35a47b3e08069e0d` — sitemap;
-- `f8f107a39a021b710383c8a1dfb5a77dbd7fffec` — LLMO/geografía;
-- `514ada917835a786c68b89483aa891c56883e4e3` — README.
+- `4ce6c69895926d08ae7e89153a85ce625ec7f99f` — Valdivia visible como sucursal sur en footer;
+- `51bff9bd5503ad6500f4846d157ecbe59b6944c6` — página pilar alineada con Santiago + Valdivia;
+- `13e4d043ec17bd6a7134c751f89bca0e9c483586` — LLMO/geografía Valdivia;
+- `b22244bb9b7a8f8561902e6bf63b365cd8589dee` — README.
 
 ### HOLD — posicionamiento orgánico regional medible
 
@@ -217,6 +220,7 @@ Para declarar PASS de posicionamiento regional se requiere evidencia real de:
 - indexación de la página pilar;
 - impresiones y consultas en Google Search Console;
 - branded search de SegurIA;
+- consultas geográficas relacionadas con Santiago, Valdivia, Los Ríos y sur de Chile;
 - consultas no-brand relacionadas con seguridad inteligente, cámaras/IA, campos, hotelería y operaciones remotas;
 - tráfico por región/landing;
 - conversiones y leads calificados;
@@ -316,7 +320,7 @@ Completado:
 - categoría visible en homepage;
 - sitemap corregido contra la arquitectura real de rutas;
 - metadata específica de las principales landings localizadas;
-- arquitectura geográfica Santiago + Chile + centro-sur/sur;
+- arquitectura geográfica Santiago + Valdivia + sur de Chile;
 - página pilar geográfica;
 - internal link global inicial;
 - `llms.txt`, README y roadmap sincronizados.
@@ -328,7 +332,7 @@ Siguiente trabajo de mayor impacto:
 3. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
 4. Decidir si las páginas de capacidades deben permanecer canónicas no localizadas o migrar a una arquitectura ES/EN completa antes de publicar hreflang para ellas.
 5. Mejorar rutas de conversión desde páginas de intención alta.
-6. Construir autoridad regional con casos, referencias, partners y evidencia real cuando existan.
+6. Construir autoridad regional alrededor de Valdivia y sur de Chile con casos, referencias, partners y evidencia real cuando existan.
 7. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
 8. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
 9. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
@@ -339,8 +343,9 @@ Modelo de contenido:
 N3uralia
   -> SegurIA Security Suite
       -> Chile
-          -> Santiago = base operacional
-          -> centro-sur/sur = foco regional
+          -> Santiago = base operacional nacional
+          -> Valdivia = sucursal sur de Chile
+              -> La Araucanía / Los Ríos / Los Lagos
       -> capacidades
           -> industrias / casos de uso
               -> evidencia / explicación
@@ -435,7 +440,7 @@ Marketing y discoverability:
 
 - crecimiento de consultas no-brand relevantes;
 - crecimiento de branded search de SegurIA;
-- crecimiento de consultas geográficas Santiago/Chile/centro-sur/sur cuando correspondan a demanda real;
+- crecimiento de consultas geográficas Santiago/Valdivia/Los Ríos/sur de Chile cuando correspondan a demanda real;
 - páginas de entrada que generan contacto;
 - conversiones medibles por landing;
 - backlinks/referrals relevantes;
