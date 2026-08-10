@@ -10,7 +10,7 @@ export const marketing = {
     },
     footer: {
       description:
-        'Sistema integral de seguridad operativa. Unimos camaras, sensores, accesos, eventos y respuesta en una sola experiencia.',
+        'SegurIA Security Suite. Unimos infraestructura, incidentes, evidencia, Vision, Edge y respuesta en una sola experiencia operacional.',
       solutions: 'Soluciones',
       seeSolution: 'Ver solucion',
       clientPortal: 'Portal cliente',
@@ -19,15 +19,15 @@ export const marketing = {
       askAdvice: 'Solicitar asesoria',
       contact: 'Contacto',
       rights: '© 2026 SegurIA. Todos los derechos reservados.',
-      line: 'Operacion clara. Tecnologia interna.',
+      line: 'Security Suite. Powered by N3uralia.',
     },
     home: {
-      eyebrow: 'Sistema integral de seguridad operativa',
+      eyebrow: 'SegurIA Security Suite',
       title: 'Lo que proteges, por fin habla claro.',
       description:
-        'SegurIA se conecta a tus camaras, sensores y sistemas de seguridad actuales para convertirlos en una operacion inteligente: menos ruido, mejores alertas y decisiones a tiempo.',
+        'SegurIA es una Security Suite que conecta tus camaras, sensores y sistemas actuales con Centro de Control, Infraestructura, Incidentes, Evidencia, Vision y Edge para convertir señales de terreno en decisiones y respuesta operacional.',
       chips: ['Aprovecha lo instalado', 'Alertas con IA', 'Mejor reaccion'],
-      primary: 'Ver sistema',
+      primary: 'Ver la suite',
       secondary: 'Disenar mi operacion',
       panelBadge: 'Operacion protegida',
       proof: [
@@ -35,10 +35,10 @@ export const marketing = {
         { label: 'Eventos', value: 'claros' },
         { label: 'Respuesta', value: 'a tiempo' },
       ],
-      sectionEyebrow: 'Que hace SegurIA',
-      sectionTitle: 'Convierte tu seguridad existente en una operacion inteligente.',
+      sectionEyebrow: 'Que incluye la Security Suite',
+      sectionTitle: 'Una sola capa operacional sobre la seguridad que ya tienes.',
       sectionDescription:
-        'Camaras, alarmas, sensores, controles de acceso y registros que antes vivian separados empiezan a conversar. SegurIA agrega IA, reglas, alertas y trazabilidad sobre lo que ya tienes.',
+        'SegurIA unifica infraestructura, eventos, incidentes, evidencia y analisis inteligente sobre tus sistemas existentes. Los motores tecnologicos reutilizables pertenecen a N3uralia; SegurIA los especializa para seguridad y continuidad operacional.',
       benefits: [
         {
           title: 'Mejoramos lo que ya tienes',
@@ -56,31 +56,31 @@ export const marketing = {
             'Cada alerta deja una historia clara: que paso, donde paso, que camara o sensor lo vio y que decision conviene tomar.',
         },
       ],
-      whyEyebrow: 'Por que importa',
-      whyTitle: 'El riesgo no aparece de golpe. Primero deja senales.',
+      whyEyebrow: 'Las seis superficies de SegurIA',
+      whyTitle: 'Una Security Suite, seis superficies conectadas.',
       whyDescription:
-        'Una puerta abierta, un movimiento fuera de horario, una camara sin revision o una bodega expuesta pueden parecer detalles. SegurIA los ordena antes de que se transformen en perdida, conflicto o desorden.',
+        'Cada superficie resuelve una parte del flujo de seguridad, pero todas comparten contexto, ownership y trazabilidad dentro de la misma suite.',
       wins: [
-        'Una operacion que se entiende sin perseguir pantallas',
-        'Camaras y sensores convertidos en informacion util',
-        'Tus sistemas actuales trabajando juntos, con una capa inteligente encima',
-        'Incidentes ordenados desde la primera senal hasta el cierre',
-        'Clientes, tecnicos y administradores mirando la misma verdad',
-        'Menos llamadas, menos dudas y menos decisiones a ciegas',
+        'Centro de Control — estado general, prioridades, propiedades, dispositivos e incidentes',
+        'Infraestructura — camaras, sensores, gateways, inventario, heartbeat y estado operacional',
+        'Incidentes — alertas, severidad, reconocimiento, resolucion y trazabilidad',
+        'Evidencia — snapshots, media protegida, actividad y contexto operacional',
+        'Vision — analisis visual, quality diagnostics, revision humana e inferencia derivada',
+        'Edge — RTSP local, seleccion de frames, spool offline y reintentos',
       ],
-      placesEyebrow: 'Donde vive',
-      placesTitle: 'Un mismo sistema, adaptado al ritmo de cada lugar.',
+      placesEyebrow: 'Donde se aplica',
+      placesTitle: 'La misma Security Suite, adaptada al ritmo de cada lugar.',
       finalTitle: 'Seguridad integral, sin hacer compleja la vida de nadie.',
       finalDescription:
-        'Cuentanos que lugares quieres proteger y armamos una ruta clara para unir monitoreo, inventario, eventos, incidentes y respuesta en una sola experiencia.',
+        'Cuentanos que lugares quieres proteger y armamos una ruta clara para unir infraestructura, monitoreo, evidencia, incidentes, Vision y respuesta en una sola experiencia.',
     },
     solutions: {
-      heroTitle: 'Seguridad integral para operar con calma.',
+      heroTitle: 'SegurIA Security Suite para operar con claridad.',
       heroDescription:
-        'Nos conectamos a tus sistemas actuales de camaras, alarmas, sensores y accesos para agregar IA, alertas utiles, evidencia y respuesta.',
+        'Conectamos tus sistemas actuales de camaras, alarmas, sensores y accesos con infraestructura, incidentes, evidencia, Vision, Edge y automatizacion operacional.',
       sectionTitle: 'Inteligencia sobre lo que ya existe.',
       sectionDescription:
-        'SegurIA no parte borrando tu infraestructura. La lee, la ordena y la convierte en una operacion integral de seguridad.',
+        'SegurIA no parte borrando tu infraestructura. La conecta, la ordena y la convierte en una operacion integrada de seguridad.',
       cta: 'Ver solucion',
     },
     routes: {
@@ -165,7 +165,7 @@ export const marketing = {
     },
     footer: {
       description:
-        'An integrated security operations system. We bring cameras, sensors, access, events and response into one clear experience.',
+        'SegurIA Security Suite. Infrastructure, incidents, evidence, Vision, Edge and response in one operational experience.',
       solutions: 'Solutions',
       seeSolution: 'View solution',
       clientPortal: 'Client portal',
@@ -174,15 +174,15 @@ export const marketing = {
       askAdvice: 'Request advisory',
       contact: 'Contact',
       rights: '© 2026 SegurIA. All rights reserved.',
-      line: 'Clear operations. Internal technology.',
+      line: 'Security Suite. Powered by N3uralia.',
     },
     home: {
-      eyebrow: 'Integrated security operations system',
+      eyebrow: 'SegurIA Security Suite',
       title: 'Everything you protect, finally speaks clearly.',
       description:
-        'SegurIA connects to your current cameras, sensors and security systems to turn them into an intelligent operation: less noise, better alerts and timely decisions.',
+        'SegurIA is a Security Suite that connects your current cameras, sensors and security systems with Control Center, Infrastructure, Incidents, Evidence, Vision and Edge to turn field signals into operational decisions and response.',
       chips: ['Use what is already installed', 'AI alerts', 'Better response'],
-      primary: 'View system',
+      primary: 'View the suite',
       secondary: 'Design my operation',
       panelBadge: 'Protected operation',
       proof: [
@@ -190,10 +190,10 @@ export const marketing = {
         { label: 'Events', value: 'clear' },
         { label: 'Response', value: 'on time' },
       ],
-      sectionEyebrow: 'What SegurIA does',
-      sectionTitle: 'It turns your existing security into an intelligent operation.',
+      sectionEyebrow: 'What the Security Suite includes',
+      sectionTitle: 'One operational layer on top of the security you already have.',
       sectionDescription:
-        'Cameras, alarms, sensors, access controls and logs that used to live apart begin to work together. SegurIA adds AI, rules, alerts and traceability on top of what you already have.',
+        'SegurIA unifies infrastructure, events, incidents, evidence and intelligent analysis across your existing systems. Reusable technology engines belong to N3uralia; SegurIA specializes them for security and operational continuity.',
       benefits: [
         {
           title: 'We improve what you already have',
@@ -211,31 +211,31 @@ export const marketing = {
             'Every alert leaves a clear story: what happened, where it happened, which camera or sensor saw it and what decision should follow.',
         },
       ],
-      whyEyebrow: 'Why it matters',
-      whyTitle: 'Risk does not appear all at once. It leaves signals first.',
+      whyEyebrow: 'The six SegurIA surfaces',
+      whyTitle: 'One Security Suite, six connected surfaces.',
       whyDescription:
-        'An open door, movement after hours, an unchecked camera or an exposed storage area can look like details. SegurIA organizes those signals before they become loss, conflict or disorder.',
+        'Each surface solves one part of the security workflow, while all of them share context, ownership and traceability inside the same suite.',
       wins: [
-        'An operation that is understood without chasing screens',
-        'Cameras and sensors transformed into useful information',
-        'Your current systems working together with an intelligent layer',
-        'Incidents organized from first signal to closure',
-        'Clients, technicians and administrators seeing the same truth',
-        'Fewer calls, fewer doubts and fewer blind decisions',
+        'Control Center — overall state, priorities, properties, devices and incidents',
+        'Infrastructure — cameras, sensors, gateways, inventory, heartbeat and operational state',
+        'Incidents — alerts, severity, acknowledgement, resolution and traceability',
+        'Evidence — snapshots, protected media, activity and operational context',
+        'Vision — visual analysis, quality diagnostics, human review and derived inference',
+        'Edge — local RTSP, frame selection, offline spool and retries',
       ],
-      placesEyebrow: 'Where it lives',
-      placesTitle: 'One system, adapted to the rhythm of each place.',
+      placesEyebrow: 'Where it applies',
+      placesTitle: 'The same Security Suite, adapted to the rhythm of each place.',
       finalTitle: 'Integrated security without making life complex.',
       finalDescription:
-        'Tell us what places you need to protect and we will build a clear path to unite monitoring, inventory, events, incidents and response into one experience.',
+        'Tell us what places you need to protect and we will build a clear path to unite infrastructure, monitoring, evidence, incidents, Vision and response in one experience.',
     },
     solutions: {
-      heroTitle: 'Integrated security to operate calmly.',
+      heroTitle: 'SegurIA Security Suite for clear operations.',
       heroDescription:
-        'We connect to your current cameras, alarms, sensors and access systems to add AI, useful alerts, evidence and response.',
+        'We connect your current cameras, alarms, sensors and access systems with infrastructure, incidents, evidence, Vision, Edge and operational automation.',
       sectionTitle: 'Intelligence on top of what already exists.',
       sectionDescription:
-        'SegurIA does not begin by replacing your infrastructure. It reads it, organizes it and turns it into an integrated security operation.',
+        'SegurIA does not begin by replacing your infrastructure. It connects it, organizes it and turns it into an integrated security operation.',
       cta: 'View solution',
     },
     routes: {
@@ -314,4 +314,3 @@ export const marketing = {
 } satisfies Record<Locale, unknown>
 
 export type MarketingCopy = (typeof marketing)[Locale]
-
