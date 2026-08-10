@@ -22,21 +22,20 @@ N3uralia
 
 ## Posicionamiento geográfico en Chile
 
-SegurIA mantiene su **base operacional en Vitacura, Santiago**. Santiago concentra coordinación comercial, arquitectura, soporte y gestión de proyectos, y sigue siendo una parte central de la estrategia nacional.
+SegurIA mantiene su **base operacional en Vitacura, Santiago**. Santiago concentra coordinación comercial, arquitectura, soporte y gestión nacional de proyectos, y sigue siendo el centro operacional de la estrategia chilena.
 
-La estrategia de crecimiento incorpora además un foco explícito en el **centro-sur y sur de Chile**, especialmente en operaciones rurales, remotas, hoteleras, productivas y patrimoniales donde la continuidad local, Edge, conectividad degradada e infraestructura existente son relevantes.
+SegurIA cuenta además con **sucursal para el sur de Chile en Valdivia, Región de Los Ríos**. Valdivia funciona como presencia regional para reforzar el desarrollo de proyectos en el centro-sur y sur, especialmente en operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
 
-Foco comercial regional:
+Estructura geográfica canónica:
 
-- Santiago y Región Metropolitana como base operacional;
-- La Araucanía;
-- Los Ríos;
-- Los Lagos;
-- proyectos en otras zonas de Chile sujetos a factibilidad técnica, logística y comercial.
+- **Santiago / Vitacura** — base operacional nacional;
+- **Valdivia / Los Ríos** — sucursal sur de Chile;
+- **La Araucanía, Los Ríos y Los Lagos** — foco regional de desarrollo comercial y proyectos;
+- otras zonas de Chile — sujetas a factibilidad técnica, logística y comercial.
 
 Página pilar: [`/es/seguridad-inteligente-chile`](https://seguria.tech/es/seguridad-inteligente-chile).
 
-No se crean páginas doorway ni se declaran oficinas locales donde no existe una operación real.
+No se crean páginas doorway por ciudad ni se inventan sedes adicionales.
 
 ## Las 6 superficies de la suite
 
@@ -227,8 +226,9 @@ Categoría
 
 Mercado
   Chile
-    -> base operacional Santiago
-    -> foco de crecimiento centro-sur y sur de Chile
+    -> Santiago = base operacional nacional
+    -> Valdivia = sucursal sur de Chile
+    -> La Araucanía / Los Ríos / Los Lagos = foco regional
 
 Capacidades
   Centro de Control
@@ -255,9 +255,10 @@ Industrias / casos de uso
 Implementado:
 
 - categoría **Security Suite** visible en homepage ES/EN;
-- Santiago preservado como base operacional;
-- página pilar Chile + sur de Chile;
-- foco regional explícito en La Araucanía, Los Ríos y Los Lagos sin inventar oficinas locales;
+- Santiago preservado como base operacional nacional;
+- Valdivia definida como sucursal del sur de Chile;
+- página pilar Chile + Santiago + Valdivia + sur de Chile;
+- foco regional explícito en La Araucanía, Los Ríos y Los Lagos;
 - las seis superficies visibles y explicadas;
 - metadata global y localizada;
 - canonical + hreflang;
@@ -325,7 +326,7 @@ PASS:
 - branding N3uralia;
 - SEO/GEO/LLMO base;
 - categoría Security Suite visible en homepage ES/EN;
-- arquitectura geográfica Santiago + Chile + centro-sur/sur implementada en contenido y discovery.
+- arquitectura geográfica Santiago + Valdivia + sur de Chile implementada en contenido y discovery.
 
 HOLD:
 
