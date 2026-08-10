@@ -12,6 +12,7 @@ const montserrat = Montserrat({
 
 const siteUrl = 'https://seguria.tech'
 const n3uraliaUrl = 'https://www.n3uralia.com'
+const legacyChileUrl = 'https://segur-ia.cl'
 const siteTitle = 'SegurIA Security Suite | Seguridad, operación, Vision y Edge'
 const siteDescription =
   'SegurIA es una Security Suite para seguridad física y operación: centro de control, infraestructura, incidentes, evidencia, Vision, Edge, cámaras, sensores, gateways y automatización. Powered by N3uralia.'
@@ -53,6 +54,10 @@ export const metadata: Metadata = {
     'seguridad para empresas',
     'seguridad para hoteles',
     'seguridad para condominios',
+    'seguridad Santiago',
+    'seguridad Valdivia',
+    'seguridad sur de Chile',
+    'seguridad Los Ríos',
     'conectividad para seguridad',
     'N3uralia',
     'SegurIA powered by N3uralia',
@@ -108,6 +113,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const chileServiceAreas = [
+    { '@type': 'Country', name: 'Chile' },
+    { '@type': 'AdministrativeArea', name: 'Región Metropolitana de Santiago' },
+    { '@type': 'AdministrativeArea', name: 'Región de La Araucanía' },
+    { '@type': 'AdministrativeArea', name: 'Región de Los Ríos' },
+    { '@type': 'AdministrativeArea', name: 'Región de Los Lagos' },
+  ]
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -135,15 +148,12 @@ export default function RootLayout({
         name: 'SegurIA',
         alternateName: ['SegurIA Security Suite', 'SegurIA Chile', 'Segur IA'],
         url: siteUrl,
-        logo: `${siteUrl}/logo.png`,
+        logo: `${siteUrl}/seguria-logo.png`,
         description: siteDescription,
         foundingDate: '2024',
         telephone: '+56928003961',
         email: 'info@seguria.tech',
-        areaServed: {
-          '@type': 'Country',
-          name: 'Chile',
-        },
+        areaServed: chileServiceAreas,
         address: {
           '@type': 'PostalAddress',
           streetAddress: 'Av. Vitacura 3439, Of. 602',
@@ -151,6 +161,29 @@ export default function RootLayout({
           addressRegion: 'Región Metropolitana',
           addressLocality: 'Vitacura',
         },
+        location: [
+          {
+            '@type': 'Place',
+            name: 'SegurIA — Base operacional Santiago',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: 'Av. Vitacura 3439, Of. 602',
+              addressCountry: 'CL',
+              addressRegion: 'Región Metropolitana',
+              addressLocality: 'Vitacura',
+            },
+          },
+          {
+            '@type': 'Place',
+            name: 'SegurIA — Sucursal sur de Chile',
+            address: {
+              '@type': 'PostalAddress',
+              addressCountry: 'CL',
+              addressRegion: 'Región de Los Ríos',
+              addressLocality: 'Valdivia',
+            },
+          },
+        ],
         knowsAbout: [
           'Security Suite',
           'Centro de control de seguridad',
@@ -166,7 +199,7 @@ export default function RootLayout({
           'Automatización e inteligencia artificial aplicada a seguridad',
           'Redes y conectividad para operaciones de seguridad',
         ],
-        sameAs: ['https://segur-ia.cl'],
+        sameAs: [legacyChileUrl],
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'sales',
@@ -174,7 +207,7 @@ export default function RootLayout({
           email: 'info@seguria.tech',
           availableLanguage: ['es'],
           areaServed: 'CL',
-          url: `${siteUrl}/contacto`,
+          url: `${siteUrl}/es/contacto`,
         },
       },
       {
@@ -212,10 +245,7 @@ export default function RootLayout({
         name: 'SegurIA Security Suite',
         serviceType: 'Suite de seguridad física, operación, monitoreo, evidencia, Vision y Edge',
         provider: { '@id': `${siteUrl}/#organization` },
-        areaServed: {
-          '@type': 'Country',
-          name: 'Chile',
-        },
+        areaServed: chileServiceAreas,
         audience: [
           { '@type': 'BusinessAudience', audienceType: 'Empresas' },
           { '@type': 'BusinessAudience', audienceType: 'Campos y agroindustria' },
