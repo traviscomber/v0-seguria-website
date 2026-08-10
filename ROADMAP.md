@@ -142,7 +142,8 @@ Implementado:
 - posicionamiento principal como **SegurIA Security Suite**;
 - metadata localizada alineada con Security Suite;
 - entity graph corregido para evitar relaciones semánticas engañosas;
-- estrategia Brandin documentada en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
+- estrategia Brandin documentada en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`;
+- README principal actualizado para reflejar estrategia Brandin, arquitectura de contenidos y estado verificado del bloque discovery.
 
 ## Arquitectura canónica
 
@@ -245,6 +246,17 @@ Gate: `imagen -> storage -> cámara -> job -> resultado -> lectura autorizada` d
 ## P1 — Brandin: posicionamiento y discoverability
 
 Objetivo: convertir **SegurIA Security Suite** en una entidad de mercado clara para compradores, buscadores y motores generativos sin depender de keyword stuffing ni claims no verificables.
+
+Estado actual:
+
+- metadata localizada: PASS;
+- entity graph JSON-LD: PASS;
+- `llms.txt`: PASS;
+- estrategia Brandin canónica: PASS;
+- README sincronizado: PASS;
+- deployments recientes del bloque discovery: PASS;
+- runtime del último bloque verificado sin errores detectados en la ventana revisada;
+- copy visible de homepage como categoría Security Suite: pendiente P1.
 
 Acciones prioritarias:
 
