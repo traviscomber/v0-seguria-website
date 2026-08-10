@@ -13,11 +13,9 @@ SegurIA es una suite integrada de seguridad y operación que reúne seguridad f�
 
 N3uralia es la capa tecnológica reutilizable. Los motores de inteligencia, automatización, análisis, orquestación y lógica diferencial pertenecen a N3uralia; SegurIA los consume y especializa para seguridad y operación.
 
-Sitio de N3uralia: https://www.n3uralia.com
+Sitio N3uralia: https://www.n3uralia.com
 
-## Superficies principales de la suite
-
-La experiencia cliente está organizada alrededor de seis módulos visibles:
+## Superficies principales
 
 1. **Centro de Control** — estado general, prioridades, propiedades, dispositivos, incidentes y actividad.
 2. **Infraestructura** — cámaras, sensores, gateways, inventario, heartbeat y estado operacional.
@@ -26,7 +24,7 @@ La experiencia cliente está organizada alrededor de seis módulos visibles:
 5. **Vision** — análisis visual operation-aware, quality diagnostics, human review e inferencia derivada.
 6. **Edge** — RTSP local, motion/change gate, selección de frames, spool offline y reintentos.
 
-Estos módulos no son productos aislados: son superficies de una misma Security Suite.
+Estas superficies forman una sola Security Suite; no son productos separados.
 
 ## Estado ejecutivo
 
@@ -54,12 +52,10 @@ Modelo vigente:
 Organization -> Property -> Operation -> Vision resources
 ```
 
-Reglas:
-
-- `operation_id` es el scope operacional canónico;
-- `organization_id` se deriva desde la propiedad vinculada a la operación;
-- `created_by_user_id` y `submitted_by_user_id` son actor/auditoría, no ownership;
-- membership operacional mediante `user_operations`;
+- `operation_id` es el scope operacional canónico.
+- `organization_id` se deriva desde la propiedad vinculada a la operación.
+- `created_by_user_id` y `submitted_by_user_id` son actor/auditoría, no ownership.
+- membership operacional mediante `user_operations`.
 - conocer un UUID no concede acceso.
 
 ### PASS — identidad e idempotencia
@@ -76,34 +72,22 @@ Inferencias:
 UNIQUE(operation_id, sha256, model_name)
 ```
 
-Los write paths relevantes exigen operación explícita y evitan colisiones entre operaciones distintas.
-
-### PASS — Wildlife security hardening
-
-Completado:
+### PASS — Wildlife / Huilo Huilo
 
 - RLS endurecida por operación;
-- lookup de scope permitido solo donde corresponde;
-- cleanup de índices duplicados de `user_operations`;
-- constraint de identidad de cámaras por operación;
-- idempotencia de inference jobs por operación;
-- tests de acceso positivo/negativo.
-
-### PASS — Huilo Huilo wildlife preservation
-
-El trabajo de Wildlife fue integrado a `main` mediante PR #28.
-
-Estado canónico conocido:
-
-- propiedad Huilo Huilo asociada a una operación canónica;
+- lookup de scope limitado;
+- índices duplicados de `user_operations` limpiados;
+- identidad de cámaras e inferencias protegida por operación;
+- tests de acceso positivo/negativo;
+- Huilo Huilo integrado a `main` mediante PR #28;
 - 4 cámaras con scope operacional;
-- inference jobs scoped y legacy separados;
-- 5 jobs históricos permanecen sin `operation_id` por falta de evidencia canónica suficiente;
-- no se reasignan datos legacy por conveniencia o inferencia.
+- 5 inference jobs históricos permanecen legacy sin `operation_id` por falta de evidencia canónica suficiente.
+
+Nunca se reasigna ownership legacy por conveniencia o inferencia.
 
 ### PASS — Security Suite client experience
 
-La experiencia del portal fue reorganizada en seis módulos:
+Portal organizado en:
 
 ```text
 Centro de Control
@@ -114,7 +98,7 @@ Vision
 Edge
 ```
 
-Se reutilizan componentes y datos reales existentes; no se inventan métricas, volúmenes ni tasas para presentación.
+Se reutilizan componentes y datos reales; no se inventan métricas, volúmenes ni tasas.
 
 ### PASS — branding N3uralia
 
@@ -124,26 +108,37 @@ Relación canónica:
 N3uralia engines -> SegurIA Security Suite -> security workflows
 ```
 
-SegurIA no define una familia independiente de motores. Los identificadores técnicos del repositorio pueden mantener nombres de implementación, pero no deben presentarse como motores propios de SegurIA.
+SegurIA no define una familia independiente de motores. Los identificadores técnicos pueden conservar nombres de implementación, pero la propiedad tecnológica reutilizable permanece en N3uralia.
 
 ### PASS — SEO / GEO / LLMO base
 
 Implementado:
 
 - canonical URLs;
-- metadata Next.js;
+- metadata Next.js global y localizada;
 - Open Graph;
 - JSON-LD / Schema.org;
-- sitemap;
+- sitemap multilenguaje;
 - robots;
 - `llms.txt`;
 - referencias semánticas SegurIA ↔ N3uralia;
 - atribución visible **Powered by N3uralia**;
-- posicionamiento principal como **SegurIA Security Suite**;
-- metadata localizada alineada con Security Suite;
-- entity graph corregido para evitar relaciones semánticas engañosas;
-- estrategia Brandin documentada en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`;
-- README principal actualizado para reflejar estrategia Brandin, arquitectura de contenidos y estado verificado del bloque discovery.
+- entity graph corregido;
+- estrategia Brandin en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
+
+### PASS — categoría Security Suite visible en homepage
+
+Implementado en ES y EN:
+
+- eyebrow principal `SegurIA Security Suite`;
+- descripción visible que define qué es la suite;
+- CTA `Ver la suite / View the suite`;
+- bloque visible que explica las seis superficies canónicas;
+- relación N3uralia → tecnología reutilizable → SegurIA especializada;
+- `/soluciones` alineado con la categoría Security Suite;
+- footer comercial alineado con `Security Suite. Powered by N3uralia.`
+
+Commit de implementación: `98dd748a638fc484bd5518b302a78b0853a8ba3a`.
 
 ## Arquitectura canónica
 
@@ -196,21 +191,14 @@ Principio: **procesar cerca del lugar, mover solo la información necesaria y ma
 
 ## Ownership y verdad canónica
 
-### Estado canónico
-
-Postgres/Supabase mantiene las entidades y relaciones operacionales: organizaciones, propiedades, operaciones, memberships, gateways, dispositivos, incidentes, cámaras, inference jobs, reviews, reglas y auditoría.
-
-### Evidencia binaria
-
-Supabase Storage mantiene blobs. Storage no define ownership; la semántica y ownership se resuelven desde Postgres.
-
-### Datos derivados
-
-Resultados de IA, clasificaciones, confianza, dashboards y métricas son derivados. No pueden sobrescribir silenciosamente la verdad operacional canónica.
+- Postgres/Supabase mantiene entidades y relaciones operacionales canónicas.
+- Supabase Storage mantiene blobs; Storage no define ownership.
+- IA, clasificaciones, confianza, dashboards y métricas son datos derivados.
+- Resultados derivados no sobrescriben silenciosamente verdad operacional canónica.
 
 ## Seguridad obligatoria
 
-- RLS y backend deben validar la ruta real de ownership.
+- RLS y backend validan la ruta real de ownership.
 - Secretos y service-role permanecen server-side.
 - Ninguna ruta sensible se autoriza solo por sesión válida.
 - Video e imágenes no exponen credenciales RTSP.
@@ -220,65 +208,54 @@ Resultados de IA, clasificaciones, confianza, dashboards y métricas son derivad
 - Demo, preview y producción permanecen separados.
 - No se inventa ownership para reconciliar datos legacy.
 
-## HOLD — verificación autenticada end-to-end de Vision
+## HOLD — Vision autenticado E2E
 
-Sigue pendiente demostrar con una sesión real autenticada el flujo completo:
+Pendiente demostrar con sesión real autenticada:
 
-1. inferencia real con `x-operation-id`;
+1. inferencia con `x-operation-id`;
 2. creación/reuso de cámara por `(operation_id, code)`;
 3. creación/reuso de job por `(operation_id, sha256, model_name)`;
-4. evidencia en Storage asociada al job correcto;
+4. evidencia Storage asociada al job correcto;
 5. lectura autorizada;
 6. caso negativo cross-operation;
 7. revisión de logs Vercel/Supabase.
 
-Gate: `imagen -> storage -> cámara -> job -> resultado -> lectura autorizada` debe quedar verificado de extremo a extremo.
+Gate:
 
-## P1 — consolidar Security Suite
+```text
+imagen -> storage -> cámara -> job -> resultado -> lectura autorizada
+```
 
-- mantener navegación y copy alineados con la categoría Security Suite;
-- conectar cada módulo con flujos operacionales reales y evidencia canónica;
-- mejorar correlación entre infraestructura, eventos, incidentes y evidencia;
-- evitar duplicación conceptual entre páginas comerciales, portal y documentación;
-- mantener `Powered by N3uralia` consistente en UI, metadata y documentación;
-- actualizar este roadmap en cada cambio material.
+## P1 — Brandin: siguiente fase
 
-## P1 — Brandin: posicionamiento y discoverability
+La categoría ya es visible. El siguiente trabajo de mayor impacto es consolidar el grafo de contenido y conversión:
 
-Objetivo: convertir **SegurIA Security Suite** en una entidad de mercado clara para compradores, buscadores y motores generativos sin depender de keyword stuffing ni claims no verificables.
-
-Estado actual:
-
-- metadata localizada: PASS;
-- entity graph JSON-LD: PASS;
-- `llms.txt`: PASS;
-- estrategia Brandin canónica: PASS;
-- README sincronizado: PASS;
-- deployments recientes del bloque discovery: PASS;
-- runtime del último bloque verificado sin errores detectados en la ventana revisada;
-- copy visible de homepage como categoría Security Suite: pendiente P1.
-
-Acciones prioritarias:
-
-1. Reescribir el hero/home visible para declarar **Security Suite** explícitamente sin perder el mensaje emocional actual.
-2. Incorporar una sección visible y citable “Qué incluye la SegurIA Security Suite” con los seis módulos.
-3. Mantener una arquitectura de contenido en tres capas: categoría -> capacidades -> industrias/casos de uso.
-4. Reforzar internal linking entre landings de intención alta, `/soluciones`, capacidades relacionadas y contacto.
-5. Añadir metadata específica a páginas que todavía dependan de metadata genérica.
+1. Reforzar internal linking entre `/soluciones`, páginas de capacidades, industrias y `/contacto`.
+2. Añadir metadata específica a páginas que todavía dependan de metadata genérica.
+3. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
+4. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
+5. Mejorar rutas de conversión desde páginas de intención alta.
 6. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
-7. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados; la visibilidad en motores generativos es una señal complementaria.
-8. Evitar páginas thin/doorway, fake FAQs, fake reviews y contenido masivo sin valor original.
+7. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
+8. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
 
-Documento de estrategia: `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
+Modelo de contenido:
 
-Gate P1 Brandin: la categoría, relaciones de entidad, metadata y copy visible deben ser coherentes; las páginas principales deben poder explicar qué es SegurIA, qué incluye y cómo se relaciona con N3uralia sin depender del README o de `llms.txt`.
+```text
+N3uralia
+  -> SegurIA Security Suite
+      -> capacidades
+          -> industrias / casos de uso
+              -> evidencia / explicación
+                  -> contacto / conversión
+```
 
 ## P1 — observabilidad y release gates
 
 - revisar runtime después de cambios relevantes;
 - mantener build/TypeScript/tests verdes;
 - verificar rutas públicas críticas;
-- validar que cambios de schema y código permanezcan sincronizados;
+- validar sincronía entre schema y código;
 - no declarar PASS si la verificación requerida no fue ejecutada.
 
 ## P2 — datos legacy
@@ -291,13 +268,11 @@ Opciones válidas:
 - conservación archivada;
 - exportación/retiro explícito aprobado por negocio.
 
-Nunca asignarlos automáticamente a Huilo Huilo u otra operación.
-
 ## P2 — gobierno, retención y recovery
 
 Definir y documentar:
 
-- retención de imágenes y evidencia;
+- retención de imágenes/evidencia;
 - retención de inference jobs;
 - lifecycle de resultados rechazados/no identificables;
 - auditoría de correcciones humanas;
@@ -320,7 +295,7 @@ Medir antes de optimizar:
 
 ## P2 — expansión de la suite
 
-Evolución potencial, siempre basada en requisitos reales:
+Evolución potencial basada en requisitos reales:
 
 - correlación avanzada de eventos;
 - mapas y planos interactivos;
@@ -340,7 +315,7 @@ Producto:
 
 - estado operacional entendible rápidamente;
 - onboarding repetible;
-- módulos de la suite coherentes entre sí;
+- módulos coherentes entre sí;
 - incidentes y evidencia conectados al contexto correcto.
 
 Datos y seguridad:
@@ -359,14 +334,6 @@ Operación:
 - Storage reconciliable con estado canónico;
 - rollback o forward-fix para cambios críticos.
 
-Negocio:
-
-- costo medible por operación;
-- latencia y costo por inferencia medibles;
-- activación de clientes repetible;
-- reducción de falsas alarmas;
-- reducción del tiempo de resolución de incidentes.
-
 Marketing y discoverability:
 
 - crecimiento de consultas no-brand relevantes;
@@ -382,23 +349,23 @@ Marketing y discoverability:
 
 ### PASS
 
-Un cambio puede considerarse listo cuando las verificaciones relevantes están ejecutadas y no existe un blocker material conocido.
+Verificaciones relevantes ejecutadas y sin blocker material conocido.
 
 ### HOLD
 
-El diseño o implementación está mayormente correcto, pero falta una verificación requerida. El estado autenticado E2E de Vision permanece aquí.
+Implementación mayormente correcta pero falta una verificación requerida. Vision autenticado E2E permanece aquí.
 
 ### BLOCK
 
-Existe un defecto conocido de seguridad, integridad, tenancy, migración o flujo primario que hace inseguro avanzar.
+Defecto conocido de seguridad, integridad, tenancy, migración o flujo primario hace inseguro avanzar.
 
-## Política de mantenimiento del roadmap
+## Política de mantenimiento
 
 `ROADMAP.md` forma parte del Definition of Done de SegurIA.
 
 Cada cambio material debe actualizar, cuando corresponda:
 
-- estado PASS / HOLD / BLOCK;
+- PASS / HOLD / BLOCK;
 - arquitectura canónica;
 - ownership y contratos;
 - módulos de la Security Suite;
