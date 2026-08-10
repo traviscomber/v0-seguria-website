@@ -5,6 +5,7 @@ import { marketing } from '@/lib/marketing-content'
 
 export function LocaleFooter({ locale }: { locale: Locale }) {
   const copy = marketing[locale].footer
+  const coverageLabel = locale === 'es' ? 'Santiago y sur de Chile' : 'Santiago and southern Chile'
 
   return (
     <footer className="border-t border-white/10 bg-[#051017]">
@@ -23,6 +24,11 @@ export function LocaleFooter({ locale }: { locale: Locale }) {
               <li>
                 <Link href={localizedPath(locale, '/soluciones')} className="text-sm text-white/50 transition-colors hover:text-white">
                   {copy.seeSolution}
+                </Link>
+              </li>
+              <li>
+                <Link href={localizedPath(locale, '/seguridad-inteligente-chile')} className="text-sm text-white/50 transition-colors hover:text-white">
+                  {coverageLabel}
                 </Link>
               </li>
               <li>
