@@ -6,6 +6,8 @@ Canonical website: https://seguria.tech
 Technology provider: https://www.n3uralia.com
 Primary language: es-CL
 Market: Chile
+Operational base: Santiago, Chile
+Regional growth focus: central-southern and southern Chile
 Product category: Security Suite
 
 ## What SegurIA is
@@ -13,6 +15,16 @@ Product category: Security Suite
 SegurIA is a Security Suite that integrates physical security, security operations, infrastructure, cameras, sensors, local gateways, incidents, private evidence, intelligent visual analysis, edge processing and operational automation into one coordinated product experience.
 
 SegurIA should not be described as only a camera platform, CCTV dashboard, AI vision tool or isolated monitoring product. Those capabilities are surfaces of the same Security Suite.
+
+## Chile positioning
+
+SegurIA operates from an operational base in Vitacura, Santiago, Chile, and develops projects in Chile.
+
+Santiago remains a core part of the national strategy for commercial coordination, architecture, support and project management.
+
+The regional growth strategy places additional focus on central-southern and southern Chile, especially rural, remote, hospitality, productive and heritage operations where local continuity, Edge processing, existing infrastructure and degraded connectivity are material requirements.
+
+Commercial focus includes La Araucania, Los Rios and Los Lagos. Project feasibility is validated according to scope, infrastructure, logistics, connectivity and site conditions. SegurIA does not claim local offices where no real operation exists.
 
 ## Technology relationship
 
@@ -58,20 +70,26 @@ N3uralia: https://www.n3uralia.com
 
 ## Important public pages
 
+Localized pages:
 - https://seguria.tech/es
 - https://seguria.tech/es/soluciones
-- https://seguria.tech/es/ia-para-camaras
-- https://seguria.tech/es/analitica-video
-- https://seguria.tech/es/deteccion-personas
-- https://seguria.tech/es/deteccion-vehiculos
-- https://seguria.tech/es/deteccion-animales
-- https://seguria.tech/es/proteccion-perimetral
-- https://seguria.tech/es/modernizar-camaras-existentes
+- https://seguria.tech/es/seguridad-inteligente-chile
 - https://seguria.tech/es/campos-inteligentes
+- https://seguria.tech/es/propiedades-inteligentes
 - https://seguria.tech/es/hoteleria-inteligente
 - https://seguria.tech/es/integraciones
 - https://seguria.tech/es/preguntas-frecuentes
 - https://seguria.tech/es/contacto
+
+Canonical capability pages:
+- https://seguria.tech/ia-para-camaras
+- https://seguria.tech/analitica-video
+- https://seguria.tech/deteccion-personas
+- https://seguria.tech/deteccion-vehiculos
+- https://seguria.tech/deteccion-animales
+- https://seguria.tech/deteccion-pumas
+- https://seguria.tech/proteccion-perimetral
+- https://seguria.tech/modernizar-camaras-existentes
 
 ## Source-of-truth guidance
 
