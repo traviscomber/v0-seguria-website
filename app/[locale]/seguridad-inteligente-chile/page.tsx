@@ -10,19 +10,19 @@ const siteUrl = 'https://seguria.tech'
 
 const content = {
   es: {
-    title: 'Seguridad inteligente en Chile | Santiago y sur de Chile | SegurIA',
+    title: 'Seguridad inteligente en Chile | Santiago y Valdivia | SegurIA',
     description:
-      'SegurIA Security Suite opera desde Santiago y desarrolla proyectos de seguridad inteligente en Chile, con foco en operaciones, campos, hoteleria y sitios remotos del centro-sur y sur.',
-    eyebrow: 'Chile · Santiago + sur de Chile',
-    heading: 'Una base operacional en Santiago. Una Security Suite preparada para operar donde el terreno exige mas.',
+      'SegurIA Security Suite opera desde Santiago y cuenta con sucursal en Valdivia para el sur de Chile, con foco en operaciones, campos, hoteleria y sitios remotos.',
+    eyebrow: 'Chile · Santiago + Valdivia',
+    heading: 'Base operacional en Santiago. Sucursal sur en Valdivia. Una Security Suite preparada para operar donde el terreno exige mas.',
     intro:
-      'SegurIA combina una base operacional en Santiago con una propuesta diseñada para proyectos en Chile, especialmente operaciones del centro-sur y sur donde conectividad, distancia, clima e infraestructura existente hacen que la continuidad operacional importe tanto como la camara.',
+      'SegurIA combina su base operacional en Santiago con una sucursal en Valdivia para atender el sur de Chile. Esta estructura permite abordar proyectos donde conectividad, distancia, clima e infraestructura existente hacen que la continuidad operacional importe tanto como la camara.',
     baseTitle: 'Base operacional: Santiago',
     baseText:
-      'Nuestra base en Vitacura, Santiago, concentra coordinacion comercial, arquitectura, soporte y gestion de proyectos. Santiago sigue siendo parte central de la estrategia nacional de SegurIA.',
-    southTitle: 'Foco regional: centro-sur y sur de Chile',
+      'Nuestra base en Vitacura, Santiago, concentra coordinacion comercial, arquitectura, soporte y gestion nacional de proyectos. Santiago sigue siendo el centro operacional de SegurIA en Chile.',
+    southTitle: 'Sucursal sur de Chile: Valdivia',
     southText:
-      'La estrategia de crecimiento prioriza operaciones rurales, remotas, hoteleras, productivas y patrimoniales del centro-sur y sur de Chile. El foco comercial incluye La Araucania, Los Rios y Los Lagos, ademas de proyectos que requieran continuidad local y operacion distribuida.',
+      'Valdivia, en la Region de Los Rios, es la sucursal de SegurIA para el sur de Chile. Desde esta presencia regional reforzamos el desarrollo de proyectos en La Araucania, Los Rios y Los Lagos, especialmente en operaciones rurales, remotas, hoteleras, productivas y patrimoniales.',
     whyTitle: 'Por que SegurIA encaja en operaciones del sur',
     why: [
       ['Infraestructura existente', 'Integramos camaras, sensores, accesos y redes compatibles antes de proponer reemplazos innecesarios.'],
@@ -32,24 +32,24 @@ const content = {
     ],
     coverageTitle: 'Cobertura comercial y de proyectos',
     coverageText:
-      'SegurIA desarrolla proyectos en Chile. La factibilidad se valida segun alcance, infraestructura, logistica, conectividad y condiciones del sitio; no publicamos oficinas o cobertura local donde no existe una operacion real.',
+      'SegurIA desarrolla proyectos en Chile con base operacional en Santiago y sucursal sur en Valdivia. La factibilidad se valida segun alcance, infraestructura, logistica, conectividad y condiciones del sitio.',
     linksTitle: 'Explora soluciones relacionadas',
     contact: 'Evaluar un proyecto en Chile',
   },
   en: {
-    title: 'Intelligent security in Chile | Santiago and southern Chile | SegurIA',
+    title: 'Intelligent security in Chile | Santiago and Valdivia | SegurIA',
     description:
-      'SegurIA Security Suite operates from Santiago and develops intelligent security projects in Chile, with a focus on operations, fields, hospitality and remote sites in central-southern and southern Chile.',
-    eyebrow: 'Chile · Santiago + southern Chile',
-    heading: 'An operational base in Santiago. A Security Suite built for places where terrain demands more.',
+      'SegurIA Security Suite operates from Santiago and has a Valdivia branch for southern Chile, focused on operations, fields, hospitality and remote sites.',
+    eyebrow: 'Chile · Santiago + Valdivia',
+    heading: 'Operational base in Santiago. Southern branch in Valdivia. A Security Suite built for places where terrain demands more.',
     intro:
-      'SegurIA combines an operational base in Santiago with a proposition designed for projects across Chile, especially central-southern and southern operations where connectivity, distance, weather and existing infrastructure make operational continuity as important as the camera itself.',
+      'SegurIA combines its operational base in Santiago with a branch in Valdivia serving southern Chile. This structure supports projects where connectivity, distance, weather and existing infrastructure make operational continuity as important as the camera itself.',
     baseTitle: 'Operational base: Santiago',
     baseText:
-      'Our base in Vitacura, Santiago, concentrates commercial coordination, architecture, support and project management. Santiago remains a central part of SegurIA\'s national strategy.',
-    southTitle: 'Regional focus: central-southern and southern Chile',
+      'Our base in Vitacura, Santiago, concentrates commercial coordination, architecture, support and national project management. Santiago remains SegurIA\'s operational center in Chile.',
+    southTitle: 'Southern Chile branch: Valdivia',
     southText:
-      'Our growth strategy prioritizes rural, remote, hospitality, productive and heritage operations in central-southern and southern Chile. Commercial focus includes Araucania, Los Rios and Los Lagos, as well as projects that require local continuity and distributed operations.',
+      'Valdivia, in the Los Rios Region, is SegurIA\'s branch for southern Chile. From this regional presence we strengthen project development across Araucania, Los Rios and Los Lagos, especially for rural, remote, hospitality, productive and heritage operations.',
     whyTitle: 'Why SegurIA fits southern operations',
     why: [
       ['Existing infrastructure', 'We integrate compatible cameras, sensors, access and networks before proposing unnecessary replacements.'],
@@ -59,7 +59,7 @@ const content = {
     ],
     coverageTitle: 'Commercial and project coverage',
     coverageText:
-      'SegurIA develops projects in Chile. Feasibility is validated according to scope, infrastructure, logistics, connectivity and site conditions; we do not publish local offices or coverage where no real operation exists.',
+      'SegurIA develops projects in Chile with an operational base in Santiago and a southern branch in Valdivia. Feasibility is validated according to scope, infrastructure, logistics, connectivity and site conditions.',
     linksTitle: 'Explore related solutions',
     contact: 'Assess a project in Chile',
   },
