@@ -20,6 +20,21 @@ N3uralia
                       -> conversión
 ```
 
+## Dominio e identidad web canónica
+
+**`https://seguria.tech` es la identidad web canónica de SegurIA Security Suite.**
+
+`https://segur-ia.cl` pertenece a la misma organización SegurIA y se mantiene únicamente como dominio legado durante el período de consolidación. No debe recibir contenido canónico nuevo ni competir con `seguria.tech` como fuente principal.
+
+Política:
+
+- todo contenido nuevo, metadata, sitemap, structured data, `llms.txt`, campañas y enlaces controlados deben apuntar a `seguria.tech`;
+- `segur-ia.cl` puede mantenerse temporalmente como señal `sameAs` mientras siga aportando identidad o enlaces históricos;
+- en el cutover final, cada URL legacy debe redirigir mediante `301` o `308` directamente a su equivalente más cercano en `seguria.tech`;
+- después de estabilizar la migración, `segur-ia.cl` podrá eliminarse de `sameAs` si deja de aportar evidencia útil de identidad.
+
+Plan detallado: [`docs/marketing/DOMAIN_CONSOLIDATION_PLAN.md`](docs/marketing/DOMAIN_CONSOLIDATION_PLAN.md).
+
 ## Posicionamiento geográfico en Chile
 
 SegurIA mantiene su **base operacional en Vitacura, Santiago**. Santiago concentra coordinación comercial, arquitectura, soporte y gestión nacional de proyectos, y sigue siendo el centro operacional de la estrategia chilena.
@@ -265,9 +280,11 @@ Implementado:
 - Open Graph;
 - JSON-LD / Schema.org;
 - entity graph SegurIA ↔ N3uralia;
+- `seguria.tech` definido como dominio canónico único de largo plazo;
+- plan de consolidación desde `segur-ia.cl` documentado;
 - sitemap alineado con rutas canónicas;
 - `robots.txt`;
-- [`public/llms.txt`](public/llms.txt) alineado con la arquitectura de rutas y geografía;
+- [`public/llms.txt`](public/llms.txt) alineado con la arquitectura de rutas, geografía y dominio canónico;
 - `Powered by N3uralia` visible;
 - estrategia canónica en [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md).
 
@@ -277,8 +294,9 @@ Próxima fase Brandin:
 2. breadcrumbs y relaciones semánticas donde correspondan;
 3. revisión de thin/duplicate intent;
 4. optimización de conversión en páginas de intención alta;
-5. medición mediante Search Console, branded search, conversiones, backlinks y leads calificados;
-6. construir autoridad regional con evidencia real, casos y referencias cuando existan.
+5. ejecutar el cutover de `segur-ia.cl` cuando tengamos acceso/control del dominio legacy;
+6. medición mediante Search Console, branded search, conversiones, backlinks y leads calificados;
+7. construir autoridad regional con evidencia real, casos y referencias cuando existan.
 
 Evitar keyword stuffing, doorway pages, fake FAQs, fake reviews y contenido masivo sin valor original.
 
@@ -326,12 +344,14 @@ PASS:
 - branding N3uralia;
 - SEO/GEO/LLMO base;
 - categoría Security Suite visible en homepage ES/EN;
-- arquitectura geográfica Santiago + Valdivia + sur de Chile implementada en contenido y discovery.
+- arquitectura geográfica Santiago + Valdivia + sur de Chile implementada en contenido y discovery;
+- `seguria.tech` establecido como identidad web canónica y preparado para consolidar el dominio legacy.
 
 HOLD:
 
 - verificación autenticada end-to-end de Vision con sesión real;
-- posicionamiento orgánico regional medible: requiere indexación y datos reales de Search Console/consultas, no se infiere desde implementación.
+- posicionamiento orgánico regional medible: requiere indexación y datos reales de Search Console/consultas, no se infiere desde implementación;
+- cutover final de `segur-ia.cl`: requiere control del dominio legacy para aplicar redirects y Change of Address.
 
 El estado, prioridades y gates completos se mantienen en [`ROADMAP.md`](ROADMAP.md), que forma parte del Definition of Done del proyecto.
 
@@ -340,6 +360,7 @@ El estado, prioridades y gates completos se mantienen en [`ROADMAP.md`](ROADMAP.
 - [`ROADMAP.md`](ROADMAP.md)
 - [`DESIGN.md`](DESIGN.md)
 - [`docs/marketing/BRAND_DISCOVERY_STRATEGY.md`](docs/marketing/BRAND_DISCOVERY_STRATEGY.md)
+- [`docs/marketing/DOMAIN_CONSOLIDATION_PLAN.md`](docs/marketing/DOMAIN_CONSOLIDATION_PLAN.md)
 - [`docs/security/gateway-connector-contract.md`](docs/security/gateway-connector-contract.md)
 - [`edge/seguria-edge-vision/ARCHITECTURE.md`](edge/seguria-edge-vision/ARCHITECTURE.md)
 - [`edge/seguria-edge-vision/README.md`](edge/seguria-edge-vision/README.md)
