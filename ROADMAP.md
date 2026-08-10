@@ -34,7 +34,7 @@ Reglas:
 
 - **Santiago no se elimina ni se relega**: Vitacura, Santiago, sigue siendo la base operacional nacional para coordinación comercial, arquitectura, soporte y gestión de proyectos.
 - **Valdivia es la sucursal de SegurIA para el sur de Chile**, con presencia regional en la Región de Los Ríos.
-- La sucursal de Valdivia refuerza el desarrollo de proyectos en La Araucanía, Los Ríos y Los Lagos, especialmente para operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
+- La sucursal de Valdivia refuerza el desarrollo de proyectos en La Araucanía, Los Ríos y Los Lagos, especialmente en operaciones rurales, remotas, hoteleras, productivas y patrimoniales.
 - No se crean páginas doorway por ciudad ni se inventan sedes adicionales.
 - La factibilidad de cada proyecto se valida por alcance, infraestructura, logística, conectividad y condiciones del sitio.
 - El posicionamiento regional debe reforzar integración de infraestructura existente, Edge, continuidad ante conectividad degradada, evidencia, incidentes y Vision.
@@ -43,6 +43,29 @@ Página pilar implementada:
 
 - `/es/seguridad-inteligente-chile`
 - `/en/seguridad-inteligente-chile`
+
+## Política de dominio canónico
+
+La identidad web de largo plazo de SegurIA es:
+
+```text
+https://seguria.tech
+```
+
+`https://segur-ia.cl` pertenece a la misma organización SegurIA y se trata como **dominio legacy de la misma empresa**, no como entidad o producto separado.
+
+Reglas:
+
+- `seguria.tech` es el único dominio canónico para contenido nuevo, metadata, sitemap, structured data, `llms.txt`, campañas y referencias controladas.
+- `segur-ia.cl` puede permanecer temporalmente en `sameAs` mientras siga aportando señal histórica de identidad.
+- no se publica contenido canónico nuevo duplicado en ambos dominios;
+- el cutover final deberá usar redirects server-side permanentes (`301` o `308`) URL-a-URL hacia el equivalente más cercano en `seguria.tech`;
+- evitar redirect chains y redirects masivos irrelevantes hacia homepage;
+- mantener redirects al menos un año y preferiblemente de forma indefinida cuando sea viable;
+- actualizar Search Console, perfiles, campañas, directorios y backlinks controlables hacia `seguria.tech`;
+- tras estabilizar la migración se podrá retirar `segur-ia.cl` de `sameAs` si deja de aportar evidencia útil.
+
+Plan operativo: `docs/marketing/DOMAIN_CONSOLIDATION_PLAN.md`.
 
 ## Superficies principales
 
@@ -153,7 +176,12 @@ Implementado:
 - referencias semánticas SegurIA ↔ N3uralia;
 - atribución visible **Powered by N3uralia**;
 - entity graph corregido;
-- estrategia Brandin en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`.
+- estrategia Brandin en `docs/marketing/BRAND_DISCOVERY_STRATEGY.md`;
+- `seguria.tech` definido como identidad web canónica de largo plazo;
+- `segur-ia.cl` documentado como dominio legacy de la misma organización;
+- corrección de títulos localizados para evitar duplicar `SegurIA Security Suite`;
+- schema corregido para usar `/seguria-logo.png` y `/es/contacto`;
+- structured data geográfico ampliado con Santiago, Valdivia, La Araucanía, Los Ríos y Los Lagos sin inventar nuevas sedes.
 
 ### PASS — categoría Security Suite visible en homepage
 
@@ -210,6 +238,19 @@ Commits principales:
 - `51bff9bd5503ad6500f4846d157ecbe59b6944c6` — página pilar alineada con Santiago + Valdivia;
 - `13e4d043ec17bd6a7134c751f89bca0e9c483586` — LLMO/geografía Valdivia;
 - `b22244bb9b7a8f8561902e6bf63b365cd8589dee` — README.
+
+### HOLD — cutover final de segur-ia.cl
+
+La política y el destino canónico están definidos, pero el traslado del dominio legacy todavía requiere ejecutar cambios sobre `segur-ia.cl`:
+
+1. inventario de URLs legacy;
+2. mapping URL-a-URL a `seguria.tech`;
+3. redirects `301`/`308`;
+4. actualización de Search Console / Change of Address cuando aplique;
+5. actualización de enlaces externos controlados;
+6. monitoreo de 404, cobertura, impresiones, branded queries y conversiones.
+
+No declarar PASS del traslado hasta verificar redirects y señales de indexación reales.
 
 ### HOLD — posicionamiento orgánico regional medible
 
@@ -323,25 +364,30 @@ Completado:
 - arquitectura geográfica Santiago + Valdivia + sur de Chile;
 - página pilar geográfica;
 - internal link global inicial;
+- `seguria.tech` definido como dominio canónico único de largo plazo;
+- plan de consolidación de `segur-ia.cl` documentado;
+- schema geográfico y rutas de identidad corregidos;
 - `llms.txt`, README y roadmap sincronizados.
 
 Siguiente trabajo de mayor impacto:
 
-1. Reforzar internal linking entre `/soluciones`, capacidades, industrias, página geográfica y `/contacto`.
-2. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
-3. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
-4. Decidir si las páginas de capacidades deben permanecer canónicas no localizadas o migrar a una arquitectura ES/EN completa antes de publicar hreflang para ellas.
-5. Mejorar rutas de conversión desde páginas de intención alta.
-6. Construir autoridad regional alrededor de Valdivia y sur de Chile con casos, referencias, partners y evidencia real cuando existan.
-7. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
-8. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
-9. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
+1. Ejecutar el cutover de `segur-ia.cl` cuando exista acceso/control operativo del dominio legacy.
+2. Reforzar internal linking entre `/soluciones`, capacidades, industrias, página geográfica y `/contacto`.
+3. Crear breadcrumbs/relaciones semánticas donde aporten contexto real.
+4. Revisar intención y profundidad de cada landing para evitar páginas thin o duplicadas.
+5. Decidir si las páginas de capacidades deben permanecer canónicas no localizadas o migrar a una arquitectura ES/EN completa antes de publicar hreflang para ellas.
+6. Mejorar rutas de conversión desde páginas de intención alta.
+7. Construir autoridad regional alrededor de Valdivia y sur de Chile con casos, referencias, partners y evidencia real cuando existan.
+8. Mantener `llms.txt`, JSON-LD, README, estrategia y roadmap sincronizados.
+9. Medir Search Console, branded search, conversiones por landing, backlinks relevantes y leads calificados.
+10. Tratar visibilidad en motores generativos como señal complementaria, no como métrica aislada.
 
 Modelo de contenido:
 
 ```text
 N3uralia
   -> SegurIA Security Suite
+      -> canonical web identity: seguria.tech
       -> Chile
           -> Santiago = base operacional nacional
           -> Valdivia = sucursal sur de Chile
@@ -440,6 +486,7 @@ Marketing y discoverability:
 
 - crecimiento de consultas no-brand relevantes;
 - crecimiento de branded search de SegurIA;
+- `seguria.tech` como dominio predominante en resultados y referencias controladas;
 - crecimiento de consultas geográficas Santiago/Valdivia/Los Ríos/sur de Chile cuando correspondan a demanda real;
 - páginas de entrada que generan contacto;
 - conversiones medibles por landing;
@@ -457,7 +504,7 @@ Verificaciones relevantes ejecutadas y sin blocker material conocido.
 
 ### HOLD
 
-Implementación mayormente correcta pero falta una verificación requerida. Vision autenticado E2E y posicionamiento orgánico regional medible permanecen aquí hasta existir evidencia suficiente.
+Implementación mayormente correcta pero falta una verificación requerida. Vision autenticado E2E, cutover final de `segur-ia.cl` y posicionamiento orgánico regional medible permanecen aquí hasta existir evidencia suficiente.
 
 ### BLOCK
 
