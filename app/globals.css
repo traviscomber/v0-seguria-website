@@ -388,6 +388,91 @@
   color: var(--text-secondary-light);
 }
 
+/* Maritime solution card: cargo vessel, Chilean Patagonia ferry, Puerto Montt workboat. */
+a[href$='/seguridad-maritima'][style] {
+  isolation: isolate;
+  background-image:
+    linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+    url('https://images.unsplash.com/photo-1601311852860-1d8f42381551?auto=format&fit=crop&q=82&w=2200') !important;
+}
+
+a[href$='/seguridad-maritima'][style]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  animation: maritime-card-background-cycle 30s ease-in-out infinite;
+}
+
+a[href$='/seguridad-maritima'][style] > .relative {
+  z-index: 1;
+}
+
+@keyframes maritime-card-background-cycle {
+  0% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1715114468723-9863f9304223?auto=format&fit=crop&q=82&w=2200');
+  }
+  4.33%,
+  28.99% {
+    opacity: 1;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1715114468723-9863f9304223?auto=format&fit=crop&q=82&w=2200');
+  }
+  33.33% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1715114468723-9863f9304223?auto=format&fit=crop&q=82&w=2200');
+  }
+  33.34% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1586976477037-0cf4ba43fec9?auto=format&fit=crop&q=82&w=2200');
+  }
+  37.67%,
+  62.32% {
+    opacity: 1;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1586976477037-0cf4ba43fec9?auto=format&fit=crop&q=82&w=2200');
+  }
+  66.66% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1586976477037-0cf4ba43fec9?auto=format&fit=crop&q=82&w=2200');
+  }
+  66.67% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1601311852860-1d8f42381551?auto=format&fit=crop&q=82&w=2200');
+  }
+  71%,
+  95.66% {
+    opacity: 1;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1601311852860-1d8f42381551?auto=format&fit=crop&q=82&w=2200');
+  }
+  100% {
+    opacity: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)),
+      url('https://images.unsplash.com/photo-1601311852860-1d8f42381551?auto=format&fit=crop&q=82&w=2200');
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -396,5 +481,9 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  a[href$='/seguridad-maritima'][style]::before {
+    display: none;
   }
 }
