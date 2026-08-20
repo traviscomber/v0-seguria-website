@@ -9,6 +9,7 @@ const localizedRoutes = [
   { path: '/campos-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/propiedades-inteligentes', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/hoteleria-inteligente', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/seguridad-maritima', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/integraciones', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/preguntas-frecuentes', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/contacto', changeFrequency: 'yearly', priority: 0.6 },
