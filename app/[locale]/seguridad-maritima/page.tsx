@@ -9,7 +9,7 @@ import { isLocale, localizedPath, type Locale } from '@/lib/locales'
 const siteUrl = 'https://seguria.tech'
 
 const maritimeImages = {
-  hero: "https://images.unsplash.com/photo-1755427485356-15d66cadb838?auto=format&fit=crop&q=82&w=2000",
+  hero: "https://images.unsplash.com/photo-1601311852860-1d8f42381551?auto=format&fit=crop&q=82&w=2200",
   radar: "https://images.unsplash.com/photo-1742293466570-8aad7ae1f877?auto=format&fit=crop&q=82&w=1400",
   bridge: "https://images.unsplash.com/photo-1668257791213-200b3d9e54c4?auto=format&fit=crop&q=82&w=1400",
   systems: "https://images.unsplash.com/photo-1755427485356-15d66cadb838?auto=format&fit=crop&q=82&w=1400",
@@ -109,6 +109,7 @@ export default async function MaritimeSecurityPage({ params }: { params: Promise
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `linear-gradient(100deg, rgba(5,16,23,0.97) 0%, rgba(10,27,46,0.88) 45%, rgba(10,27,46,0.42) 100%), url('${maritimeImages.hero}')`,
+            backgroundPosition: 'center 55%',
           }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,rgba(77,163,217,0.2),transparent_30%),linear-gradient(to_bottom,transparent_70%,#0A1B2E_100%)]" />
