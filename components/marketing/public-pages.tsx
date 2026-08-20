@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, BellRing, Camera, CheckCircle2, Clock, Eye, FileSearch, Home, Hotel, Leaf, Moon, ShieldCheck, Siren } from 'lucide-react'
+import { Anchor, ArrowRight, BellRing, Camera, CheckCircle2, Clock, Eye, FileSearch, Home, Hotel, Leaf, Moon, ShieldCheck, Siren } from 'lucide-react'
 import { localizedPath, type Locale } from '@/lib/locales'
 import { marketing } from '@/lib/marketing-content'
 import { LocaleFooter } from '@/components/marketing/locale-footer'
@@ -7,11 +7,33 @@ import { LocaleNavigation } from '@/components/marketing/locale-navigation'
 import { LocalizedContactForm } from '@/components/marketing/localized-contact-form'
 
 const benefitIcons = [Moon, Siren, FileSearch]
-const placeIcons = [Leaf, Home, Hotel]
+const placeIcons = [Leaf, Home, Hotel, Anchor]
+
+function maritimePage(locale: Locale) {
+  return locale === 'es'
+    ? {
+        eyebrow: 'Seguridad Marítima Inteligente',
+        title: 'Tu embarcación no necesita más cámaras. Necesita saber qué pasó.',
+        description:
+          'Cámaras, grabadores y sistemas a bordo convertidos en evidencia, incidentes y control operacional, incluso con conectividad limitada.',
+        href: '/seguridad-maritima',
+        image:
+          "linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)), url('https://images.unsplash.com/photo-1540946485063-a40da27545f8?q=70&w=1400&auto=format&fit=crop')",
+      }
+    : {
+        eyebrow: 'Smart Maritime Security',
+        title: 'Your vessel does not need more cameras. It needs to know what happened.',
+        description:
+          'Onboard cameras, recorders and systems turned into evidence, incidents and operational control, even with limited connectivity.',
+        href: '/seguridad-maritima',
+        image:
+          "linear-gradient(to bottom, rgba(10, 27, 46, 0.34), rgba(10, 27, 46, 0.92)), url('https://images.unsplash.com/photo-1540946485063-a40da27545f8?q=70&w=1400&auto=format&fit=crop')",
+      }
+}
 
 export function PublicHomePage({ locale }: { locale: Locale }) {
   const copy = marketing[locale]
-  const places = [copy.routes.fields, copy.routes.properties, copy.routes.hospitality]
+  const places = [copy.routes.fields, copy.routes.properties, copy.routes.hospitality, maritimePage(locale)]
 
   return (
     <main className="min-h-screen bg-[#0A1B2E]">
@@ -110,7 +132,7 @@ export function PublicHomePage({ locale }: { locale: Locale }) {
             <h2 className="mx-auto mt-4 max-w-3xl text-balance text-3xl font-light text-[#0A1B2E] md:text-4xl">{copy.home.placesTitle}</h2>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {places.map((place, index) => {
               const Icon = placeIcons[index]
               return (
@@ -154,7 +176,7 @@ export function PublicHomePage({ locale }: { locale: Locale }) {
 
 export function PublicSolutionsPage({ locale }: { locale: Locale }) {
   const copy = marketing[locale]
-  const pages = [copy.routes.fields, copy.routes.properties, copy.routes.hospitality]
+  const pages = [copy.routes.fields, copy.routes.properties, copy.routes.hospitality, maritimePage(locale)]
 
   return (
     <main className="min-h-screen bg-[#0A1B2E]">
